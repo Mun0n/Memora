@@ -1,4 +1,6 @@
 import json
+import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -20,5 +22,24 @@ class OrchestratorContracts(unittest.TestCase):
 
     def test_no_unresolved_design_blocker(self):
         self.assertNotIn("DESIGN_BLOCKER", (ROOT / "specs/SLICE_01.md").read_text())
+
+    def test_audit_parser_accepts_markdown_heading(self):
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md") as audit:
+            audit.write("# Audit\n\n## Result: PASS_WITH_NOTES\n")
+            audit.flush()
+            parsed = subprocess.check_output(
+                [
+                    "sed", "-nE",
+                    r"s/^[#*[:space:]]*(Result|STATUS):[[:space:]]*(PASS_WITH_NOTES|PASS|FAIL).*/\2/p",
+                    audit.name,
+                ],
+                text=True,
+            ).strip()
+        self.assertEqual("PASS_WITH_NOTES", parsed)
+
+    def test_validation_does_not_require_ripgrep(self):
+        validate = (ROOT / "scripts/validate.sh").read_text()
+        self.assertIn("tool/scan_repository.py", validate)
+        self.assertNotIn("rg -n --hidden", validate)
 
 if __name__ == "__main__": unittest.main()

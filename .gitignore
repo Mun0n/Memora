@@ -6,6 +6,8 @@
 .vscode/
 build/
 coverage/
+__pycache__/
+*.py[cod]
 *.iml
 .env
 .env.*
@@ -14,4 +16,3 @@ coverage/
 !.agent/tmp/.gitkeep
 .agent/reports/slice_*/
 !.agent/reports/.gitkeep
-

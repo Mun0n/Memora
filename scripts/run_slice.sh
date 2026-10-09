@@ -33,7 +33,12 @@ required=(
 )
 for path in "${required[@]}"; do [[ -f "$ROOT/$path" ]] || { echo "ERROR: missing $path" >&2; exit 1; }; done
 
-if rg -n 'DESIGN_BLOCKER' "$SPEC" >/dev/null; then
+if command -v rg >/dev/null 2>&1; then
+  blocker_found="$(rg -n 'DESIGN_BLOCKER' "$SPEC" || true)"
+else
+  blocker_found="$(grep -n 'DESIGN_BLOCKER' "$SPEC" || true)"
+fi
+if [[ -n "$blocker_found" ]]; then
   echo "ERROR: unresolved DESIGN_BLOCKER in $SPEC" >&2; exit 1
 fi
 
@@ -113,8 +118,12 @@ while true; do
   ./scripts/validate.sh >"$REPORT_DIR/validation.log" 2>&1 || true
   invoke QA "Evaluate every acceptance criterion using validation.log and current tree. Write ${REPORT_REL}/qa.md with PASS, FAIL or BLOCKED."
   invoke AUDITOR "Fresh independent, read-only audit. Inspect git diff and validation.log. Write ${REPORT_REL}/audit.md with Result: PASS, PASS_WITH_NOTES or FAIL."
-  result="$(sed -nE 's/^Result:[[:space:]]*(PASS_WITH_NOTES|PASS|FAIL).*/\1/p' "$REPORT_DIR/audit.md" | head -1)"
+  result="$(sed -nE 's/^[#*[:space:]]*(Result|STATUS):[[:space:]]*(PASS_WITH_NOTES|PASS|FAIL).*/\2/p' "$REPORT_DIR/audit.md" | head -1)"
   if [[ "$result" == PASS || "$result" == PASS_WITH_NOTES ]]; then break; fi
+  if [[ "$result" != FAIL ]]; then
+    echo "ERROR: could not parse a valid audit result from $REPORT_REL/audit.md" >&2
+    exit 1
+  fi
   iteration=$((iteration + 1))
   if [[ "$iteration" -ge "$MAX_REPAIR" ]]; then
     echo "REPAIR_LIMIT_REACHED" | tee "$REPORT_DIR/final.md"

@@ -14,10 +14,10 @@ else
   echo "INFO: no Flutter manifests yet; orchestrator-only validation completed."
 fi
 
-secret_pattern='(sk''_live_|service_''role\s*=|SUPABASE_SERVICE_''ROLE_KEY\s*=)'
-if rg -n --hidden --glob '!.git/**' --glob '!.agent/reports/**' "$secret_pattern" .; then
-  echo "ERROR: possible committed secret detected" >&2
-  exit 1
+python3 "$ROOT/tool/scan_repository.py"
+
+if [[ -f "$ROOT/tool/check_package_boundaries.py" ]]; then
+  python3 "$ROOT/tool/check_package_boundaries.py"
 fi
 
 echo "VALIDATION PASS"

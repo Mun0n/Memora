@@ -1,0 +1,11 @@
+name: domain
+description: Memora domain entities, value objects and synthetic fixtures. No Flutter or remote deps.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.11.1
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6
