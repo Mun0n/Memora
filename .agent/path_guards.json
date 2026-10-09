@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "protected_paths": [
+    "AGENTS.md",
+    ".agent/workflow.md",
+    ".agent/path_guards.json",
+    "docs/product/FUNCTIONAL_SPEC_V0.1.md",
+    "docs/architecture/ARCHITECTURE_V0.1.md"
+  ],
+  "allowed": {
+    "DOMAIN": ["packages/domain/", "packages/data/", "backend/", "test/", "tool/", "docs/current/", ".agent/reports/"],
+    "UI": ["apps/", "packages/ui/", "test/", "docs/current/", ".agent/reports/"],
+    "QA": ["test/", "scripts/validate.sh", "docs/current/", ".agent/reports/"],
+    "SUPERVISOR": [".agent/reports/"],
+    "AUDITOR": [".agent/reports/"]
+  }
+}

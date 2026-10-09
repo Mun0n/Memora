@@ -1,0 +1,14 @@
+---
+description: Mandatory Memora rules for every Cursor agent
+alwaysApply: true
+---
+
+Read `AGENTS.md`, `.agent/workflow.md`, the active `specs/SLICE_NN.md`, and only the role-specific context named by the orchestrator before editing.
+
+Use fictional data only. Never add real patient, caregiver, family, health, contact or location data. Never add secrets or production credentials.
+
+Do not make medical claims. Memora is supportive software, not a treatment, diagnostic tool or emergency service.
+
+Do not introduce LLM or generative-AI features in v0.1. Do not invent product requirements. Keep changes inside the active slice and your role’s allowed paths.
+
+Never push, rewrite Git history, bypass the orchestrator or start another slice.

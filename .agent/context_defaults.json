@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "project_context": [
+    "docs/product/FUNCTIONAL_SPEC_V0.1.md",
+    "docs/architecture/ARCHITECTURE_V0.1.md",
+    "docs/product/ROADMAP.md"
+  ],
+  "context_budget": {
+    "max_initial_files": 10,
+    "warn_prompt_chars": 20000
+  },
+  "role_context": {
+    "SUPERVISOR": ["AGENTS.md", ".agent/workflow.md", "spec"],
+    "DOMAIN": ["AGENTS.md", "spec", "docs/architecture/ARCHITECTURE_V0.1.md"],
+    "UI": ["AGENTS.md", "spec", "docs/product/FUNCTIONAL_SPEC_V0.1.md"],
+    "QA": ["AGENTS.md", "spec", "changed_files", "validation_log"],
+    "AUDITOR": ["AGENTS.md", "spec", "changed_files", "diff", "validation_log"]
+  }
+}

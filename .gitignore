@@ -1,0 +1,17 @@
+.DS_Store
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.idea/
+.vscode/
+build/
+coverage/
+*.iml
+.env
+.env.*
+!.env.example
+.agent/tmp/*
+!.agent/tmp/.gitkeep
+.agent/reports/slice_*/
+!.agent/reports/.gitkeep
+
