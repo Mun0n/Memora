@@ -1,5 +1,5 @@
 name: data
-description: Memora data-layer DTOs and local catalogs. Depends on domain only; no remote client in Slice 2.
+description: Memora data-layer DTOs and deterministic local/outbox adapters. Depends on domain only; no remote client in Slice 3.
 version: 0.1.0
 publish_to: none
 

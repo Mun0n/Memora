@@ -1,7 +1,7 @@
 /// Memora domain layer: pure Dart entities, value objects and synthetic fixtures.
 ///
-/// Dependency rule: this package must not import Flutter, Supabase, or other
-/// project packages (`data`, `ui`, apps).
+/// Dependency rule: this package must not import Flutter, Supabase, database
+/// drivers, or other project packages (`data`, `ui`, apps).
 library;
 
 export 'src/identity/family_access_policy.dart';
@@ -13,5 +13,23 @@ export 'src/identity/household_timezone.dart';
 export 'src/identity/identifiers.dart';
 export 'src/identity/identity_fixtures.dart';
 export 'src/identity/membership_status.dart';
+export 'src/memories/memory_entry.dart';
+export 'src/observations/blood_pressure_observation.dart';
+export 'src/observations/weight_observation.dart';
+export 'src/offline/offline_fixtures.dart';
+export 'src/offline/offline_identifiers.dart';
+export 'src/reminders/reminder.dart';
+export 'src/repositories/memory_repository.dart';
+export 'src/repositories/observation_repository.dart';
+export 'src/repositories/reminder_repository.dart';
+export 'src/repositories/routine_repository.dart';
+export 'src/routines/routine.dart';
+export 'src/routines/routine_step.dart';
+export 'src/sync/aggregate_version.dart';
+export 'src/sync/idempotency_key.dart';
+export 'src/sync/outbox_operation.dart';
+export 'src/sync/outbox_port.dart';
+export 'src/sync/sync_state.dart';
+export 'src/sync/tombstone.dart';
 export 'src/synthetic_fixtures.dart';
 export 'src/synthetic_persona.dart';

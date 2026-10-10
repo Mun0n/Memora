@@ -1,5 +1,7 @@
 # Memora Family Web shell
 
-Non-production Slice 1 placeholder for the family web experience.
+Non-production Slice 3 placeholder for the responsive caregiver/family web
+experience. Web-focused target (no Android output).
 
-Uses synthetic persona `Familia Ejemplo` only. No product features, auth or remote services.
+Uses synthetic persona `Familia Ejemplo` only. No product features, auth or
+remote services.

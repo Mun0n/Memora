@@ -1,14 +1,9 @@
 /// Which Memora client shell is running. Labels are for humans, not auth.
 enum ExperienceTarget {
-  tablet(
-    englishLabel: 'Tablet',
-    spanishLabel: 'Tableta',
-    semanticsLabel: 'Memora Tablet shell, non-production demonstration',
-  ),
-  caregiver(
-    englishLabel: 'Caregiver',
-    spanishLabel: 'Cuidadora',
-    semanticsLabel: 'Memora Caregiver shell, non-production demonstration',
+  user(
+    englishLabel: 'User',
+    spanishLabel: 'Usuario',
+    semanticsLabel: 'Memora User shell, non-production demonstration',
   ),
   familyWeb(
     englishLabel: 'Family Web',

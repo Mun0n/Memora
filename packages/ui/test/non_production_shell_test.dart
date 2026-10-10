@@ -4,15 +4,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ui/ui.dart';
 
 void main() {
-  testWidgets('shell exposes experience semantics and synthetic persona', (
+  testWidgets('user shell exposes experience semantics and synthetic persona', (
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
     try {
       await tester.pumpWidget(
-        MaterialApp(
+        const MaterialApp(
           home: NonProductionShell(
-            target: ExperienceTarget.tablet,
+            target: ExperienceTarget.user,
             persona: SyntheticFixtures.amparoDemo,
           ),
         ),
@@ -20,11 +20,11 @@ void main() {
 
       expect(
         find.bySemanticsLabel(
-          'Memora Tablet shell, non-production demonstration',
+          'Memora User shell, non-production demonstration',
         ),
         findsOneWidget,
       );
-      expect(find.textContaining('Tablet'), findsWidgets);
+      expect(find.textContaining('User'), findsWidgets);
       expect(find.textContaining('Amparo Demo'), findsOneWidget);
       expect(find.textContaining('SYNTHETIC / NON-PRODUCTION'), findsOneWidget);
       expect(
@@ -36,29 +36,42 @@ void main() {
     }
   });
 
-  testWidgets('sync status region meets minimum touch target height', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        home: NonProductionShell(
-          target: ExperienceTarget.caregiver,
-          persona: SyntheticFixtures.elenaDemo,
+  testWidgets(
+    'family web shell sync status meets minimum touch target height',
+    (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: NonProductionShell(
+            target: ExperienceTarget.familyWeb,
+            persona: SyntheticFixtures.familiaEjemplo,
+          ),
         ),
-      ),
-    );
+      );
 
-    final statusFinder = find.byWidgetPredicate(
-      (widget) =>
-          widget is Container &&
-          widget.constraints?.minHeight == NonProductionShell.minTouchExtent &&
-          widget.decoration is BoxDecoration,
-    );
-    expect(statusFinder, findsOneWidget);
-    final size = tester.getSize(statusFinder);
+      final statusFinder = find.byWidgetPredicate(
+        (widget) =>
+            widget is Container &&
+            widget.constraints?.minHeight ==
+                NonProductionShell.minTouchExtent &&
+            widget.decoration is BoxDecoration,
+      );
+      expect(statusFinder, findsOneWidget);
+      final size = tester.getSize(statusFinder);
+      expect(
+        size.height,
+        greaterThanOrEqualTo(NonProductionShell.minTouchExtent),
+      );
+    },
+  );
+
+  testWidgets('viewport class switches at expanded breakpoint', (tester) async {
     expect(
-      size.height,
-      greaterThanOrEqualTo(NonProductionShell.minTouchExtent),
+      ShellViewportClass.fromWidth(ShellViewportClass.expandedBreakpoint - 1),
+      ShellViewportClass.compact,
+    );
+    expect(
+      ShellViewportClass.fromWidth(ShellViewportClass.expandedBreakpoint),
+      ShellViewportClass.expanded,
     );
   });
 }

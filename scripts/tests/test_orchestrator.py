@@ -67,6 +67,9 @@ class OrchestratorContracts(unittest.TestCase):
         self.assertIn("3 4 5 6", runner)
         self.assertIn("run_slice.sh", runner)
         self.assertIn("git commit", runner)
+        self.assertIn("START_SLICE", runner)
+        self.assertIn("git add -A -- apps packages backend", runner)
+        self.assertNotIn("backend test tool", runner)
         self.assertNotIn("git push", runner)
 
     def test_qa_changes_are_revalidated_before_audit(self):

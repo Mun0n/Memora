@@ -1,9 +1,17 @@
-/// Memora data layer: transport-neutral DTOs and local catalogs.
+/// Memora data layer: transport-neutral DTOs and deterministic local adapters.
 ///
 /// Dependency rule: may depend on `domain` only among project packages.
-/// No Supabase client, network repository, sync queue or credentials in Slice 2.
+/// No Flutter, Supabase client, network repository or credentials in Slice 3.
+/// Android Drift persistence is selected in docs; adapters stay replaceable.
 library;
 
 export 'src/identity/family_membership_dto.dart';
 export 'src/identity/family_space_dto.dart';
+export 'src/offline/in_memory_memory_repository.dart';
+export 'src/offline/in_memory_observation_repositories.dart';
+export 'src/offline/in_memory_offline_store.dart';
+export 'src/offline/in_memory_outbox.dart';
+export 'src/offline/in_memory_reminder_repository.dart';
+export 'src/offline/in_memory_routine_repository.dart';
+export 'src/offline/offline_store_snapshot.dart';
 export 'src/synthetic_persona_catalog.dart';

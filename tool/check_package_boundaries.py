@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Slice 1 helper: enforce domain/data package direction and forbidden patterns.
+"""Enforce domain/data package direction and forbidden patterns.
 
 Safe to call from validate.sh later. Exit 0 on success, 1 on violation.
 Uses only the Python standard library.
@@ -21,9 +21,11 @@ FORBIDDEN_SECRET = re.compile(
     re.IGNORECASE,
 )
 FORBIDDEN_IMPORT_DOMAIN = re.compile(
-    r"package:(flutter|supabase|data|ui)/|dart:ui\b"
+    r"package:(flutter|supabase|data|ui|drift|sqlite3)/|dart:ui\b"
 )
-FORBIDDEN_IMPORT_DATA = re.compile(r"package:(flutter|supabase|ui)/|dart:ui\b")
+FORBIDDEN_IMPORT_DATA = re.compile(
+    r"package:(flutter|supabase|ui|drift|sqlite3)/|dart:ui\b"
+)
 
 
 def fail(message: str) -> None:
@@ -45,6 +47,8 @@ def check_domain() -> None:
         fail("packages/domain pubspec must not depend on Flutter")
     if "supabase" in pubspec.lower():
         fail("packages/domain pubspec must not mention Supabase")
+    if "drift" in pubspec.lower() or "sqlite" in pubspec.lower():
+        fail("packages/domain pubspec must not depend on database drivers")
     if "path:" in pubspec or "packages/" in pubspec:
         fail("packages/domain must have no path/project package dependencies")
 
