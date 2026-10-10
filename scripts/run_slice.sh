@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Human-run local Cursor orchestrator. No push, deployment or automatic next slice.
+# Lower-level local Cursor orchestrator. No push or deployment.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -9,13 +9,15 @@ source "$ROOT/scripts/lib/cursor_cli.sh"
 SLICE="${1:-}"
 DRY_RUN=0
 REVIEW_REPAIR=0
-[[ -n "$SLICE" ]] || { echo "Usage: ./scripts/run_slice.sh <slice-number> [--dry-run|--review-repair]" >&2; exit 2; }
+AUTO_CONTINUE=0
+[[ -n "$SLICE" ]] || { echo "Usage: ./scripts/run_slice.sh <slice-number> [--dry-run|--review-repair|--auto-continue]" >&2; exit 2; }
 shift
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --dry-run) DRY_RUN=1 ;;
     --review-repair) REVIEW_REPAIR=1 ;;
-    -h|--help) echo "Usage: ./scripts/run_slice.sh <slice-number> [--dry-run|--review-repair]"; exit 0 ;;
+    --auto-continue) AUTO_CONTINUE=1 ;;
+    -h|--help) echo "Usage: ./scripts/run_slice.sh <slice-number> [--dry-run|--review-repair|--auto-continue]"; exit 0 ;;
     *) echo "ERROR: unknown argument: $1" >&2; exit 2 ;;
   esac
   shift
@@ -59,6 +61,15 @@ if [[ "$REVIEW_REPAIR" -eq 1 ]]; then
   [[ -n "$(git status --porcelain -- packages backend docs/current 2>/dev/null)" ]] || {
     echo "ERROR: review repair requires an existing uncommitted slice implementation" >&2
     exit 1
+  }
+fi
+
+if [[ "$AUTO_CONTINUE" -eq 1 ]]; then
+  [[ "$DRY_RUN" -eq 0 && "$REVIEW_REPAIR" -eq 0 ]] || {
+    echo "ERROR: --auto-continue cannot be combined with another mode" >&2; exit 2;
+  }
+  [[ "${MEMORA_MVP_RUN:-}" == "1" ]] || {
+    echo "ERROR: --auto-continue is reserved for scripts/run_mvp.sh" >&2; exit 2;
   }
 fi
 
@@ -106,7 +117,7 @@ echo "MEMORA SLICE $SLICE"
 echo "Spec: $SPEC"
 echo "Cursor CLI: $CLI"
 echo "Context policy: role-specific, fresh process, maximum 10 initial files"
-echo "Phases: SUPERVISOR → DOMAIN → UI → QA → AUDITOR → HUMAN_REVIEW"
+echo "Phases: SUPERVISOR → DOMAIN → UI → QA → REVALIDATE → AUDITOR"
 echo "Repair cap: $MAX_REPAIR"
 if [[ "$REVIEW_REPAIR" -eq 1 ]]; then
   echo "Mode: targeted repair requested at HUMAN_REVIEW"
@@ -136,6 +147,9 @@ iteration=0
 while true; do
   ./scripts/validate.sh >"$REPORT_DIR/validation.log" 2>&1 || true
   invoke QA "Evaluate every acceptance criterion using validation.log and current tree. If present, include ${REPORT_REL}/human_review.md findings. Write ${REPORT_REL}/qa.md with PASS, FAIL or BLOCKED."
+  ./scripts/validate.sh >"$REPORT_DIR/validation.log" 2>&1 || true
+  git status --short >"$REPORT_DIR/changed_files.log"
+  git diff --binary >"$REPORT_DIR/diff.patch"
   invoke AUDITOR "Fresh independent, read-only audit. Inspect git diff and validation.log. If present, verify every ${REPORT_REL}/human_review.md finding. Write ${REPORT_REL}/audit.md with Result: PASS, PASS_WITH_NOTES or FAIL."
   result="$(sed -nE 's/^[#*[:space:]]*(Result|STATUS):[[:space:]]*(PASS_WITH_NOTES|PASS|FAIL).*/\2/p' "$REPORT_DIR/audit.md" | head -1)"
   if [[ "$result" == PASS || "$result" == PASS_WITH_NOTES ]]; then break; fi
@@ -155,7 +169,11 @@ while true; do
 done
 
 {
-  echo "# Slice ${SLICE} — Human review required"
+  if [[ "$AUTO_CONTINUE" -eq 1 ]]; then
+    echo "# Slice ${SLICE} — Accepted for automatic MVP continuation"
+  else
+    echo "# Slice ${SLICE} — Human review required"
+  fi
   echo
   echo "Audit: $result"
   echo "Repair iterations: $iteration"
@@ -163,7 +181,15 @@ done
   echo "Changed files:"
   git status --short
   echo
-  echo "Do not automatically begin Slice $((SLICE + 1))."
+  if [[ "$AUTO_CONTINUE" -eq 1 ]]; then
+    echo "The MVP runner may checkpoint this slice and begin Slice $((SLICE + 1))."
+  else
+    echo "Do not automatically begin Slice $((SLICE + 1))."
+  fi
 } | tee "$REPORT_DIR/final.md"
 
-echo "HUMAN_REVIEW"
+if [[ "$AUTO_CONTINUE" -eq 1 ]]; then
+  echo "SLICE_ACCEPTED"
+else
+  echo "HUMAN_REVIEW"
+fi

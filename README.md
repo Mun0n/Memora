@@ -6,9 +6,9 @@ The repository is currently in **planning and orchestration validation**. No app
 
 ## Planned experiences
 
-- Android tablet: calm, predictable experience for the person with Alzheimer’s.
-- Android phone: care coordination for the primary caregiver.
-- Flutter Web: family contribution and configuration.
+- Android phone and tablet: one calm, predictable, accessible application for the
+  person with Alzheimer’s.
+- Flutter Web: responsive configuration and contribution for caregivers and family.
 - Supabase: authenticated family spaces, authorization, sync, storage and audit events.
 - Offline-first clients: local data remains useful without connectivity and synchronizes later.
 

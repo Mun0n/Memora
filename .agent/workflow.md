@@ -2,18 +2,32 @@
 
 ## Ownership
 
-`scripts/run_slice.sh` is a human-terminal command. Codex/Work may prepare specifications and run short local checks, but must not invoke or wait for Cursor. There is no provider fallback and no cloud execution.
+`scripts/run_mvp.sh` is the normal human-terminal entry point. It creates a dedicated
+local branch, executes the remaining approved MVP slices, validates and audits each
+slice, and creates a local checkpoint commit after each accepted slice. There is no
+provider fallback, push, deployment or cloud execution.
+
+`scripts/run_slice.sh` remains the lower-level entry point for dry runs and focused
+repairs. Codex/Work must not invoke or wait for Cursor; the human starts orchestration.
 
 ## Lifecycle
 
 ```text
-PREFLIGHT → SUPERVISOR_PLAN → DOMAIN → UI → QA → AUDIT
-                                      ↑          │
-                                      └─ REPAIR ─┘
-PASS/PASS_WITH_NOTES → HUMAN_REVIEW
+MVP_PREFLIGHT
+  → SLICE 3: PLAN → DOMAIN → UI → QA → REVALIDATE → AUDIT → CHECKPOINT
+  → SLICE 4: PLAN → DOMAIN → UI → QA → REVALIDATE → AUDIT → CHECKPOINT
+  → SLICE 5: PLAN → DOMAIN → UI → QA → REVALIDATE → AUDIT → CHECKPOINT
+  → SLICE 6: PLAN → DOMAIN → UI → QA → REVALIDATE → AUDIT → CHECKPOINT
+  → MVP_REVIEW
+
+Within any slice, `FAIL` enters a bounded DOMAIN/UI repair loop and then repeats QA,
+revalidation and audit. `PASS` or `PASS_WITH_NOTES` authorizes the next slice.
 ```
 
-Each role is a fresh Cursor CLI process on the same working tree. The AUDITOR never inherits specialist transcripts. A slice with `DESIGN_BLOCKER`, a dirty implementation tree, missing contracts or missing CLI stops before implementation. Maximum repair iterations: 3.
+Each role is a fresh Cursor CLI process on the same working tree. The AUDITOR never
+inherits specialist transcripts. A run with `DESIGN_BLOCKER`, a dirty initial tree,
+missing contracts or missing CLI stops before implementation. Maximum repair
+iterations per slice: 3.
 
 ## Roles
 
@@ -33,9 +47,11 @@ Soft limits warn at 10 initial files or approximately 20,000 prompt characters. 
 
 - `--dry-run` validates contracts, Git state, spec blockers, Cursor discovery, prompt budgets and planned phases without invoking agents or modifying run state.
 - Each mutating role is surrounded by a filesystem snapshot. Changes outside its allowed paths stop the run.
-- QA runs `./scripts/validate.sh`; failures enter a bounded repair loop.
-- Dirty implementation paths are rejected to avoid mixing unrelated work.
-- No push, deployment, Git rewrite or automatic next slice.
+- QA runs `./scripts/validate.sh`; validation is run again after QA so the auditor
+  never relies on stale evidence.
+- Dirty implementation paths are rejected when the MVP run begins.
+- The runner creates a dedicated branch and local commits only after an accepted audit.
+- No push, deployment, Git rewrite, production connection or automatic use of real data.
 
 ## Data and privacy
 
@@ -43,4 +59,5 @@ Only synthetic, clearly labeled fictional data is allowed. Agents must stop if a
 
 ## Reports
 
-Each run writes `.agent/reports/slice_NN/{plan,domain,ui,qa,audit,final}.md`, captured stdout/stderr and validation logs. `.agent/state.json` contains only resumable orchestration metadata, never user data.
+Each slice writes `.agent/reports/slice_NN/{plan,domain,ui,qa,audit,final}.md`, captured
+stdout/stderr and validation logs. The reports remain local and ignored by Git.

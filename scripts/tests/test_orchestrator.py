@@ -13,6 +13,8 @@ class OrchestratorContracts(unittest.TestCase):
             ".agent/path_guards.json", "agents/SUPERVISOR.md", "agents/DOMAIN.md",
             "agents/UI.md", "agents/QA.md", "agents/AUDITOR.md", "specs/SLICE_01.md",
             "specs/SLICE_02.md", "tool/run_rls_tests.sh",
+            "specs/SLICE_03.md", "specs/SLICE_04.md", "specs/SLICE_05.md",
+            "specs/SLICE_06.md", "scripts/run_mvp.sh",
         ]
         self.assertEqual([], [p for p in required if not (ROOT / p).is_file()])
 
@@ -48,11 +50,31 @@ class OrchestratorContracts(unittest.TestCase):
         self.assertIn("tool/scan_repository.py", validate)
         self.assertNotIn("rg -n --hidden", validate)
 
+    def test_flutter_validation_failure_is_propagated(self):
+        validate = (ROOT / "scripts/validate.sh").read_text()
+        self.assertIn("flutter_validation_failed=1", validate)
+        self.assertIn("ERROR: Flutter/Dart validation failed", validate)
+
     def test_human_review_repair_is_explicit_and_bounded(self):
         runner = (ROOT / "scripts/run_slice.sh").read_text()
         self.assertIn("--review-repair", runner)
         self.assertIn("human_review.md", runner)
         self.assertIn("HUMAN_REVIEW_REPAIR", runner)
         self.assertIn('if [[ "$REVIEW_REPAIR" -eq 0 ]]', runner)
+
+    def test_mvp_runner_is_bounded_and_never_pushes(self):
+        runner = (ROOT / "scripts/run_mvp.sh").read_text()
+        self.assertIn("3 4 5 6", runner)
+        self.assertIn("run_slice.sh", runner)
+        self.assertIn("git commit", runner)
+        self.assertNotIn("git push", runner)
+
+    def test_qa_changes_are_revalidated_before_audit(self):
+        runner = (ROOT / "scripts/run_slice.sh").read_text()
+        qa = runner.index('invoke QA')
+        revalidation = runner.index('./scripts/validate.sh >"$REPORT_DIR/validation.log"', qa)
+        audit = runner.index('invoke AUDITOR', revalidation)
+        self.assertLess(qa, revalidation)
+        self.assertLess(revalidation, audit)
 
 if __name__ == "__main__": unittest.main()

@@ -6,10 +6,17 @@ cd "$ROOT"
 python3 -m unittest discover -s scripts/tests -p 'test_*.py'
 
 if find apps packages -name pubspec.yaml -print -quit 2>/dev/null | grep -q .; then
+  flutter_validation_failed=0
   while IFS= read -r manifest; do
     dir="$(dirname "$manifest")"
-    (cd "$dir" && flutter pub get && dart format --output=none --set-exit-if-changed . && flutter analyze && flutter test)
+    if ! (cd "$dir" && flutter pub get && dart format --output=none --set-exit-if-changed . && flutter analyze && flutter test); then
+      flutter_validation_failed=1
+    fi
   done < <(find apps packages -name pubspec.yaml -print | sort)
+  [[ "$flutter_validation_failed" -eq 0 ]] || {
+    echo "ERROR: Flutter/Dart validation failed" >&2
+    exit 1
+  }
 else
   echo "INFO: no Flutter manifests yet; orchestrator-only validation completed."
 fi

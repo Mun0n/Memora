@@ -2,18 +2,22 @@
 
 ## System shape
 
-Memora is a Flutter monorepo with shared domain packages and three presentation targets:
+Memora is a Flutter monorepo with shared domain packages and two presentation targets:
 
 ```text
-apps/tablet  ─┐
-apps/caregiver├─ packages/domain + packages/data + packages/ui ─ local SQLite
-apps/web     ─┘                         │
+apps/user (Android phone/tablet) ─┐
+                                  ├─ packages/domain + packages/data + packages/ui
+apps/web (caregiver/family) ──────┘                         │
+                                                   local persistence
                                           sync
                                            │
                               Supabase Auth/Postgres/Storage
 ```
 
-`apps/tablet` and `apps/caregiver` are separate Android entry points so release, navigation and accessibility decisions remain independent. `apps/web` is Flutter Web for family contributors. Shared packages must not force identical UI.
+`apps/user` is one accessible Android application with responsive layouts for phone
+and tablet. `apps/web` is a responsive Flutter Web application for caregivers and
+authorized family contributors. The historical `apps/caregiver` shell is removed
+during Slice 3; the MVP has no native caregiver application.
 
 ## Proposed stack
 
@@ -35,7 +39,9 @@ Versions are intentionally not pinned until Slice 1 records the installed toolch
 
 ## Offline-first contract
 
-Android reads from and writes to the local store first. Mutations create an outbox operation with an idempotency key, aggregate identifier, base version and timestamp. Sync is explicit and retryable.
+The supported-person Android application reads from and writes to the local store
+first. Mutations create an outbox operation with an idempotency key, aggregate
+identifier, base version and timestamp. Sync is explicit and retryable.
 
 Server records carry a monotonically increasing version or equivalent concurrency token. The default policy is:
 
@@ -46,7 +52,8 @@ Server records carry a monotonically increasing version or equivalent concurrenc
 
 The UI exposes `local`, `pending`, `synced`, `conflicted` and `failed` states in plain language. Network loss is normal, not exceptional.
 
-Flutter Web may use a local cache, but v0.1 must not promise identical long-term offline behavior until the storage spike passes.
+Flutter Web preserves recoverable drafts but does not promise the same long-term
+offline behavior as the supported-person Android application.
 
 ## Supabase and trust boundaries
 
