@@ -12,6 +12,7 @@ class OrchestratorContracts(unittest.TestCase):
             "AGENTS.md", ".agent/workflow.md", ".agent/context_defaults.json",
             ".agent/path_guards.json", "agents/SUPERVISOR.md", "agents/DOMAIN.md",
             "agents/UI.md", "agents/QA.md", "agents/AUDITOR.md", "specs/SLICE_01.md",
+            "specs/SLICE_02.md", "tool/run_rls_tests.sh",
         ]
         self.assertEqual([], [p for p in required if not (ROOT / p).is_file()])
 
@@ -21,7 +22,12 @@ class OrchestratorContracts(unittest.TestCase):
         self.assertEqual({"SUPERVISOR", "DOMAIN", "UI", "QA", "AUDITOR"}, set(cfg["role_context"]))
 
     def test_no_unresolved_design_blocker(self):
-        self.assertNotIn("DESIGN_BLOCKER", (ROOT / "specs/SLICE_01.md").read_text())
+        for spec in sorted((ROOT / "specs").glob("SLICE_*.md")):
+            self.assertNotIn("DESIGN_BLOCKER", spec.read_text(), spec)
+
+    def test_slice_02_rls_harness_is_part_of_validation(self):
+        validate = (ROOT / "scripts/validate.sh").read_text()
+        self.assertIn('tool/run_rls_tests.sh', validate)
 
     def test_audit_parser_accepts_markdown_heading(self):
         with tempfile.NamedTemporaryFile(mode="w", suffix=".md") as audit:
