@@ -147,9 +147,21 @@ final class InMemoryOfflineStore {
   MemoryEntry? memoryById(MemoryId id) => _memories[id.value];
 
   List<MemoryEntry> memoriesForFamily(FamilySpaceId familySpaceId) {
-    return _memories.values
+    final listed = _memories.values
         .where((m) => m.familySpaceId == familySpaceId)
-        .toList(growable: false);
+        .toList();
+    listed.sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
+    return List<MemoryEntry>.unmodifiable(listed);
+  }
+
+  List<MemoryEntry> approvedMemoriesForFamily(FamilySpaceId familySpaceId) {
+    final listed = _memories.values
+        .where(
+          (m) => m.familySpaceId == familySpaceId && m.isApprovedForViewing,
+        )
+        .toList();
+    listed.sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
+    return List<MemoryEntry>.unmodifiable(listed);
   }
 
   void putMemory(MemoryEntry memory) {
@@ -166,6 +178,12 @@ final class InMemoryOfflineStore {
         .toList(growable: false);
   }
 
+  List<WeightObservation> weightsChronological(FamilySpaceId familySpaceId) {
+    final listed = weightsForFamily(familySpaceId).toList();
+    listed.sort((a, b) => a.recordedAt.compareTo(b.recordedAt));
+    return List<WeightObservation>.unmodifiable(listed);
+  }
+
   void putWeight(WeightObservation observation) {
     _weights[observation.id.value] = observation;
   }
@@ -179,6 +197,14 @@ final class InMemoryOfflineStore {
     return _bloodPressures.values
         .where((o) => o.familySpaceId == familySpaceId)
         .toList(growable: false);
+  }
+
+  List<BloodPressureObservation> bloodPressuresChronological(
+    FamilySpaceId familySpaceId,
+  ) {
+    final listed = bloodPressuresForFamily(familySpaceId).toList();
+    listed.sort((a, b) => a.recordedAt.compareTo(b.recordedAt));
+    return List<BloodPressureObservation>.unmodifiable(listed);
   }
 
   void putBloodPressure(BloodPressureObservation observation) {

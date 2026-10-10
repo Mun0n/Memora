@@ -1,4 +1,4 @@
-/// Spanish-first, localization-ready copy for Slice 4 routine vertical.
+/// Spanish-first, localization-ready copy for Slice 4–5 presentation.
 ///
 /// Values are the default `es` surface. Keys are stable identifiers for a
 /// future ARB/`AppLocalizations` migration — do not hardcode English-only
@@ -32,6 +32,12 @@ abstract final class MemoraCopy {
   static const String recoveryContinueOffline = 'Seguir sin red';
   static const String recoveryReviewConflict = 'Revisar conflicto';
   static const String recoveryCreateRoutine = 'Crear rutina Demo';
+
+  // Navigation
+  static const String navRoutines = 'Rutinas';
+  static const String navMemories = 'Recuerdos';
+  static const String navObservations = 'Observaciones';
+  static const String navHelp = 'Ayuda';
 
   // User home
   static const String userHomeTitle = 'Hoy';
@@ -72,6 +78,64 @@ abstract final class MemoraCopy {
       'No son cobertura de emergencia ni alerta médica.';
   static const String quietStartLabel = 'Inicio (hora local)';
   static const String quietEndLabel = 'Fin (hora local)';
+
+  // Memories
+  static const String memoriesTitle = 'Recuerdos de la familia';
+  static const String memoriesApprovedTitle = 'Recuerdos';
+  static const String memoriesEmpty = 'No hay recuerdos para mostrar.';
+  static const String memoriesLoading = 'Cargando recuerdos…';
+  static const String memoriesOffline =
+      'Sin red. Los recuerdos guardados siguen disponibles.';
+  static const String createMemory = 'Crear recuerdo';
+  static const String contributeMemory = 'Proponer recuerdo';
+  static const String editMemory = 'Editar recuerdo';
+  static const String saveMemory = 'Guardar recuerdo';
+  static const String approveMemory = 'Aprobar';
+  static const String archiveMemory = 'Archivar';
+  static const String moveMemoryUp = 'Subir recuerdo';
+  static const String moveMemoryDown = 'Bajar recuerdo';
+  static const String memoryCaptionLabel = 'Pie de foto / descripción';
+  static const String memoryDateContextLabel = 'Contexto de fecha';
+  static const String memoryLifecycleProposed = 'Propuesto';
+  static const String memoryLifecycleApproved = 'Aprobado';
+  static const String memoryLifecycleArchived = 'Archivado';
+  static const String mediaStatusLabel = 'Estado del medio';
+  static const String mediaFailedPlaceholder =
+      'La imagen no está disponible. Puedes seguir con el recuerdo.';
+  static const String mediaRetryUpload = 'Reintentar medio';
+  static const String continueAfterFailedMedia = 'Seguir viendo recuerdos';
+  static const String memoryMediaPathLabel = 'Ruta (familia)';
+  static const String memoryMediaChecksumLabel = 'Suma de comprobación';
+
+  // Observations (non-clinical storage only)
+  static const String observationsTitle = 'Peso y tensión (registro)';
+  static const String observationDisclaimer =
+      'Memora no interpreta estos valores. '
+      'No es un servicio médico ni de emergencias.';
+  static const String weightSection = 'Peso';
+  static const String bloodPressureSection = 'Tensión arterial';
+  static const String weightValueLabel = 'Peso (kg)';
+  static const String systolicLabel = 'Sistólica (mmHg)';
+  static const String diastolicLabel = 'Diastólica (mmHg)';
+  static const String saveWeight = 'Guardar peso';
+  static const String saveBloodPressure = 'Guardar tensión';
+  static const String correctObservation = 'Corregir (añadir fila)';
+  static const String tombstoneObservation = 'Marcar como retirado';
+  static const String observationHistory = 'Historial cronológico';
+  static const String observationAuthorLabel = 'Autor';
+  static const String observationCorrectionOf = 'Corrección de';
+  static const String observationTombstoned = 'Retirado';
+  static const String observationsEmpty = 'No hay observaciones registradas.';
+  static const String observationsLoading = 'Cargando observaciones…';
+
+  // Help / About
+  static const String helpAboutTitle = 'Ayuda y acerca de';
+  static const String helpAboutBody =
+      'Memora ayuda con rutinas diarias y coordinación familiar. '
+      'Usa solo datos de demostración en este entorno.';
+  static const String helpAboutDisclaimer =
+      'Memora no interpreta valores de peso ni tensión. '
+      'No es un servicio médico ni de emergencias.';
 
   // Shared chrome
   static const String personaPrefix = 'Persona sintética';

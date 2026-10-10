@@ -34,6 +34,25 @@ void main() {
       MemoraCopy.reminderConvenienceNotice,
       isNot(contains('emergency coverage')),
     );
+    expect(MemoraCopy.observationDisclaimer, contains('no interpreta'));
+    expect(MemoraCopy.helpAboutDisclaimer, contains('emergencias'));
+    expect(
+      MemoraCopy.observationDisclaimer.toLowerCase(),
+      isNot(contains('umbral')),
+    );
+    expect(
+      MemoraCopy.observationDisclaimer.toLowerCase(),
+      isNot(contains('alerta')),
+    );
+  });
+
+  test('DemoIds produce memory and observation ids', () {
+    final ids = DemoIds(start: 0x800);
+    expect(ids.nextMemoryId().value, startsWith('01932f00-0004-7000-8000-'));
+    expect(
+      ids.nextObservationId().value,
+      startsWith('01932f00-0004-7000-8000-'),
+    );
   });
 
   test('SpanishDateFormat formats Demo civil time', () {

@@ -18,6 +18,10 @@ final class DemoIds {
 
   RoutineProgressId nextProgressId() => RoutineProgressId(nextUuid());
 
+  MemoryId nextMemoryId() => MemoryId(nextUuid());
+
+  ObservationId nextObservationId() => ObservationId(nextUuid());
+
   IdempotencyKey nextIdempotencyKey(String purpose) {
     return IdempotencyKey('demo-ui-$purpose-${nextUuid()}');
   }

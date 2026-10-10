@@ -1,5 +1,7 @@
 import '../identity/identity_fixtures.dart';
 import '../memories/memory_entry.dart';
+import '../memories/memory_lifecycle_status.dart';
+import '../memories/memory_media_metadata.dart';
 import '../observations/blood_pressure_observation.dart';
 import '../observations/weight_observation.dart';
 import '../reminders/quiet_hours.dart';
@@ -15,7 +17,7 @@ import '../sync/idempotency_key.dart';
 import '../sync/sync_state.dart';
 import 'offline_identifiers.dart';
 
-/// Stable Demo/Ejemplo offline fixtures for Slice 3–4 contracts.
+/// Stable Demo/Ejemplo offline fixtures for Slice 3–5 contracts.
 ///
 /// Uses reserved Slice 2 family-space IDs. Values are fictional only.
 abstract final class OfflineFixtures {
@@ -35,12 +37,24 @@ abstract final class OfflineFixtures {
     '01932f00-0003-7000-8000-000000000303',
   );
 
+  static final MemoryId proposedPatioMemoryId = MemoryId(
+    '01932f00-0005-7000-8000-000000000501',
+  );
+
   static final ObservationId weightObservationId = ObservationId(
     '01932f00-0003-7000-8000-000000000304',
   );
 
   static final ObservationId bloodPressureObservationId = ObservationId(
     '01932f00-0003-7000-8000-000000000305',
+  );
+
+  static final ObservationId weightCorrectionId = ObservationId(
+    '01932f00-0005-7000-8000-000000000504',
+  );
+
+  static final ObservationId bloodPressureCorrectionId = ObservationId(
+    '01932f00-0005-7000-8000-000000000505',
   );
 
   static final RoutineProgressId morningProgressId = RoutineProgressId(
@@ -80,6 +94,27 @@ abstract final class OfflineFixtures {
   static final QuietHours demoQuietHours = QuietHours(
     startMinuteOfDay: 22 * 60,
     endMinuteOfDay: 7 * 60,
+  );
+
+  /// Local fictional media path — not a production storage object.
+  static final String gardenMediaPath =
+      '${IdentityFixtures.familiaEjemploSpaceId.value}/memories/demo-jardin-ejemplo.jpg';
+
+  static const String gardenMediaChecksum =
+      'sha256:demo-fictional-checksum-jardin-ejemplo';
+
+  static final MemoryMediaMetadata gardenMediaMetadata = MemoryMediaMetadata(
+    familySpaceId: IdentityFixtures.familiaEjemploSpaceId,
+    familyScopedPath: gardenMediaPath,
+    checksum: gardenMediaChecksum,
+    uploadState: SyncState.local,
+  );
+
+  static final MemoryMediaMetadata gardenMediaFailed = MemoryMediaMetadata(
+    familySpaceId: IdentityFixtures.familiaEjemploSpaceId,
+    familyScopedPath: gardenMediaPath,
+    checksum: gardenMediaChecksum,
+    uploadState: SyncState.failed,
   );
 
   static final Routine morningRoutine = Routine(
@@ -131,11 +166,29 @@ abstract final class OfflineFixtures {
     syncState: SyncState.local,
   );
 
+  /// Approved Demo memory with fictional media metadata.
   static final MemoryEntry gardenMemory = MemoryEntry(
     id: gardenMemoryId,
     familySpaceId: IdentityFixtures.familiaEjemploSpaceId,
-    title: 'Jardín Ejemplo',
-    body: 'Foto ficticia del jardín de Familia Ejemplo.',
+    caption: 'Jardín Ejemplo',
+    dateContext: 'Octubre 2026 Demo',
+    displayOrder: 0,
+    lifecycleStatus: MemoryLifecycleStatus.approved,
+    media: gardenMediaMetadata,
+    createdBy: IdentityFixtures.elenaPrimaryUserId,
+    version: AggregateVersion.initial,
+    syncState: SyncState.local,
+  );
+
+  /// Proposed contributor memory — not visible to supported-person approved view.
+  static final MemoryEntry proposedPatioMemory = MemoryEntry(
+    id: proposedPatioMemoryId,
+    familySpaceId: IdentityFixtures.familiaEjemploSpaceId,
+    caption: 'Patio Ejemplo (propuesta)',
+    dateContext: 'Septiembre 2026 Demo',
+    displayOrder: 1,
+    lifecycleStatus: MemoryLifecycleStatus.proposed,
+    createdBy: IdentityFixtures.luciaContributorUserId,
     version: AggregateVersion.initial,
     syncState: SyncState.local,
   );
@@ -146,6 +199,7 @@ abstract final class OfflineFixtures {
     familySpaceId: IdentityFixtures.familiaEjemploSpaceId,
     kilograms: 62.5,
     recordedAt: demoRecordedAt,
+    authorId: IdentityFixtures.elenaPrimaryUserId,
     version: AggregateVersion.initial,
     syncState: SyncState.local,
   );
@@ -158,6 +212,7 @@ abstract final class OfflineFixtures {
         systolicMmHg: 120,
         diastolicMmHg: 80,
         recordedAt: demoRecordedAt,
+        authorId: IdentityFixtures.elenaPrimaryUserId,
         version: AggregateVersion.initial,
         syncState: SyncState.local,
       );

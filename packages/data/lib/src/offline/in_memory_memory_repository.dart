@@ -34,6 +34,13 @@ final class InMemoryMemoryRepository implements MemoryRepository {
   }
 
   @override
+  Future<List<MemoryEntry>> listApprovedForFamily(
+    FamilySpaceId familySpaceId,
+  ) async {
+    return _store.approvedMemoriesForFamily(familySpaceId);
+  }
+
+  @override
   Future<MemoryEntry> softDelete({
     required MemoryId id,
     required AggregateVersion baseVersion,

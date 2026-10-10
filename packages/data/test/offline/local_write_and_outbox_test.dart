@@ -130,6 +130,7 @@ void main() {
         familySpaceId: IdentityFixtures.familiaEjemploSpaceId,
         kilograms: 63.0,
         recordedAt: OfflineFixtures.demoRecordedAt.add(const Duration(days: 1)),
+        authorId: IdentityFixtures.elenaPrimaryUserId,
         version: AggregateVersion.initial,
         syncState: SyncState.local,
       ),

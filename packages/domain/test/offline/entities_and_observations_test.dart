@@ -27,6 +27,10 @@ void main() {
   group('Weight and blood-pressure observations', () {
     test('store values only and reject non-positive readings', () {
       expect(OfflineFixtures.amparoWeight.kilograms, 62.5);
+      expect(
+        OfflineFixtures.amparoWeight.authorId,
+        IdentityFixtures.elenaPrimaryUserId,
+      );
       expect(OfflineFixtures.amparoBloodPressure.systolicMmHg, 120);
       expect(OfflineFixtures.amparoBloodPressure.diastolicMmHg, 80);
 
@@ -36,6 +40,7 @@ void main() {
           familySpaceId: IdentityFixtures.familiaEjemploSpaceId,
           kilograms: 0,
           recordedAt: OfflineFixtures.demoRecordedAt,
+          authorId: IdentityFixtures.elenaPrimaryUserId,
           version: AggregateVersion.initial,
           syncState: SyncState.local,
         ),
@@ -48,6 +53,7 @@ void main() {
           systolicMmHg: 0,
           diastolicMmHg: 80,
           recordedAt: OfflineFixtures.demoRecordedAt,
+          authorId: IdentityFixtures.elenaPrimaryUserId,
           version: AggregateVersion.initial,
           syncState: SyncState.local,
         ),
@@ -97,7 +103,15 @@ void main() {
         IdentityFixtures.familiaEjemploSpaceId,
       );
       expect(OfflineFixtures.morningRoutine.title, contains('Demo'));
-      expect(OfflineFixtures.gardenMemory.title, contains('Ejemplo'));
+      expect(OfflineFixtures.gardenMemory.caption, contains('Ejemplo'));
+      expect(
+        OfflineFixtures.gardenMemory.lifecycleStatus,
+        MemoryLifecycleStatus.approved,
+      );
+      expect(
+        OfflineFixtures.gardenMediaMetadata.familyScopedPath,
+        startsWith('${IdentityFixtures.familiaEjemploSpaceId.value}/'),
+      );
       expect(
         OfflineFixtures.morningRoutine.lifecycleStatus,
         RoutineLifecycleStatus.active,

@@ -17,6 +17,7 @@ final class InMemoryWeightObservationRepository
     final existing = _store.weightById(observation.id);
     if (existing != null) {
       // Idempotent re-append of the same observation id returns the stored row.
+      // Never overwrite kilograms/author/correction linkage on collision.
       await _store.enqueueMutation(
         idempotencyKey: idempotencyKey,
         aggregateType: OutboxAggregateType.weightObservation,
@@ -49,6 +50,47 @@ final class InMemoryWeightObservationRepository
     FamilySpaceId familySpaceId,
   ) async {
     return _store.weightsForFamily(familySpaceId);
+  }
+
+  @override
+  Future<List<WeightObservation>> listChronological(
+    FamilySpaceId familySpaceId,
+  ) async {
+    return _store.weightsChronological(familySpaceId);
+  }
+
+  @override
+  Future<WeightObservation> softDelete({
+    required ObservationId id,
+    required AggregateVersion baseVersion,
+    required DateTime deletedAt,
+    required IdempotencyKey idempotencyKey,
+    UserId? deletedBy,
+  }) async {
+    final current = _store.weightById(id);
+    if (current == null) {
+      throw StateError('weight observation not found: ${id.value}');
+    }
+    final nextVersion = baseVersion.next();
+    final deleted = current.copyWith(
+      version: nextVersion,
+      syncState: SyncState.pending,
+      tombstone: Tombstone(
+        aggregateId: id.value,
+        version: nextVersion,
+        deletedAt: deletedAt,
+        deletedBy: deletedBy,
+      ),
+    );
+    _store.putWeight(deleted);
+    await _store.enqueueMutation(
+      idempotencyKey: idempotencyKey,
+      aggregateType: OutboxAggregateType.weightObservation,
+      aggregateId: id.value,
+      baseVersion: baseVersion,
+      enqueuedAt: deletedAt.toUtc(),
+    );
+    return deleted;
   }
 }
 
@@ -98,5 +140,46 @@ final class InMemoryBloodPressureObservationRepository
     FamilySpaceId familySpaceId,
   ) async {
     return _store.bloodPressuresForFamily(familySpaceId);
+  }
+
+  @override
+  Future<List<BloodPressureObservation>> listChronological(
+    FamilySpaceId familySpaceId,
+  ) async {
+    return _store.bloodPressuresChronological(familySpaceId);
+  }
+
+  @override
+  Future<BloodPressureObservation> softDelete({
+    required ObservationId id,
+    required AggregateVersion baseVersion,
+    required DateTime deletedAt,
+    required IdempotencyKey idempotencyKey,
+    UserId? deletedBy,
+  }) async {
+    final current = _store.bloodPressureById(id);
+    if (current == null) {
+      throw StateError('blood-pressure observation not found: ${id.value}');
+    }
+    final nextVersion = baseVersion.next();
+    final deleted = current.copyWith(
+      version: nextVersion,
+      syncState: SyncState.pending,
+      tombstone: Tombstone(
+        aggregateId: id.value,
+        version: nextVersion,
+        deletedAt: deletedAt,
+        deletedBy: deletedBy,
+      ),
+    );
+    _store.putBloodPressure(deleted);
+    await _store.enqueueMutation(
+      idempotencyKey: idempotencyKey,
+      aggregateType: OutboxAggregateType.bloodPressureObservation,
+      aggregateId: id.value,
+      baseVersion: baseVersion,
+      enqueuedAt: deletedAt.toUtc(),
+    );
+    return deleted;
   }
 }

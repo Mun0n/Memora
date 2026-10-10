@@ -15,6 +15,9 @@ abstract interface class MemoryRepository {
 
   Future<List<MemoryEntry>> listForFamily(FamilySpaceId familySpaceId);
 
+  /// Approved, non-archived, non-tombstoned memories ordered by [MemoryEntry.displayOrder].
+  Future<List<MemoryEntry>> listApprovedForFamily(FamilySpaceId familySpaceId);
+
   Future<MemoryEntry> softDelete({
     required MemoryId id,
     required AggregateVersion baseVersion,

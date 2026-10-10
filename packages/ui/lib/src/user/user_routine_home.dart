@@ -31,15 +31,16 @@ class UserRoutineHome extends StatelessWidget {
           onSyncAction: controller.recoveryActionLabel == null
               ? null
               : () => controller.recover(),
-          body: _UserBody(controller: controller),
+          body: UserRoutineHomeContent(controller: controller),
         );
       },
     );
   }
 }
 
-class _UserBody extends StatelessWidget {
-  const _UserBody({required this.controller});
+/// Routine home body without chrome (used inside the Slice 5 section shell).
+class UserRoutineHomeContent extends StatelessWidget {
+  const UserRoutineHomeContent({super.key, required this.controller});
 
   final UserRoutineController controller;
 

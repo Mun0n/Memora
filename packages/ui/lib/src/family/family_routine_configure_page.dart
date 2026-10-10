@@ -32,15 +32,16 @@ class FamilyRoutineConfigurePage extends StatelessWidget {
           onSyncAction: controller.recoveryActionLabel == null
               ? null
               : () => controller.recover(),
-          body: _FamilyBody(controller: controller),
+          body: FamilyRoutineConfigureContent(controller: controller),
         );
       },
     );
   }
 }
 
-class _FamilyBody extends StatelessWidget {
-  const _FamilyBody({required this.controller});
+/// Routine/reminder configure body without chrome (Slice 5 section shell).
+class FamilyRoutineConfigureContent extends StatelessWidget {
+  const FamilyRoutineConfigureContent({super.key, required this.controller});
 
   final FamilyRoutineController controller;
 

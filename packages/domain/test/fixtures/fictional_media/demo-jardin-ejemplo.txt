@@ -1,0 +1,3 @@
+FICTIONAL DEMO ASSET — Jardín Ejemplo
+Not a real photograph. Used only for local memory media metadata tests.
+checksum-label: sha256:demo-fictional-checksum-jardin-ejemplo
