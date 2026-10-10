@@ -44,7 +44,41 @@ void main() {
       MemoraCopy.observationDisclaimer.toLowerCase(),
       isNot(contains('alerta')),
     );
+    expect(MemoraCopy.sessionDemoTitle, contains('demostración'));
+    expect(MemoraCopy.syncPushAction, contains('Enviar'));
+    expect(MemoraCopy.privacyExportAction, contains('exportación'));
+    expect(MemoraCopy.privacyAuditNote.toLowerCase(), contains('tokens'));
+    expect(
+      MemoraCopy.sessionCredentialNamesHint,
+      contains(RemoteCredentialNames.supabaseUrl),
+    );
+    expect(
+      MemoraCopy.sessionCredentialNamesHint,
+      isNot(contains('service_role')),
+    );
   });
+
+  test(
+    'SyncPresentationController conflict summary never dumps health keys',
+    () {
+      final conflict = SyncConflict(
+        id: '01932f00-0006-7000-8000-000000000901',
+        familySpaceId: IdentityFixtures.familiaEjemploSpaceId,
+        aggregateType: OutboxAggregateType.weightObservation,
+        aggregateId: OfflineFixtures.amparoWeight.id.value,
+        localVersion: AggregateVersion(1),
+        remoteVersion: AggregateVersion(1),
+        localPayload: const {'kilograms': 62.5},
+        remotePayload: const {'kilograms': 99.9},
+        detectedAt: DateTime.utc(2026, 10, 10),
+      );
+      final summary = SyncPresentationController.conflictSummary(conflict);
+      expect(summary, contains('Observación'));
+      expect(summary, isNot(contains('62.5')));
+      expect(summary, isNot(contains('99.9')));
+      expect(summary, isNot(contains('kilograms')));
+    },
+  );
 
   test('DemoIds produce memory and observation ids', () {
     final ids = DemoIds(start: 0x800);

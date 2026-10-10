@@ -1,4 +1,4 @@
-/// Memora shared UI primitives and Slice 4–5 presentation.
+/// Memora shared UI primitives and Slice 4–6 presentation.
 ///
 /// Dependency rule: may import `package:domain/` only among project packages.
 /// Must not import `package:data/` or implement authorization policy.
@@ -19,7 +19,11 @@ export 'src/l10n/memora_copy.dart';
 export 'src/navigation/feature_section.dart';
 export 'src/navigation/feature_section_nav.dart';
 export 'src/non_production_shell.dart';
+export 'src/privacy/privacy_page.dart';
+export 'src/privacy/privacy_presentation_controller.dart';
 export 'src/sync/presentation_sync.dart';
+export 'src/sync/sync_presentation_controller.dart';
+export 'src/sync/sync_status_page.dart';
 export 'src/theme/memora_theme.dart';
 export 'src/user/user_approved_memories_page.dart';
 export 'src/user/user_memory_controller.dart';

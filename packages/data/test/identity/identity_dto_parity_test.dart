@@ -69,6 +69,18 @@ void main() {
         'updateFamilySpace',
         'viewMemberships',
         'manageMemberships',
+        'viewRoutines',
+        'editRoutines',
+        'recordRoutineProgress',
+        'viewReminders',
+        'configureReminders',
+        'viewApprovedMemories',
+        'manageMemories',
+        'contributeMemories',
+        'manageMediaMetadata',
+        'viewObservations',
+        'recordObservations',
+        'resolveSyncConflicts',
       });
     });
   });

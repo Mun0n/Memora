@@ -4,7 +4,7 @@ import '../l10n/memora_copy.dart';
 import '../theme/memora_theme.dart';
 import 'feature_section.dart';
 
-/// Large-target section switcher for Slice 5 surfaces.
+/// Large-target section switcher for Slice 5–6 surfaces.
 class FeatureSectionNav extends StatelessWidget {
   const FeatureSectionNav({
     super.key,
@@ -51,12 +51,16 @@ class _NavChip extends StatelessWidget {
       FeatureSection.routines => MemoraCopy.navRoutines,
       FeatureSection.memories => MemoraCopy.navMemories,
       FeatureSection.observations => MemoraCopy.navObservations,
+      FeatureSection.sync => MemoraCopy.navSync,
+      FeatureSection.privacy => MemoraCopy.navPrivacy,
       FeatureSection.help => MemoraCopy.navHelp,
     };
     final keyName = switch (section) {
       FeatureSection.routines => 'memora-nav-routines',
       FeatureSection.memories => 'memora-nav-memories',
       FeatureSection.observations => 'memora-nav-observations',
+      FeatureSection.sync => 'memora-nav-sync',
+      FeatureSection.privacy => 'memora-nav-privacy',
       FeatureSection.help => 'memora-nav-help',
     };
     return OutlinedButton(

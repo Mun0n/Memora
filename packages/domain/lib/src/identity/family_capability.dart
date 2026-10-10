@@ -1,9 +1,23 @@
-/// Explicit capability catalogue for Slice 2 family-identity authorization.
+/// Explicit capability catalogue for family-identity and product authorization.
+///
+/// Wire names must stay identical to PostgreSQL `memora_has_capability`.
 enum FamilyCapability {
   viewFamilySpace('viewFamilySpace'),
   updateFamilySpace('updateFamilySpace'),
   viewMemberships('viewMemberships'),
-  manageMemberships('manageMemberships');
+  manageMemberships('manageMemberships'),
+  viewRoutines('viewRoutines'),
+  editRoutines('editRoutines'),
+  recordRoutineProgress('recordRoutineProgress'),
+  viewReminders('viewReminders'),
+  configureReminders('configureReminders'),
+  viewApprovedMemories('viewApprovedMemories'),
+  manageMemories('manageMemories'),
+  contributeMemories('contributeMemories'),
+  manageMediaMetadata('manageMediaMetadata'),
+  viewObservations('viewObservations'),
+  recordObservations('recordObservations'),
+  resolveSyncConflicts('resolveSyncConflicts');
 
   const FamilyCapability(this.wireName);
 

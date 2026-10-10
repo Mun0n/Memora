@@ -11,6 +11,10 @@ import '../family/family_routine_controller.dart';
 import '../help/help_about_page.dart';
 import '../navigation/feature_section.dart';
 import '../navigation/feature_section_nav.dart';
+import '../privacy/privacy_page.dart';
+import '../privacy/privacy_presentation_controller.dart';
+import '../sync/sync_presentation_controller.dart';
+import '../sync/sync_status_page.dart';
 import '../theme/memora_theme.dart';
 import '../user/user_approved_memories_page.dart';
 import '../user/user_memory_controller.dart';
@@ -18,19 +22,23 @@ import '../user/user_routine_controller.dart';
 import '../user/user_routine_home.dart';
 import '../widgets/shell_scaffold.dart';
 
-/// Supported-person app shell: routines, approved memories, Help/About.
+/// Supported-person app shell: routines, approved memories, sync, privacy, Help.
 class MemoraUserApp extends StatefulWidget {
   const MemoraUserApp({
     super.key,
     required this.controller,
     required this.persona,
     this.memoryController,
+    this.syncController,
+    this.privacyController,
     this.autoload = true,
     this.initialSection = FeatureSection.routines,
   });
 
   final UserRoutineController controller;
   final UserMemoryController? memoryController;
+  final SyncPresentationController? syncController;
+  final PrivacyPresentationController? privacyController;
   final SyntheticPersona persona;
 
   /// When true, triggers load after the first frame.
@@ -52,6 +60,8 @@ class _MemoraUserAppState extends State<MemoraUserApp> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         widget.controller.load();
         widget.memoryController?.load();
+        widget.syncController?.load();
+        widget.privacyController?.load();
       });
     }
   }
@@ -65,6 +75,8 @@ class _MemoraUserAppState extends State<MemoraUserApp> {
       home: _UserShell(
         routineController: widget.controller,
         memoryController: widget.memoryController,
+        syncController: widget.syncController,
+        privacyController: widget.privacyController,
         persona: widget.persona,
         section: _section,
         onSection: (section) => setState(() => _section = section),
@@ -77,6 +89,8 @@ class _UserShell extends StatelessWidget {
   const _UserShell({
     required this.routineController,
     required this.memoryController,
+    required this.syncController,
+    required this.privacyController,
     required this.persona,
     required this.section,
     required this.onSection,
@@ -84,6 +98,8 @@ class _UserShell extends StatelessWidget {
 
   final UserRoutineController routineController;
   final UserMemoryController? memoryController;
+  final SyncPresentationController? syncController;
+  final PrivacyPresentationController? privacyController;
   final SyntheticPersona persona;
   final FeatureSection section;
   final ValueChanged<FeatureSection> onSection;
@@ -93,28 +109,52 @@ class _UserShell extends StatelessWidget {
     final sections = <FeatureSection>[
       FeatureSection.routines,
       if (memoryController != null) FeatureSection.memories,
+      if (syncController != null) FeatureSection.sync,
+      if (privacyController != null) FeatureSection.privacy,
       FeatureSection.help,
     ];
-    final listenable = memoryController == null
-        ? routineController
-        : Listenable.merge(<Listenable>[routineController, memoryController!]);
+    final listenables = <Listenable>[routineController];
+    if (memoryController != null) {
+      listenables.add(memoryController!);
+    }
+    if (syncController != null) {
+      listenables.add(syncController!);
+    }
+    if (privacyController != null) {
+      listenables.add(privacyController!);
+    }
 
     return ListenableBuilder(
-      listenable: listenable,
+      listenable: Listenable.merge(listenables),
       builder: (context, _) {
         final syncLabel = switch (section) {
+          FeatureSection.sync =>
+            syncController?.syncChromeLabel ?? routineController.syncLabel,
           FeatureSection.memories =>
             memoryController?.syncLabel ?? routineController.syncLabel,
-          _ => routineController.syncLabel,
+          FeatureSection.privacy =>
+            syncController?.sessionLabel ?? routineController.syncLabel,
+          _ =>
+            syncController?.unresolved.isNotEmpty == true
+                ? syncController!.syncChromeLabel
+                : routineController.syncLabel,
         };
         final syncAction = switch (section) {
+          FeatureSection.sync => syncController?.recoveryActionLabel,
           FeatureSection.memories => memoryController?.recoveryActionLabel,
-          _ => routineController.recoveryActionLabel,
+          FeatureSection.privacy => null,
+          _ =>
+            syncController?.unresolved.isNotEmpty == true
+                ? syncController!.recoveryActionLabel
+                : routineController.recoveryActionLabel,
         };
         final onSync = syncAction == null
             ? null
             : () {
-                if (section == FeatureSection.memories) {
+                if (section == FeatureSection.sync ||
+                    syncController?.unresolved.isNotEmpty == true) {
+                  syncController?.recover();
+                } else if (section == FeatureSection.memories) {
                   memoryController?.recover();
                 } else {
                   routineController.recover();
@@ -143,6 +183,12 @@ class _UserShell extends StatelessWidget {
                 FeatureSection.memories => UserApprovedMemoriesPage(
                   controller: memoryController!,
                 ),
+                FeatureSection.sync => SyncStatusPage(
+                  controller: syncController!,
+                ),
+                FeatureSection.privacy => PrivacyPage(
+                  controller: privacyController!,
+                ),
                 FeatureSection.help => const HelpAboutPage(),
                 FeatureSection.observations => const HelpAboutPage(),
               },
@@ -154,7 +200,7 @@ class _UserShell extends StatelessWidget {
   }
 }
 
-/// Caregiver/family web: routines, memories, observations, Help/About.
+/// Caregiver/family web: routines, memories, observations, sync, privacy, Help.
 class MemoraFamilyWebApp extends StatefulWidget {
   const MemoraFamilyWebApp({
     super.key,
@@ -162,6 +208,8 @@ class MemoraFamilyWebApp extends StatefulWidget {
     required this.persona,
     this.memoryController,
     this.observationController,
+    this.syncController,
+    this.privacyController,
     this.autoload = true,
     this.initialSection = FeatureSection.routines,
   });
@@ -169,6 +217,8 @@ class MemoraFamilyWebApp extends StatefulWidget {
   final FamilyRoutineController controller;
   final FamilyMemoryController? memoryController;
   final FamilyObservationController? observationController;
+  final SyncPresentationController? syncController;
+  final PrivacyPresentationController? privacyController;
   final SyntheticPersona persona;
   final bool autoload;
   final FeatureSection initialSection;
@@ -189,6 +239,8 @@ class _MemoraFamilyWebAppState extends State<MemoraFamilyWebApp> {
         widget.controller.load();
         widget.memoryController?.load();
         widget.observationController?.load();
+        widget.syncController?.load();
+        widget.privacyController?.load();
       });
     }
   }
@@ -203,6 +255,8 @@ class _MemoraFamilyWebAppState extends State<MemoraFamilyWebApp> {
         routineController: widget.controller,
         memoryController: widget.memoryController,
         observationController: widget.observationController,
+        syncController: widget.syncController,
+        privacyController: widget.privacyController,
         persona: widget.persona,
         section: _section,
         onSection: (section) => setState(() => _section = section),
@@ -216,6 +270,8 @@ class _FamilyShell extends StatelessWidget {
     required this.routineController,
     required this.memoryController,
     required this.observationController,
+    required this.syncController,
+    required this.privacyController,
     required this.persona,
     required this.section,
     required this.onSection,
@@ -224,6 +280,8 @@ class _FamilyShell extends StatelessWidget {
   final FamilyRoutineController routineController;
   final FamilyMemoryController? memoryController;
   final FamilyObservationController? observationController;
+  final SyncPresentationController? syncController;
+  final PrivacyPresentationController? privacyController;
   final SyntheticPersona persona;
   final FeatureSection section;
   final ValueChanged<FeatureSection> onSection;
@@ -234,6 +292,8 @@ class _FamilyShell extends StatelessWidget {
       FeatureSection.routines,
       if (memoryController != null) FeatureSection.memories,
       if (observationController != null) FeatureSection.observations,
+      if (syncController != null) FeatureSection.sync,
+      if (privacyController != null) FeatureSection.privacy,
       FeatureSection.help,
     ];
     final listenables = <Listenable>[routineController];
@@ -243,26 +303,47 @@ class _FamilyShell extends StatelessWidget {
     if (observationController != null) {
       listenables.add(observationController!);
     }
+    if (syncController != null) {
+      listenables.add(syncController!);
+    }
+    if (privacyController != null) {
+      listenables.add(privacyController!);
+    }
 
     return ListenableBuilder(
       listenable: Listenable.merge(listenables),
       builder: (context, _) {
         final syncLabel = switch (section) {
+          FeatureSection.sync =>
+            syncController?.syncChromeLabel ?? routineController.syncLabel,
           FeatureSection.memories =>
             memoryController?.syncLabel ?? routineController.syncLabel,
           FeatureSection.observations =>
             observationController?.syncLabel ?? routineController.syncLabel,
-          _ => routineController.syncLabel,
+          FeatureSection.privacy =>
+            syncController?.sessionLabel ?? routineController.syncLabel,
+          _ =>
+            syncController?.unresolved.isNotEmpty == true
+                ? syncController!.syncChromeLabel
+                : routineController.syncLabel,
         };
         final syncAction = switch (section) {
+          FeatureSection.sync => syncController?.recoveryActionLabel,
           FeatureSection.memories => memoryController?.recoveryActionLabel,
           FeatureSection.observations => null,
-          _ => routineController.recoveryActionLabel,
+          FeatureSection.privacy => null,
+          _ =>
+            syncController?.unresolved.isNotEmpty == true
+                ? syncController!.recoveryActionLabel
+                : routineController.recoveryActionLabel,
         };
         final onSync = syncAction == null
             ? null
             : () {
-                if (section == FeatureSection.memories) {
+                if (section == FeatureSection.sync ||
+                    syncController?.unresolved.isNotEmpty == true) {
+                  syncController?.recover();
+                } else if (section == FeatureSection.memories) {
                   memoryController?.recover();
                 } else {
                   routineController.recover();
@@ -293,6 +374,12 @@ class _FamilyShell extends StatelessWidget {
                 ),
                 FeatureSection.observations => FamilyObservationPage(
                   controller: observationController!,
+                ),
+                FeatureSection.sync => SyncStatusPage(
+                  controller: syncController!,
+                ),
+                FeatureSection.privacy => PrivacyPage(
+                  controller: privacyController!,
                 ),
                 FeatureSection.help => const HelpAboutPage(),
               },

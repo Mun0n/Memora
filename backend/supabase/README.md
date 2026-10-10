@@ -1,6 +1,7 @@
-# Supabase draft (Slice 2)
+# Supabase draft (Slices 2 + 6)
 
-Local, versioned PostgreSQL contracts for family-space identity. No remote project linking, no client credentials, no production seeds.
+Local, versioned PostgreSQL contracts for family-space identity and product tables.
+No remote project linking, no client credentials, no production seeds.
 
 ## Layout
 
@@ -9,14 +10,16 @@ Local, versioned PostgreSQL contracts for family-space identity. No remote proje
 
 ## Capability matrix
 
-Must stay identical to `packages/domain` `FamilyAccessPolicy`:
+Must stay identical to `packages/domain` `FamilyAccessPolicy` wire names:
 
-| Active role | viewFamilySpace | updateFamilySpace | viewMemberships | manageMemberships |
-| --- | --- | --- | --- | --- |
-| supportedPerson | Yes | No | No | No |
-| primaryCaregiver | Yes | Yes | Yes | Yes |
-| caregiver | Yes | No | Yes | No |
-| familyContributor | Yes | No | No | No |
+| Active role | Identity | Routines | Reminders | Memories | Media meta | Observations | Conflicts |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| supportedPerson | viewFamilySpace | viewRoutines, recordRoutineProgress | viewReminders | viewApprovedMemories | — | — | — |
+| primaryCaregiver | all identity | view+edit | view+configure | view+manage | manageMediaMetadata | view+record | resolveSyncConflicts |
+| caregiver | viewFamilySpace, viewMemberships | view+edit | view+configure | view+manage | manageMediaMetadata | view+record | resolveSyncConflicts |
+| familyContributor | viewFamilySpace | viewRoutines | — | viewApproved + contribute | (via contribute insert) | — | — |
+
+Media is **metadata-only** (no storage bucket policies in v0.1).
 
 ## Run
 

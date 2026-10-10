@@ -4,6 +4,7 @@ import 'package:test/test.dart';
 void main() {
   group('FamilyAccessPolicy capability matrix', () {
     final cases = <(FamilyRole, FamilyCapability, bool)>[
+      // Identity wires
       (FamilyRole.supportedPerson, FamilyCapability.viewFamilySpace, true),
       (FamilyRole.supportedPerson, FamilyCapability.updateFamilySpace, false),
       (FamilyRole.supportedPerson, FamilyCapability.viewMemberships, false),
@@ -20,6 +21,71 @@ void main() {
       (FamilyRole.familyContributor, FamilyCapability.updateFamilySpace, false),
       (FamilyRole.familyContributor, FamilyCapability.viewMemberships, false),
       (FamilyRole.familyContributor, FamilyCapability.manageMemberships, false),
+      // Product wires (Slice 6)
+      (FamilyRole.supportedPerson, FamilyCapability.viewRoutines, true),
+      (FamilyRole.supportedPerson, FamilyCapability.editRoutines, false),
+      (
+        FamilyRole.supportedPerson,
+        FamilyCapability.recordRoutineProgress,
+        true,
+      ),
+      (FamilyRole.supportedPerson, FamilyCapability.viewReminders, true),
+      (FamilyRole.supportedPerson, FamilyCapability.configureReminders, false),
+      (FamilyRole.supportedPerson, FamilyCapability.viewApprovedMemories, true),
+      (FamilyRole.supportedPerson, FamilyCapability.manageMemories, false),
+      (FamilyRole.supportedPerson, FamilyCapability.contributeMemories, false),
+      (FamilyRole.supportedPerson, FamilyCapability.manageMediaMetadata, false),
+      (FamilyRole.supportedPerson, FamilyCapability.viewObservations, false),
+      (FamilyRole.supportedPerson, FamilyCapability.recordObservations, false),
+      (
+        FamilyRole.supportedPerson,
+        FamilyCapability.resolveSyncConflicts,
+        false,
+      ),
+      (FamilyRole.primaryCaregiver, FamilyCapability.editRoutines, true),
+      (FamilyRole.primaryCaregiver, FamilyCapability.configureReminders, true),
+      (FamilyRole.primaryCaregiver, FamilyCapability.manageMemories, true),
+      (FamilyRole.primaryCaregiver, FamilyCapability.manageMediaMetadata, true),
+      (FamilyRole.primaryCaregiver, FamilyCapability.recordObservations, true),
+      (
+        FamilyRole.primaryCaregiver,
+        FamilyCapability.resolveSyncConflicts,
+        true,
+      ),
+      (
+        FamilyRole.primaryCaregiver,
+        FamilyCapability.recordRoutineProgress,
+        false,
+      ),
+      (FamilyRole.primaryCaregiver, FamilyCapability.contributeMemories, false),
+      (FamilyRole.caregiver, FamilyCapability.editRoutines, true),
+      (FamilyRole.caregiver, FamilyCapability.manageMemories, true),
+      (FamilyRole.caregiver, FamilyCapability.recordObservations, true),
+      (FamilyRole.caregiver, FamilyCapability.resolveSyncConflicts, true),
+      (FamilyRole.caregiver, FamilyCapability.contributeMemories, false),
+      (FamilyRole.familyContributor, FamilyCapability.viewRoutines, true),
+      (FamilyRole.familyContributor, FamilyCapability.contributeMemories, true),
+      (
+        FamilyRole.familyContributor,
+        FamilyCapability.viewApprovedMemories,
+        true,
+      ),
+      (FamilyRole.familyContributor, FamilyCapability.editRoutines, false),
+      (
+        FamilyRole.familyContributor,
+        FamilyCapability.recordObservations,
+        false,
+      ),
+      (
+        FamilyRole.familyContributor,
+        FamilyCapability.configureReminders,
+        false,
+      ),
+      (
+        FamilyRole.familyContributor,
+        FamilyCapability.resolveSyncConflicts,
+        false,
+      ),
     ];
 
     for (final (role, capability, expected) in cases) {
@@ -109,6 +175,71 @@ void main() {
         FamilyAccessPolicy.canViewMembershipRow(
           actor: IdentityFixtures.elenaPrimaryMembership,
           target: IdentityFixtures.casaDemoBPrimaryMembership,
+        ),
+        isFalse,
+      );
+    });
+  });
+
+  group('care policies use capability wires', () {
+    test('RoutineCarePolicy mirrors editRoutines / progress / resolve', () {
+      expect(
+        RoutineCarePolicy.canConfigureCareContent(
+          IdentityFixtures.elenaPrimaryMembership,
+        ),
+        isTrue,
+      );
+      expect(
+        RoutineCarePolicy.canRecordStepProgress(
+          IdentityFixtures.amparoSupportedMembership,
+        ),
+        isTrue,
+      );
+      expect(
+        RoutineCarePolicy.canResolveSyncConflicts(
+          IdentityFixtures.carlosCaregiverMembership,
+        ),
+        isTrue,
+      );
+      expect(
+        RoutineCarePolicy.canConfigureCareContent(
+          IdentityFixtures.luciaContributorMembership,
+        ),
+        isFalse,
+      );
+    });
+
+    test('MemoryCarePolicy mirrors manage / contribute / viewApproved', () {
+      expect(
+        MemoryCarePolicy.canManageMemories(
+          IdentityFixtures.elenaPrimaryMembership,
+        ),
+        isTrue,
+      );
+      expect(
+        MemoryCarePolicy.canContributeMemories(
+          IdentityFixtures.luciaContributorMembership,
+        ),
+        isTrue,
+      );
+      expect(
+        MemoryCarePolicy.canViewApprovedMemories(
+          IdentityFixtures.amparoSupportedMembership,
+        ),
+        isTrue,
+      );
+    });
+
+    test('ObservationCarePolicy caregiver-only', () {
+      expect(
+        ObservationCarePolicy.canRecordObservations(
+          IdentityFixtures.carlosCaregiverMembership,
+        ),
+        isTrue,
+      );
+      expect(
+        ObservationCarePolicy.canRecordObservations(
+          IdentityFixtures.amparoSupportedMembership,
         ),
         isFalse,
       );

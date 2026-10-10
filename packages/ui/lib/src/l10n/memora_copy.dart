@@ -1,4 +1,4 @@
-/// Spanish-first, localization-ready copy for Slice 4–5 presentation.
+/// Spanish-first, localization-ready copy for Slice 4–6 presentation.
 ///
 /// Values are the default `es` surface. Keys are stable identifiers for a
 /// future ARB/`AppLocalizations` migration — do not hardcode English-only
@@ -37,7 +37,63 @@ abstract final class MemoraCopy {
   static const String navRoutines = 'Rutinas';
   static const String navMemories = 'Recuerdos';
   static const String navObservations = 'Observaciones';
+  static const String navSync = 'Sincronización';
+  static const String navPrivacy = 'Privacidad';
   static const String navHelp = 'Ayuda';
+
+  // Session boundary (names only — no credential values)
+  static const String sessionDemoTitle = 'Sesión de demostración (sin red)';
+  static const String sessionSignedOutTitle = 'Sesión cerrada';
+  static const String sessionNamedCredentialsTitle =
+      'Credenciales configuradas por nombre (sin valores en pantalla)';
+  static const String sessionCredentialNamesHint =
+      'Solo nombres de configuración: MEMORA_SUPABASE_URL y '
+      'MEMORA_SUPABASE_ANON_KEY. Sin claves de servicio.';
+
+  // Explicit sync chrome
+  static const String syncSectionTitle = 'Sincronización';
+  static const String syncSectionBody =
+      'Los cambios se guardan primero en este dispositivo. '
+      'Puedes enviar y recibir cuando quieras (modo demo local).';
+  static const String syncPushAction = 'Enviar cambios';
+  static const String syncPullAction = 'Recibir cambios';
+  static const String syncBusy = 'Sincronizando…';
+  static const String syncPushSummaryPrefix = 'Envío:';
+  static const String syncPullSummaryPrefix = 'Recepción:';
+  static const String syncConflictsTitle = 'Conflictos por resolver';
+  static const String syncConflictsEmpty = 'No hay conflictos pendientes.';
+  static const String syncConflictRoutine = 'Rutina';
+  static const String syncConflictObservation =
+      'Observación (se conservan ambas entradas; sin fusionar valores)';
+  static const String syncConflictOther = 'Cambio';
+  static const String syncResolveKeepLocal = 'Quedarse con la local';
+  static const String syncResolveKeepRemote = 'Quedarse con la remota';
+  static const String syncResolveKeepBoth = 'Conservar ambas';
+  static const String syncResolveUnauthorized =
+      'Tu rol no puede resolver conflictos de sincronización.';
+  static const String syncCannotResolveObservations =
+      'Las observaciones no se fusionan. Se conservan ambas entradas.';
+
+  // Privacy contracts
+  static const String privacySectionTitle = 'Privacidad y sesión';
+  static const String privacySectionBody =
+      'Contratos de demostración: exportación, eliminación y sesiones. '
+      'No hay verificación remota ni envío a un servidor alojado.';
+  static const String privacyExportAction = 'Solicitar exportación';
+  static const String privacyDeletionAction = 'Solicitar eliminación';
+  static const String privacyExportConfirmed =
+      'Solicitud de exportación registrada (demostración).';
+  static const String privacyDeletionConfirmed =
+      'Solicitud de eliminación registrada (demostración).';
+  static const String privacySessionsTitle = 'Sesiones de demostración';
+  static const String privacySessionsEmpty = 'No hay sesiones activas.';
+  static const String privacyRevokeSession = 'Cerrar sesión';
+  static const String privacySessionRevoked = 'Sesión cerrada (demostración).';
+  static const String privacyAuditNote =
+      'El historial auditable guarda solo etiquetas (acción, objetivo, hora). '
+      'No muestra contenido, valores de salud, tokens ni rutas de medios.';
+  static const String privacyUnauthorized =
+      'Tu membresía no puede usar estos contratos de privacidad.';
 
   // User home
   static const String userHomeTitle = 'Hoy';

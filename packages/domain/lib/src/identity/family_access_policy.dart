@@ -6,29 +6,55 @@ import 'membership_status.dart';
 /// Central role→capability policy. Callers ask for a capability; they do not
 /// scatter role-name checks.
 ///
-/// Matrix (active memberships only; invited/revoked grant nothing):
-///
-/// | Role               | viewFamilySpace | updateFamilySpace | viewMemberships | manageMemberships |
-/// | ------------------ | --------------- | ----------------- | --------------- | ----------------- |
-/// | supportedPerson    | Yes             | No                | No              | No                |
-/// | primaryCaregiver   | Yes             | Yes               | Yes             | Yes               |
-/// | caregiver          | Yes             | No                | Yes             | No                |
-/// | familyContributor  | Yes             | No                | No              | No                |
+/// Matrix (active memberships only; invited/revoked grant nothing). Product
+/// wires mirror Slice 3–5 role policies and the architecture permission table
+/// (contributor/caregiver “if granted” = capability present when active).
 abstract final class FamilyAccessPolicy {
   static const Map<FamilyRole, Set<FamilyCapability>> _activeCapabilities =
       <FamilyRole, Set<FamilyCapability>>{
-        FamilyRole.supportedPerson: {FamilyCapability.viewFamilySpace},
+        FamilyRole.supportedPerson: {
+          FamilyCapability.viewFamilySpace,
+          FamilyCapability.viewRoutines,
+          FamilyCapability.recordRoutineProgress,
+          FamilyCapability.viewReminders,
+          FamilyCapability.viewApprovedMemories,
+        },
         FamilyRole.primaryCaregiver: {
           FamilyCapability.viewFamilySpace,
           FamilyCapability.updateFamilySpace,
           FamilyCapability.viewMemberships,
           FamilyCapability.manageMemberships,
+          FamilyCapability.viewRoutines,
+          FamilyCapability.editRoutines,
+          FamilyCapability.viewReminders,
+          FamilyCapability.configureReminders,
+          FamilyCapability.viewApprovedMemories,
+          FamilyCapability.manageMemories,
+          FamilyCapability.manageMediaMetadata,
+          FamilyCapability.viewObservations,
+          FamilyCapability.recordObservations,
+          FamilyCapability.resolveSyncConflicts,
         },
         FamilyRole.caregiver: {
           FamilyCapability.viewFamilySpace,
           FamilyCapability.viewMemberships,
+          FamilyCapability.viewRoutines,
+          FamilyCapability.editRoutines,
+          FamilyCapability.viewReminders,
+          FamilyCapability.configureReminders,
+          FamilyCapability.viewApprovedMemories,
+          FamilyCapability.manageMemories,
+          FamilyCapability.manageMediaMetadata,
+          FamilyCapability.viewObservations,
+          FamilyCapability.recordObservations,
+          FamilyCapability.resolveSyncConflicts,
         },
-        FamilyRole.familyContributor: {FamilyCapability.viewFamilySpace},
+        FamilyRole.familyContributor: {
+          FamilyCapability.viewFamilySpace,
+          FamilyCapability.viewRoutines,
+          FamilyCapability.viewApprovedMemories,
+          FamilyCapability.contributeMemories,
+        },
       };
 
   /// Capabilities granted by [role] when the membership is active.
@@ -53,7 +79,6 @@ abstract final class FamilyAccessPolicy {
       return false;
     }
     if (allows(actor, FamilyCapability.viewMemberships)) {
-      // viewMemberships still requires the actor to be active (via [allows]).
       return true;
     }
     return actor.isActive &&

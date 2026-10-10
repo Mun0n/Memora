@@ -1,14 +1,41 @@
 # Current project state
 
-- Phase: Slice 5 UI complete — memories + non-clinical observations presentation wired; QA next.
-- Implemented product functionality: caregiver/family web create/edit/order/activate/archive routines + quiet-hours reminder configure; memory manage/contribute/approve/archive + media retry chrome; weight/BP entry + chronological history with adjacent disclaimer; Help/About disclaimer; supported-person home with date/time orientation, today's active routines, one primary step action, approved-memory viewing (offline-cached; failed media never traps nav). Domain/data local-first contracts include Slice 5 memory lifecycle and observation add/correct/tombstone. No sign-in, no app↔Supabase connection.
-- Shared packages: `packages/domain` (routine lifecycle/progress, quiet-hours reminders, `ManageMemory`, `RecordObservations`, role policies), `packages/data` (in-memory adapters + restart/outbox proofs including memories + observation corrections), `packages/ui` (shared a11y chrome, Spanish-first `MemoraCopy`, user + family routine/memory/observation presentation, Help/About).
-- App shells: `apps/user` (supported-person Android phone/tablet) and `apps/web` (caregiver/family web) compose fictional `InMemoryOfflineStore` adapters; Demo/Ejemplo fixtures seeded at startup; section nav for Rutinas / Recuerdos / Observaciones (web) / Ayuda.
-- Persistence: Android Drift/SQLite documented; Slice 4–5 domain/data proofs use in-memory + snapshot restart. Web adapter remains replaceable. Media is metadata-only (no production storage client).
-- Backend draft: `backend/supabase/migrations` family-space/membership schema with forced RLS; unchanged this slice (memory/observation gates use role policies, not new SQL capability wires).
-- Validation: `./scripts/validate.sh` → `VALIDATION PASS` after UI (format + analyze + test + secret scan + package boundary check + RLS suite); evidence in `.agent/reports/slice_05/ui.md`.
-- Data: fictional development data only (`Amparo Demo`, `Elena Demo`, `Familia Ejemplo`, `Casa Demo B`, reserved Slice-2/3/4/5 UUIDs); local fictional media path/checksum fixtures only; no auth credentials or production endpoints.
-- External services: none connected. Reminder UI copy frames convenience prompts only (quiet-hours aware); no notification transport. No production object storage.
-- LLM features: none authorized.
+- Phase: Slice 6 UI — demo sync/privacy/session composition + E2E scenario tests. QA next → AUDIT → `MVP_REVIEW`.
+- Implemented product functionality: caregiver/family web create/edit/order/activate/archive routines + quiet-hours reminder configure; memory manage/contribute/approve/archive + media retry chrome; weight/BP entry + chronological history with adjacent disclaimer; Help/About disclaimer; supported-person home with date/time orientation, today's active routines, one primary step action, approved-memory viewing (offline-cached; failed media never traps nav). Slice 6 UI: both shells compose `SessionBoundary.demo` + `FakeSupabaseRemote` + `SyncEngine` by default (no network/remote env); sync push/pull + caregiver conflict resolve; privacy export/deletion/session revoke contracts; Spanish-first chrome.
+- Shared packages: `packages/domain` (capabilities lockstep, `SyncEngine`, privacy/session ports, care policies), `packages/data` (in-memory adapters, `FakeSupabaseRemote`, sync bridge, audit/privacy stores), `packages/ui` (sync/privacy/session presentation + section nav).
+- App shells: `apps/user` + `apps/web` wire demo adapters + fake remote + session boundary; E2E scenario widget tests cover caregiver web + supported-person phone/tablet paths from `docs/current/MVP_E2E_SCENARIO.md`.
+- Persistence: Android Drift/SQLite documented; proofs use in-memory + snapshot restart + fake remote. Media metadata-only (no storage bucket).
+- Backend: `backend/supabase/migrations` family-identity + product tables with forced RLS and extended `memora_has_capability` wires matching Dart.
+- Validation: UI runs package/app flutter tests; full `./scripts/validate.sh` before QA handoff.
+- Data: fictional development data only (`Amparo Demo`, `Elena Demo`, `Familia Ejemplo`, `Casa Demo B`, reserved Slice-2–6 UUIDs); no auth credentials or production endpoints.
+- External services: none connected. Credentials injectable by **names only**. Reminder UI convenience prompts only. No LLM.
 - Approved MVP: accessible supported-person Android phone/tablet app; responsive caregiver/family web; routines, reminders, memories, weight/blood-pressure recording, local persistence and synchronization. No native caregiver app or meal tracking.
-- Next work: Slice 5 QA → AUDIT.
+- Next work: Slice 6 QA → AUDIT → stop at `MVP_REVIEW` (no deploy/push).
+
+## Human handoff — run fictional demo mode
+
+```bash
+# Supported-person (phone/tablet shell)
+cd apps/user && flutter run
+
+# Caregiver/family web
+cd apps/web && flutter run -d chrome
+```
+
+Both start in offline demo mode (`SessionBoundary.demo`). No `MEMORA_SUPABASE_*` env vars required. Sync uses in-process `FakeSupabaseRemote`.
+
+### What remains unconnected
+
+- Hosted Supabase project / real Auth
+- Production object storage (media is metadata-only)
+- Durable Android Drift schema wiring
+- Real identity re-verification for export/deletion
+- Notification transport for reminders
+
+### Flows needing human product evaluation
+
+1. Supported-person home: orientation, one primary step, offline resilience.
+2. Caregiver conflict resolve (keep local / remote / both) wording and burden.
+3. Privacy export/deletion confirmation copy (contract-level; no hosted delivery).
+4. Sync freshness chrome comprehension without technical jargon.
+5. Non-clinical observation disclaimer placement beside entry + Help/About.
