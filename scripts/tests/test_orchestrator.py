@@ -48,4 +48,11 @@ class OrchestratorContracts(unittest.TestCase):
         self.assertIn("tool/scan_repository.py", validate)
         self.assertNotIn("rg -n --hidden", validate)
 
+    def test_human_review_repair_is_explicit_and_bounded(self):
+        runner = (ROOT / "scripts/run_slice.sh").read_text()
+        self.assertIn("--review-repair", runner)
+        self.assertIn("human_review.md", runner)
+        self.assertIn("HUMAN_REVIEW_REPAIR", runner)
+        self.assertIn('if [[ "$REVIEW_REPAIR" -eq 0 ]]', runner)
+
 if __name__ == "__main__": unittest.main()

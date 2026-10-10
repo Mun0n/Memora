@@ -8,12 +8,14 @@ source "$ROOT/scripts/lib/cursor_cli.sh"
 
 SLICE="${1:-}"
 DRY_RUN=0
-[[ -n "$SLICE" ]] || { echo "Usage: ./scripts/run_slice.sh <slice-number> [--dry-run]" >&2; exit 2; }
+REVIEW_REPAIR=0
+[[ -n "$SLICE" ]] || { echo "Usage: ./scripts/run_slice.sh <slice-number> [--dry-run|--review-repair]" >&2; exit 2; }
 shift
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --dry-run) DRY_RUN=1 ;;
-    -h|--help) echo "Usage: ./scripts/run_slice.sh <slice-number> [--dry-run]"; exit 0 ;;
+    --review-repair) REVIEW_REPAIR=1 ;;
+    -h|--help) echo "Usage: ./scripts/run_slice.sh <slice-number> [--dry-run|--review-repair]"; exit 0 ;;
     *) echo "ERROR: unknown argument: $1" >&2; exit 2 ;;
   esac
   shift
@@ -45,9 +47,19 @@ fi
 CLI="$(cursor_cli_discover || true)"
 [[ -n "$CLI" ]] || { echo "ERROR: Cursor agent CLI not found" >&2; exit 1; }
 
-if [[ "$DRY_RUN" -eq 0 ]] && [[ -n "$(git status --porcelain -- apps packages backend specs docs scripts agents .cursor AGENTS.md 2>/dev/null)" ]]; then
+if [[ "$DRY_RUN" -eq 0 && "$REVIEW_REPAIR" -eq 0 ]] && [[ -n "$(git status --porcelain -- apps packages backend specs docs scripts agents .cursor AGENTS.md 2>/dev/null)" ]]; then
   echo "ERROR: implementation paths are dirty; commit or separately resolve existing work first" >&2
   exit 1
+fi
+
+if [[ "$REVIEW_REPAIR" -eq 1 ]]; then
+  [[ "$DRY_RUN" -eq 0 ]] || { echo "ERROR: --dry-run and --review-repair are mutually exclusive" >&2; exit 2; }
+  [[ -f "$REPORT_DIR/audit.md" ]] || { echo "ERROR: review repair requires $REPORT_REL/audit.md" >&2; exit 1; }
+  [[ -f "$REPORT_DIR/human_review.md" ]] || { echo "ERROR: review repair requires $REPORT_REL/human_review.md" >&2; exit 1; }
+  [[ -n "$(git status --porcelain -- packages backend docs/current 2>/dev/null)" ]] || {
+    echo "ERROR: review repair requires an existing uncommitted slice implementation" >&2
+    exit 1
+  }
 fi
 
 mkdir -p "$REPORT_DIR" "$TMP"
@@ -96,6 +108,9 @@ echo "Cursor CLI: $CLI"
 echo "Context policy: role-specific, fresh process, maximum 10 initial files"
 echo "Phases: SUPERVISOR → DOMAIN → UI → QA → AUDITOR → HUMAN_REVIEW"
 echo "Repair cap: $MAX_REPAIR"
+if [[ "$REVIEW_REPAIR" -eq 1 ]]; then
+  echo "Mode: targeted repair requested at HUMAN_REVIEW"
+fi
 
 for role in SUPERVISOR DOMAIN UI QA AUDITOR; do
   write_prompt "$role" "DRY-RUN preview only. Do not act."
@@ -109,15 +124,19 @@ if [[ "$DRY_RUN" -eq 1 ]]; then
   exit 0
 fi
 
-invoke SUPERVISOR "Write ${REPORT_REL}/plan.md. Do not implement."
-invoke DOMAIN "Read plan.md. Implement only authorized domain/data/backend tasks, then write ${REPORT_REL}/domain.md."
-invoke UI "Read plan.md and current diff. Implement only authorized app/UI tasks, then write ${REPORT_REL}/ui.md."
+if [[ "$REVIEW_REPAIR" -eq 1 ]]; then
+  invoke DOMAIN "HUMAN_REVIEW_REPAIR: Read ${REPORT_REL}/human_review.md and audit.md. Repair only those DOMAIN-owned findings, preserve the accepted slice implementation, run focused checks, and update ${REPORT_REL}/domain.md."
+else
+  invoke SUPERVISOR "Write ${REPORT_REL}/plan.md. Do not implement."
+  invoke DOMAIN "Read plan.md. Implement only authorized domain/data/backend tasks, then write ${REPORT_REL}/domain.md."
+  invoke UI "Read plan.md and current diff. Implement only authorized app/UI tasks, then write ${REPORT_REL}/ui.md."
+fi
 
 iteration=0
 while true; do
   ./scripts/validate.sh >"$REPORT_DIR/validation.log" 2>&1 || true
-  invoke QA "Evaluate every acceptance criterion using validation.log and current tree. Write ${REPORT_REL}/qa.md with PASS, FAIL or BLOCKED."
-  invoke AUDITOR "Fresh independent, read-only audit. Inspect git diff and validation.log. Write ${REPORT_REL}/audit.md with Result: PASS, PASS_WITH_NOTES or FAIL."
+  invoke QA "Evaluate every acceptance criterion using validation.log and current tree. If present, include ${REPORT_REL}/human_review.md findings. Write ${REPORT_REL}/qa.md with PASS, FAIL or BLOCKED."
+  invoke AUDITOR "Fresh independent, read-only audit. Inspect git diff and validation.log. If present, verify every ${REPORT_REL}/human_review.md finding. Write ${REPORT_REL}/audit.md with Result: PASS, PASS_WITH_NOTES or FAIL."
   result="$(sed -nE 's/^[#*[:space:]]*(Result|STATUS):[[:space:]]*(PASS_WITH_NOTES|PASS|FAIL).*/\2/p' "$REPORT_DIR/audit.md" | head -1)"
   if [[ "$result" == PASS || "$result" == PASS_WITH_NOTES ]]; then break; fi
   if [[ "$result" != FAIL ]]; then
@@ -130,7 +149,9 @@ while true; do
     exit 1
   fi
   invoke DOMAIN "Repair only DOMAIN-owned findings in audit.md for iteration $iteration."
-  invoke UI "Repair only UI-owned findings in audit.md for iteration $iteration."
+  if [[ "$REVIEW_REPAIR" -eq 0 ]]; then
+    invoke UI "Repair only UI-owned findings in audit.md for iteration $iteration."
+  fi
 done
 
 {
