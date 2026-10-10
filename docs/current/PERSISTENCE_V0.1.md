@@ -1,16 +1,16 @@
-# Persistence selection v0.1 (Slice 3)
+# Persistence selection v0.1 (Slice 3–4)
 
 ## Decision
 
 | Surface | Persistence | Notes |
 | --- | --- | --- |
-| `apps/user` (Android phone/tablet) | **Drift over SQLite** | Selected for the supported-person offline spine. Concrete Drift schema wiring ships when feature slices need durable device storage. |
+| `apps/user` (Android phone/tablet) | **Drift over SQLite** | Selected for the supported-person offline spine. Concrete Drift schema wiring still deferred; Slice 4 AC3 restart/idempotency proofs use in-memory snapshot restore. |
 | `apps/web` (caregiver/family) | **Replaceable adapter** | Recoverable drafts only; not the same long-term offline guarantee as Android. Adapter may be swapped without changing domain ports. |
 
 ## Layer rules
 
 - `packages/domain` repository and outbox **ports** have no Flutter, Drift, SQLite or Supabase imports.
-- `packages/data` Slice 3 ships **deterministic in-memory** implementations behind those ports for local write visibility, outbox idempotency, retry and restart proofs.
+- `packages/data` ships **deterministic in-memory** implementations behind those ports for local write visibility, outbox idempotency, retry and restart proofs (including routine day-progress).
 - Domain repositories must not depend on a concrete database. Android Drift is an adapter behind `packages/data` (or app composition) in a later wiring step — not a domain dependency.
 - No network sync transport, credentials or production endpoints in this slice.
 

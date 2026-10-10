@@ -18,6 +18,9 @@ final class InMemoryOfflineStore {
     for (final routine in snapshot.routines) {
       store._routines[routine.id.value] = routine;
     }
+    for (final progress in snapshot.routineProgress) {
+      store._routineProgress[progress.id.value] = progress;
+    }
     for (final reminder in snapshot.reminders) {
       store._reminders[reminder.id.value] = reminder;
     }
@@ -36,6 +39,8 @@ final class InMemoryOfflineStore {
   final InMemoryOutbox outbox;
 
   final Map<String, Routine> _routines = <String, Routine>{};
+  final Map<String, RoutineDayProgress> _routineProgress =
+      <String, RoutineDayProgress>{};
   final Map<String, Reminder> _reminders = <String, Reminder>{};
   final Map<String, MemoryEntry> _memories = <String, MemoryEntry>{};
   final Map<String, WeightObservation> _weights = <String, WeightObservation>{};
@@ -45,6 +50,7 @@ final class InMemoryOfflineStore {
   OfflineStoreSnapshot capture() {
     return OfflineStoreSnapshot(
       routines: _routines.values.toList(growable: false),
+      routineProgress: _routineProgress.values.toList(growable: false),
       reminders: _reminders.values.toList(growable: false),
       memories: _memories.values.toList(growable: false),
       weightObservations: _weights.values.toList(growable: false),
@@ -82,8 +88,44 @@ final class InMemoryOfflineStore {
         .toList(growable: false);
   }
 
+  List<Routine> activeRoutinesForFamily(FamilySpaceId familySpaceId) {
+    return _routines.values
+        .where((r) => r.familySpaceId == familySpaceId && r.isPresentableToday)
+        .toList(growable: false);
+  }
+
   void putRoutine(Routine routine) {
     _routines[routine.id.value] = routine;
+  }
+
+  // --- Routine progress ----------------------------------------------------
+
+  RoutineDayProgress? progressById(RoutineProgressId id) =>
+      _routineProgress[id.value];
+
+  RoutineDayProgress? progressByRoutineAndDate({
+    required RoutineId routineId,
+    required DateTime localDate,
+  }) {
+    final day = DateTime(localDate.year, localDate.month, localDate.day);
+    for (final progress in _routineProgress.values) {
+      if (progress.routineId == routineId &&
+          progress.localDate == day &&
+          !progress.isDeleted) {
+        return progress;
+      }
+    }
+    return null;
+  }
+
+  List<RoutineDayProgress> progressForFamily(FamilySpaceId familySpaceId) {
+    return _routineProgress.values
+        .where((p) => p.familySpaceId == familySpaceId)
+        .toList(growable: false);
+  }
+
+  void putProgress(RoutineDayProgress progress) {
+    _routineProgress[progress.id.value] = progress;
   }
 
   // --- Reminders -----------------------------------------------------------

@@ -1,5 +1,5 @@
 name: family_web
-description: Memora Family Web shell — responsive caregiver/family non-production placeholder.
+description: Memora Family Web shell — caregiver/family routine configure (fictional local adapters).
 publish_to: none
 version: 0.1.0+1
 
@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  data:
+    path: ../../packages/data
   domain:
     path: ../../packages/domain
   ui:

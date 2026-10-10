@@ -1,5 +1,5 @@
 name: ui
-description: Memora shared presentation primitives. Depends on domain only; no data/auth policy.
+description: Memora shared presentation primitives and Slice 4 routine UI. Depends on domain only; no data/auth policy.
 version: 0.1.0
 publish_to: none
 

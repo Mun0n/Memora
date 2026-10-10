@@ -1,8 +1,22 @@
-/// Memora shared UI primitives for non-production shells.
+/// Memora shared UI primitives and Slice 4 routine presentation.
 ///
 /// Dependency rule: may import `package:domain/` only among project packages.
-/// Must not import `package:data/`, authorize access, or implement product features.
+/// Must not import `package:data/` or implement authorization policy.
 library;
 
+export 'src/apps/memora_feature_app.dart';
+export 'src/demo/demo_ids.dart';
+export 'src/demo/spanish_date_format.dart';
 export 'src/experience_target.dart';
+export 'src/family/family_routine_configure_page.dart';
+export 'src/family/family_routine_controller.dart';
+export 'src/l10n/memora_copy.dart';
 export 'src/non_production_shell.dart';
+export 'src/sync/presentation_sync.dart';
+export 'src/theme/memora_theme.dart';
+export 'src/user/user_routine_controller.dart';
+export 'src/user/user_routine_home.dart';
+export 'src/widgets/demo_banner.dart';
+export 'src/widgets/draft_text_field.dart';
+export 'src/widgets/shell_scaffold.dart';
+export 'src/widgets/sync_status_bar.dart';

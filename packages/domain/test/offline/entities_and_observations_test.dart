@@ -98,6 +98,19 @@ void main() {
       );
       expect(OfflineFixtures.morningRoutine.title, contains('Demo'));
       expect(OfflineFixtures.gardenMemory.title, contains('Ejemplo'));
+      expect(
+        OfflineFixtures.morningRoutine.lifecycleStatus,
+        RoutineLifecycleStatus.active,
+      );
+      expect(
+        OfflineFixtures.archivedEveningRoutine.lifecycleStatus,
+        RoutineLifecycleStatus.archived,
+      );
+      expect(
+        OfflineFixtures.archivedEveningRoutine.isPresentableToday,
+        isFalse,
+      );
+      expect(OfflineFixtures.walkReminder.quietHours, isNotNull);
     });
   });
 }

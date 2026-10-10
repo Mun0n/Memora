@@ -15,6 +15,9 @@ abstract interface class RoutineRepository {
 
   Future<List<Routine>> listForFamily(FamilySpaceId familySpaceId);
 
+  /// Active, non-deleted routines for today's supported-person presentation.
+  Future<List<Routine>> listActiveForFamily(FamilySpaceId familySpaceId);
+
   Future<Routine> softDelete({
     required RoutineId id,
     required AggregateVersion baseVersion,

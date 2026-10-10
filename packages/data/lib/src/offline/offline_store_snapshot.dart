@@ -4,6 +4,7 @@ import 'package:domain/domain.dart';
 final class OfflineStoreSnapshot {
   const OfflineStoreSnapshot({
     required this.routines,
+    required this.routineProgress,
     required this.reminders,
     required this.memories,
     required this.weightObservations,
@@ -12,6 +13,7 @@ final class OfflineStoreSnapshot {
   });
 
   final List<Routine> routines;
+  final List<RoutineDayProgress> routineProgress;
   final List<Reminder> reminders;
   final List<MemoryEntry> memories;
   final List<WeightObservation> weightObservations;

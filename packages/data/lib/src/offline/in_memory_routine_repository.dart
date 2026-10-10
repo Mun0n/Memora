@@ -34,6 +34,11 @@ final class InMemoryRoutineRepository implements RoutineRepository {
   }
 
   @override
+  Future<List<Routine>> listActiveForFamily(FamilySpaceId familySpaceId) async {
+    return _store.activeRoutinesForFamily(familySpaceId);
+  }
+
+  @override
   Future<Routine> softDelete({
     required RoutineId id,
     required AggregateVersion baseVersion,

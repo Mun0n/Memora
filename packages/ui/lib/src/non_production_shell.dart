@@ -2,6 +2,7 @@ import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 
 import 'experience_target.dart';
+import 'theme/memora_theme.dart';
 
 /// Viewport class used by shell layout adaptation (phone/tablet, narrow/desktop).
 enum ShellViewportClass {
@@ -44,11 +45,12 @@ class NonProductionShell extends StatelessWidget {
   final SyntheticPersona persona;
   final String syncStatusLabel;
 
-  static const Color highContrastInk = Color(0xFF121212);
-  static const Color highContrastSurface = Color(0xFFF7F7F2);
-  static const Color accentBand = Color(0xFF1F4B3A);
-  static const double minTouchExtent = 48;
-  static const double expandedContentMaxWidth = 720;
+  static const Color highContrastInk = MemoraTheme.highContrastInk;
+  static const Color highContrastSurface = MemoraTheme.highContrastSurface;
+  static const Color accentBand = MemoraTheme.accentBand;
+  static const double minTouchExtent = MemoraTheme.minTouchExtent;
+  static const double expandedContentMaxWidth =
+      MemoraTheme.expandedContentMaxWidth;
 
   @override
   Widget build(BuildContext context) {

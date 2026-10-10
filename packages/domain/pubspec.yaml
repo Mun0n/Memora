@@ -1,5 +1,5 @@
 name: domain
-description: Memora domain entities, offline contracts, identity policy and synthetic fixtures. No Flutter, database or remote deps.
+description: Memora domain entities, routine/reminder use cases, offline contracts and synthetic fixtures. No Flutter, database or remote deps.
 version: 0.1.0
 publish_to: none
 

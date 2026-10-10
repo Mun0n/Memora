@@ -5,6 +5,7 @@ import 'sync_state.dart';
 /// Aggregate kinds that may appear in the offline outbox.
 enum OutboxAggregateType {
   routine,
+  routineProgress,
   reminder,
   memory,
   weightObservation,

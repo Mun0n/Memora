@@ -1,12 +1,11 @@
-import 'package:domain/domain.dart';
 import 'package:flutter/widgets.dart';
-import 'package:ui/ui.dart';
 
-void main() {
-  runApp(
-    const MemoraShellApp(
-      target: ExperienceTarget.user,
-      persona: SyntheticFixtures.amparoDemo,
-    ),
-  );
+import 'demo_composition.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final composition = UserDemoComposition(networkAvailable: false);
+  await composition.seedDemoFixtures();
+  await composition.load();
+  runApp(composition.buildApp());
 }

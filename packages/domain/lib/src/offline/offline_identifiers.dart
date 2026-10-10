@@ -95,3 +95,25 @@ final class ObservationId {
   @override
   String toString() => 'ObservationId($value)';
 }
+
+/// Opaque routine day-progress identifier (UUID string).
+final class RoutineProgressId {
+  factory RoutineProgressId(String raw) {
+    _assertUuid(raw, 'RoutineProgressId');
+    return RoutineProgressId._(raw.toLowerCase());
+  }
+
+  const RoutineProgressId._(this.value);
+
+  final String value;
+
+  @override
+  bool operator ==(Object other) =>
+      other is RoutineProgressId && other.value == value;
+
+  @override
+  int get hashCode => value.hashCode;
+
+  @override
+  String toString() => 'RoutineProgressId($value)';
+}

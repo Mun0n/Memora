@@ -3,6 +3,7 @@ import '../offline/offline_identifiers.dart';
 import '../sync/aggregate_version.dart';
 import '../sync/sync_state.dart';
 import '../sync/tombstone.dart';
+import 'routine_lifecycle_status.dart';
 import 'routine_step.dart';
 
 /// Daily/care routine with ordered steps. Local-first aggregate.
@@ -14,6 +15,7 @@ final class Routine {
     required List<RoutineStep> steps,
     required this.version,
     required this.syncState,
+    this.lifecycleStatus = RoutineLifecycleStatus.active,
     this.tombstone,
   }) : steps = List<RoutineStep>.unmodifiable(_validateSteps(steps)) {
     if (title.trim().isEmpty) {
@@ -25,15 +27,21 @@ final class Routine {
   final FamilySpaceId familySpaceId;
   final String title;
   final List<RoutineStep> steps;
+  final RoutineLifecycleStatus lifecycleStatus;
   final AggregateVersion version;
   final SyncState syncState;
   final Tombstone? tombstone;
 
   bool get isDeleted => tombstone != null;
 
+  /// Eligible for today's supported-person presentation.
+  bool get isPresentableToday =>
+      !isDeleted && lifecycleStatus == RoutineLifecycleStatus.active;
+
   Routine copyWith({
     String? title,
     List<RoutineStep>? steps,
+    RoutineLifecycleStatus? lifecycleStatus,
     AggregateVersion? version,
     SyncState? syncState,
     Tombstone? tombstone,
@@ -44,6 +52,7 @@ final class Routine {
       familySpaceId: familySpaceId,
       title: title ?? this.title,
       steps: steps ?? this.steps,
+      lifecycleStatus: lifecycleStatus ?? this.lifecycleStatus,
       version: version ?? this.version,
       syncState: syncState ?? this.syncState,
       tombstone: clearTombstone ? null : (tombstone ?? this.tombstone),
