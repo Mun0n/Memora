@@ -1,7 +1,9 @@
-/// Memora data layer placeholder surface for Slice 1.
+/// Memora data layer: transport-neutral DTOs and local catalogs.
 ///
 /// Dependency rule: may depend on `domain` only among project packages.
-/// No network, Supabase, SQLite schema, sync queue or credentials in v0.1 Slice 1.
+/// No Supabase client, network repository, sync queue or credentials in Slice 2.
 library;
 
+export 'src/identity/family_membership_dto.dart';
+export 'src/identity/family_space_dto.dart';
 export 'src/synthetic_persona_catalog.dart';

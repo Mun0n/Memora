@@ -1,5 +1,5 @@
 name: domain
-description: Memora domain entities, value objects and synthetic fixtures. No Flutter or remote deps.
+description: Memora domain entities, identity/capability policy and synthetic fixtures. No Flutter or remote deps.
 version: 0.1.0
 publish_to: none
 

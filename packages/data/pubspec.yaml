@@ -1,5 +1,5 @@
 name: data
-description: Memora data-layer stubs. Depends on domain only; no remote/sync in Slice 1.
+description: Memora data-layer DTOs and local catalogs. Depends on domain only; no remote client in Slice 2.
 version: 0.1.0
 publish_to: none
 
