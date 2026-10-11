@@ -95,8 +95,15 @@ abstract final class MemoraCopy {
   static const String privacyUnauthorized =
       'Tu membresía no puede usar estos contratos de privacidad.';
 
-  // User home
+  // User home — Slice 7 four-tile shell
   static const String userHomeTitle = 'Hoy';
+  static const String userHomeGreeting = 'Hola';
+  static const String homeTileMiDia = 'Mi día';
+  static const String homeTilePasatiempos = 'Pasatiempos';
+  static const String homeTileQuieroHablar = 'Quiero hablar';
+  static const String homeTileRecuerdos = 'Recuerdos';
+  static const String homeSemanticsLabel = 'Inicio de Memora';
+  static const String returnHome = 'Volver al inicio';
   static const String todaysRoutines = 'Rutinas de hoy';
   static const String primaryActionComplete = 'Marcar como hecho';
   static const String primaryActionCorrect = 'Corregir: aún no hecho';
@@ -104,6 +111,19 @@ abstract final class MemoraCopy {
   static const String stepCompleted = 'Hecho';
   static const String noPrimaryAction = 'Todas las tareas de hoy están hechas.';
   static const String nextStepLabel = 'Siguiente paso';
+  static const String miDiaTitle = 'Mi día';
+  static const String miDiaEmptyBody =
+      'Hoy no hay un paso pendiente. Puedes volver al inicio cuando quieras.';
+
+  // Pasatiempos / Quiero hablar — honest placeholders (no activity/call success)
+  static const String pasatiemposTitle = 'Pasatiempos';
+  static const String pasatiemposBody =
+      'Aquí aparecerán las actividades que configure tu familia. '
+      'De momento no hay ninguna preparada.';
+  static const String quieroHablarTitle = 'Quiero hablar';
+  static const String quieroHablarBody =
+      'Aquí aparecerán las personas de confianza que configure tu familia. '
+      'Desde aquí no se hace ninguna llamada.';
 
   // Family web configure
   static const String familyHomeTitle = 'Rutinas y recordatorios';

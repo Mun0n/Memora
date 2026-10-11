@@ -1,46 +1,28 @@
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 
-import '../experience_target.dart';
 import '../l10n/memora_copy.dart';
 import '../theme/memora_theme.dart';
-import '../widgets/shell_scaffold.dart';
 import 'user_routine_controller.dart';
 
-/// Supported-person home: orientation, today's routines, one primary action.
-class UserRoutineHome extends StatelessWidget {
-  const UserRoutineHome({
-    super.key,
-    required this.controller,
-    required this.persona,
-  });
+/// Supported-person "Mi día": one current/next step and one primary action.
+class UserMiDiaPage extends StatelessWidget {
+  const UserMiDiaPage({super.key, required this.controller});
 
   final UserRoutineController controller;
-  final SyntheticPersona persona;
 
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: controller,
-      builder: (context, _) {
-        return ShellScaffold(
-          target: ExperienceTarget.user,
-          persona: persona,
-          syncLabel: controller.syncLabel,
-          syncActionLabel: controller.recoveryActionLabel,
-          onSyncAction: controller.recoveryActionLabel == null
-              ? null
-              : () => controller.recover(),
-          body: UserRoutineHomeContent(controller: controller),
-        );
-      },
+      builder: (context, _) => UserMiDiaContent(controller: controller),
     );
   }
 }
 
-/// Routine home body without chrome (used inside the Slice 5 section shell).
-class UserRoutineHomeContent extends StatelessWidget {
-  const UserRoutineHomeContent({super.key, required this.controller});
+/// Mi día body without destination chrome.
+class UserMiDiaContent extends StatelessWidget {
+  const UserMiDiaContent({super.key, required this.controller});
 
   final UserRoutineController controller;
 
@@ -50,10 +32,11 @@ class UserRoutineHomeContent extends StatelessWidget {
     final action = controller.primaryAction;
 
     return Column(
+      key: const Key('memora-user-mi-dia'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          MemoraCopy.userHomeTitle,
+          MemoraCopy.miDiaTitle,
           style: textTheme.headlineSmall?.copyWith(
             color: MemoraTheme.highContrastInk,
             fontWeight: FontWeight.w700,
@@ -64,55 +47,45 @@ class UserRoutineHomeContent extends StatelessWidget {
           header: true,
           child: Text(
             controller.orientationLabel,
-            key: const Key('memora-user-orientation'),
-            style: textTheme.titleLarge?.copyWith(
+            key: const Key('memora-user-mi-dia-orientation'),
+            style: textTheme.titleMedium?.copyWith(
               color: MemoraTheme.highContrastInk,
-              fontSize: 22,
+              fontSize: 20,
             ),
           ),
         ),
-        const SizedBox(height: 20),
-        Text(
-          MemoraCopy.todaysRoutines,
-          style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 12),
-        if (controller.routines.isEmpty)
-          Text(
-            MemoraCopy.stateEmpty,
-            key: const Key('memora-user-empty'),
-            style: textTheme.bodyLarge?.copyWith(fontSize: 18),
-          )
-        else
-          ...controller.routines.map((routine) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: _RoutineSummary(routine: routine, controller: controller),
-            );
-          }),
-        const SizedBox(height: 16),
+        const SizedBox(height: 24),
         Text(
           MemoraCopy.nextStepLabel,
           style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         if (action == null)
           Text(
-            MemoraCopy.noPrimaryAction,
+            MemoraCopy.miDiaEmptyBody,
             key: const Key('memora-user-no-action'),
-            style: textTheme.bodyLarge?.copyWith(fontSize: 18),
+            style: textTheme.bodyLarge?.copyWith(fontSize: 20),
           )
         else ...[
           Text(
-            '${action.routine.title}: ${action.step.instruction}',
+            action.step.instruction,
             key: const Key('memora-user-primary-step'),
             style: textTheme.titleLarge?.copyWith(
               color: MemoraTheme.highContrastInk,
-              fontSize: 22,
+              fontSize: 24,
               fontWeight: FontWeight.w600,
+              height: 1.25,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
+          Text(
+            action.routine.title,
+            style: textTheme.bodyLarge?.copyWith(
+              fontSize: 18,
+              color: MemoraTheme.highContrastInk,
+            ),
+          ),
+          const SizedBox(height: 20),
           FilledButton(
             key: const Key('memora-user-primary-action'),
             onPressed: () => controller.togglePrimaryAction(),
@@ -128,50 +101,43 @@ class UserRoutineHomeContent extends StatelessWidget {
   }
 }
 
-class _RoutineSummary extends StatelessWidget {
-  const _RoutineSummary({required this.routine, required this.controller});
+/// Backward-compatible name for Mi día body (Slice 6 call sites).
+class UserRoutineHomeContent extends StatelessWidget {
+  const UserRoutineHomeContent({super.key, required this.controller});
 
-  final Routine routine;
   final UserRoutineController controller;
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return Semantics(
-      container: true,
-      label: routine.title,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border.all(color: MemoraTheme.borderInk, width: 2),
-          color: Colors.white,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                routine.title,
-                style: textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 20,
-                ),
-              ),
-              const SizedBox(height: 8),
-              ...routine.steps.map((step) {
-                final status = controller.statusFor(routine, step);
-                final label = status == StepCompletionStatus.completed
-                    ? MemoraCopy.stepCompleted
-                    : MemoraCopy.stepPending;
-                return Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Text(
-                    '${step.order + 1}. ${step.instruction} ($label)',
-                    style: textTheme.bodyLarge?.copyWith(fontSize: 18),
-                  ),
-                );
-              }),
-            ],
+    return UserMiDiaContent(controller: controller);
+  }
+}
+
+/// Standalone Mi día surface without the four-tile shell (tests / embeds).
+class UserRoutineHome extends StatelessWidget {
+  const UserRoutineHome({
+    super.key,
+    required this.controller,
+    required this.persona,
+  });
+
+  final UserRoutineController controller;
+  final SyntheticPersona persona;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: MemoraTheme.light(),
+      home: Scaffold(
+        backgroundColor: MemoraTheme.highContrastSurface,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Semantics(
+              label: persona.displayName,
+              child: UserMiDiaPage(controller: controller),
+            ),
           ),
         ),
       ),

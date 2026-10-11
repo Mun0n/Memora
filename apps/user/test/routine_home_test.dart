@@ -16,6 +16,7 @@ void main() {
     bool networkAvailable = false,
     InMemoryOfflineStore? store,
     bool seed = true,
+    UserHomeDestination initialDestination = UserHomeDestination.home,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
@@ -32,12 +33,21 @@ void main() {
       await composition.seedDemoFixtures();
     }
     await composition.load();
-    await tester.pumpWidget(composition.buildApp());
+    await tester.pumpWidget(
+      composition.buildApp(initialDestination: initialDestination),
+    );
     await tester.pumpAndSettle();
     return composition;
   }
 
-  testWidgets('phone: orientation, Demo persona, one primary action', (
+  Future<void> expectNoHomeOverflow(WidgetTester tester) async {
+    expect(tester.takeException(), isNull);
+    expect(find.byType(Scrollbar), findsNothing);
+    final scrollables = find.byType(Scrollable);
+    expect(scrollables, findsNothing);
+  }
+
+  testWidgets('phone 1.0: four tiles, order, no scroll/overflow', (
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
@@ -45,92 +55,184 @@ void main() {
       await pumpUser(tester, size: phoneSize);
 
       expect(
-        find.bySemanticsLabel(
-          'Memora User shell, non-production demonstration',
-        ),
+        find.bySemanticsLabel(MemoraCopy.homeSemanticsLabel),
         findsOneWidget,
       );
-      expect(find.bySemanticsLabel('Compact shell layout'), findsOneWidget);
-      expect(find.textContaining('Amparo Demo'), findsOneWidget);
-      expect(
-        find.textContaining('DEMOSTRACIÓN — NO PRODUCCIÓN'),
-        findsOneWidget,
+      expect(find.byKey(const Key('memora-user-home')), findsOneWidget);
+      expect(find.text(MemoraCopy.homeTileMiDia), findsOneWidget);
+      expect(find.text(MemoraCopy.homeTilePasatiempos), findsOneWidget);
+      expect(find.text(MemoraCopy.homeTileQuieroHablar), findsOneWidget);
+      expect(find.text(MemoraCopy.homeTileRecuerdos), findsOneWidget);
+
+      final miDia = tester.getTopLeft(
+        find.byKey(const Key('memora-user-home-tile-mi-dia')),
       );
-      expect(find.byKey(const Key('memora-user-orientation')), findsOneWidget);
-      expect(find.textContaining('Rutina de mañana Demo'), findsWidgets);
-      expect(
-        find.byKey(const Key('memora-user-primary-action')),
-        findsOneWidget,
+      final pasatiempos = tester.getTopLeft(
+        find.byKey(const Key('memora-user-home-tile-pasatiempos')),
       );
-      expect(find.text(MemoraCopy.primaryActionComplete), findsOneWidget);
-      expect(find.textContaining('Sin red'), findsOneWidget);
+      final hablar = tester.getTopLeft(
+        find.byKey(const Key('memora-user-home-tile-quiero-hablar')),
+      );
+      final recuerdos = tester.getTopLeft(
+        find.byKey(const Key('memora-user-home-tile-recuerdos')),
+      );
+      expect(miDia.dy, lessThan(hablar.dy));
+      expect(pasatiempos.dy, lessThan(recuerdos.dy));
+      expect(miDia.dx, lessThan(pasatiempos.dx));
+      expect(hablar.dx, lessThan(recuerdos.dx));
+
+      await expectNoHomeOverflow(tester);
+
+      // AC3 exclusions on home
+      expect(find.text(MemoraCopy.navSync), findsNothing);
+      expect(find.text(MemoraCopy.navPrivacy), findsNothing);
+      expect(find.text(MemoraCopy.navHelp), findsNothing);
+      expect(find.textContaining('conflicto'), findsNothing);
+      expect(find.textContaining('MEMORA_SUPABASE'), findsNothing);
+      expect(find.textContaining('Amparo Demo'), findsNothing);
+      expect(find.text(MemoraCopy.demoBanner), findsNothing);
+      expect(find.text(MemoraCopy.todaysRoutines), findsNothing);
     } finally {
       semantics.dispose();
     }
   });
 
-  testWidgets('tablet: expanded layout consumes same routine contract', (
+  testWidgets('phone 1.5 / tablet 1.0 & 1.5: four tiles, no scroll', (
     tester,
   ) async {
-    await pumpUser(tester, size: tabletSize);
-
-    expect(find.bySemanticsLabel('Expanded shell layout'), findsOneWidget);
-    expect(find.textContaining('Rutina de mañana Demo'), findsWidgets);
-    expect(find.byKey(const Key('memora-user-primary-step')), findsOneWidget);
+    for (final size in [phoneSize, tabletSize]) {
+      for (final scale in [1.0, 1.5]) {
+        await pumpUser(tester, size: size, textScale: scale);
+        expect(
+          find.byKey(const Key('memora-user-home-tile-mi-dia')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('memora-user-home-tile-pasatiempos')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('memora-user-home-tile-quiero-hablar')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('memora-user-home-tile-recuerdos')),
+          findsOneWidget,
+        );
+        await expectNoHomeOverflow(tester);
+      }
+    }
   });
 
-  testWidgets('complete and correct survive restart snapshot', (tester) async {
-    final composition = await pumpUser(tester, size: phoneSize);
+  testWidgets('tiles exceed 48 dp and expose Spanish semantics', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await pumpUser(tester, size: phoneSize);
+      for (final key in [
+        const Key('memora-user-home-tile-mi-dia'),
+        const Key('memora-user-home-tile-pasatiempos'),
+        const Key('memora-user-home-tile-quiero-hablar'),
+        const Key('memora-user-home-tile-recuerdos'),
+      ]) {
+        final size = tester.getSize(find.byKey(key));
+        expect(size.width, greaterThan(48));
+        expect(size.height, greaterThan(48));
+      }
+      expect(find.bySemanticsLabel(MemoraCopy.homeTileMiDia), findsOneWidget);
+      expect(
+        find.bySemanticsLabel(MemoraCopy.homeTilePasatiempos),
+        findsOneWidget,
+      );
+      expect(
+        find.bySemanticsLabel(MemoraCopy.homeTileQuieroHablar),
+        findsOneWidget,
+      );
+      expect(
+        find.bySemanticsLabel(MemoraCopy.homeTileRecuerdos),
+        findsOneWidget,
+      );
+    } finally {
+      semantics.dispose();
+    }
+  });
 
-    final action = find.byKey(const Key('memora-user-primary-action'));
-    await tester.ensureVisible(action);
-    await tester.tap(action);
+  testWidgets('Mi día: one step, complete/correct, return home, offline', (
+    tester,
+  ) async {
+    final composition = await pumpUser(tester, size: phoneSize);
+    await tester.tap(find.byKey(const Key('memora-user-home-tile-mi-dia')));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Hecho'), findsWidgets);
+
+    expect(find.byKey(const Key('memora-user-mi-dia')), findsOneWidget);
+    expect(find.byKey(const Key('memora-user-primary-step')), findsOneWidget);
+    expect(find.byKey(const Key('memora-user-primary-action')), findsOneWidget);
+    expect(find.text(MemoraCopy.todaysRoutines), findsNothing);
+    expect(find.textContaining('Beber un vaso'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('memora-user-primary-action')));
+    await tester.pumpAndSettle();
+    // Two-step demo routine: completing step 0 advances to the next pending step.
+    expect(find.byKey(const Key('memora-user-primary-action')), findsOneWidget);
+    expect(composition.controller.primaryAction, isNotNull);
 
     final snapshot = composition.store.capture();
-    final restored = InMemoryOfflineStore.fromSnapshot(snapshot);
-    final restoredComposition = UserDemoComposition(
-      store: restored,
+    final restored = UserDemoComposition(
+      store: InMemoryOfflineStore.fromSnapshot(snapshot),
       networkAvailable: false,
     );
-    await restoredComposition.load();
-    await tester.pumpWidget(restoredComposition.buildApp());
-    await tester.pumpAndSettle();
-
-    expect(
-      find.textContaining('Beber un vaso de agua (Hecho)'),
-      findsOneWidget,
+    await restored.load();
+    await tester.pumpWidget(
+      restored.buildApp(initialDestination: UserHomeDestination.miDia),
     );
-
-    final next = find.byKey(const Key('memora-user-primary-action'));
-    await tester.ensureVisible(next);
-    await tester.tap(next);
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('memora-user-primary-action')), findsOneWidget);
+
+    // Complete remaining steps until correction is offered.
+    while (find.text(MemoraCopy.primaryActionComplete).evaluate().isNotEmpty) {
+      await tester.tap(find.byKey(const Key('memora-user-primary-action')));
+      await tester.pumpAndSettle();
+    }
+    expect(find.text(MemoraCopy.primaryActionCorrect), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('memora-user-return-home')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('memora-user-home')), findsOneWidget);
   });
 
-  testWidgets('phone text scale 1.3 keeps routine copy readable', (
+  testWidgets('Pasatiempos / Quiero hablar placeholders are honest', (
     tester,
   ) async {
-    await pumpUser(tester, size: phoneSize, textScale: 1.3);
-    expect(find.textContaining('Rutina de mañana Demo'), findsWidgets);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('primary action meets large touch target', (tester) async {
     await pumpUser(tester, size: phoneSize);
-    final action = find.byKey(const Key('memora-user-primary-action'));
-    expect(tester.getSize(action).height, greaterThanOrEqualTo(48));
+
+    await tester.tap(
+      find.byKey(const Key('memora-user-home-tile-pasatiempos')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('memora-user-pasatiempos')), findsOneWidget);
+    expect(find.textContaining('aparecerán las actividades'), findsOneWidget);
+    expect(find.textContaining('llamada'), findsNothing);
+    expect(find.textContaining('emergencia'), findsNothing);
+    await tester.tap(find.byKey(const Key('memora-user-return-home')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const Key('memora-user-home-tile-quiero-hablar')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('memora-user-quiero-hablar')), findsOneWidget);
+    expect(find.textContaining('no se hace ninguna llamada'), findsOneWidget);
+    expect(find.textContaining('emergencia'), findsNothing);
+    expect(find.textContaining('éxito'), findsNothing);
+    await tester.tap(find.byKey(const Key('memora-user-return-home')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('memora-user-home')), findsOneWidget);
   });
 
-  testWidgets('empty and failed recovery states are accessible', (
+  testWidgets('sync failure does not rearrange home or block Mi día', (
     tester,
   ) async {
-    await pumpUser(tester, size: phoneSize, seed: false);
-    expect(find.byKey(const Key('memora-user-empty')), findsOneWidget);
-    expect(find.textContaining('No hay rutinas activas'), findsWidgets);
-
     final failedStore = InMemoryOfflineStore();
     failedStore.putRoutine(OfflineFixtures.morningRoutine);
     failedStore.putProgress(
@@ -145,29 +247,16 @@ void main() {
       seed: false,
       networkAvailable: true,
     );
-    expect(find.textContaining('No se pudo sincronizar'), findsOneWidget);
+
     expect(
-      find.byKey(const Key('memora-sync-recovery-action')),
+      find.byKey(const Key('memora-user-home-tile-mi-dia')),
       findsOneWidget,
     );
-  });
+    expect(find.textContaining('No se pudo sincronizar'), findsNothing);
+    expect(find.textContaining('conflicto'), findsNothing);
 
-  testWidgets('conflicted state exposes recovery action', (tester) async {
-    final store = InMemoryOfflineStore();
-    store.putRoutine(OfflineFixtures.morningRoutine);
-    store.putProgress(
-      OfflineFixtures.morningProgressPending.copyWith(
-        syncState: SyncState.conflicted,
-      ),
-    );
-    await pumpUser(
-      tester,
-      size: phoneSize,
-      store: store,
-      seed: false,
-      networkAvailable: true,
-    );
-    expect(find.textContaining('conflicto'), findsWidgets);
-    expect(find.text(MemoraCopy.recoveryReviewConflict), findsOneWidget);
+    await tester.tap(find.byKey(const Key('memora-user-home-tile-mi-dia')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('memora-user-primary-action')), findsOneWidget);
   });
 }

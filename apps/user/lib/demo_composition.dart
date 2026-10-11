@@ -113,7 +113,7 @@ final class UserDemoComposition {
 
   MemoraUserApp buildApp({
     bool autoload = false,
-    FeatureSection initialSection = FeatureSection.routines,
+    UserHomeDestination initialDestination = UserHomeDestination.home,
   }) {
     return MemoraUserApp(
       controller: controller,
@@ -122,7 +122,7 @@ final class UserDemoComposition {
       privacyController: privacyController,
       persona: SyntheticFixtures.amparoDemo,
       autoload: autoload,
-      initialSection: initialSection,
+      initialDestination: initialDestination,
     );
   }
 
