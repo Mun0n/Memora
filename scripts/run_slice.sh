@@ -137,6 +137,7 @@ fi
 
 if [[ "$REVIEW_REPAIR" -eq 1 ]]; then
   invoke DOMAIN "HUMAN_REVIEW_REPAIR: Read ${REPORT_REL}/human_review.md and audit.md. Repair only those DOMAIN-owned findings, preserve the accepted slice implementation, run focused checks, and update ${REPORT_REL}/domain.md."
+  invoke UI "HUMAN_REVIEW_REPAIR: Read ${REPORT_REL}/human_review.md and audit.md. Repair only those UI/app-owned findings, preserve unrelated accepted behavior, run focused checks, and update ${REPORT_REL}/ui.md."
 else
   invoke SUPERVISOR "Write ${REPORT_REL}/plan.md. Do not implement."
   invoke DOMAIN "Read plan.md. Implement only authorized domain/data/backend tasks, then write ${REPORT_REL}/domain.md."
@@ -163,9 +164,7 @@ while true; do
     exit 1
   fi
   invoke DOMAIN "Repair only DOMAIN-owned findings in audit.md for iteration $iteration."
-  if [[ "$REVIEW_REPAIR" -eq 0 ]]; then
-    invoke UI "Repair only UI-owned findings in audit.md for iteration $iteration."
-  fi
+  invoke UI "Repair only UI-owned findings in audit.md for iteration $iteration."
 done
 
 {

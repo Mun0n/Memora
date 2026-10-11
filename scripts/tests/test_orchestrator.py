@@ -60,7 +60,9 @@ class OrchestratorContracts(unittest.TestCase):
         self.assertIn("--review-repair", runner)
         self.assertIn("human_review.md", runner)
         self.assertIn("HUMAN_REVIEW_REPAIR", runner)
-        self.assertIn('if [[ "$REVIEW_REPAIR" -eq 0 ]]', runner)
+        review_block = runner[runner.index('if [[ "$REVIEW_REPAIR" -eq 1 ]]', runner.index("./scripts/validate.sh")) :]
+        self.assertIn('invoke DOMAIN "HUMAN_REVIEW_REPAIR:', review_block)
+        self.assertIn('invoke UI "HUMAN_REVIEW_REPAIR:', review_block)
 
     def test_mvp_runner_is_bounded_and_never_pushes(self):
         runner = (ROOT / "scripts/run_mvp.sh").read_text()
