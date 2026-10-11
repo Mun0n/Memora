@@ -14,10 +14,10 @@ Human approval is not required between those slices. The orchestrator must stop 
 failed audit after bounded repair, a safety stop, an unresolved product ambiguity, a
 toolchain failure or any request for credentials, deployment or real personal data.
 
-`scripts/run_slice.sh <slice-number>` remains available for focused repairs. Do not
-invoke `cursor-agent` or `agent` directly. Codex/Work may prepare specifications,
-inspect the repository and run local non-agent checks, but the human starts the MVP
-orchestrator from Terminal.
+`scripts/run_slice.sh <slice-number>` remains available for focused repairs and
+explicitly approved post-MVP product slices. Do not invoke `cursor-agent` or `agent`
+directly. Codex/Work may prepare specifications, inspect the repository and run local
+non-agent checks, but the human starts orchestration from Terminal.
 
 Before changing the repository, read `.agent/workflow.md`, the current `specs/SLICE_NN.md`, and the relevant documents under `docs/`.
 

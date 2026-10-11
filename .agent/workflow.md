@@ -7,8 +7,9 @@ local branch, executes the remaining approved MVP slices, validates and audits e
 slice, and creates a local checkpoint commit after each accepted slice. There is no
 provider fallback, push, deployment or cloud execution.
 
-`scripts/run_slice.sh` remains the lower-level entry point for dry runs and focused
-repairs. Codex/Work must not invoke or wait for Cursor; the human starts orchestration.
+`scripts/run_slice.sh` remains the lower-level entry point for dry runs, focused
+repairs and explicitly approved post-MVP product slices. Codex/Work must not invoke or
+wait for Cursor; the human starts orchestration.
 
 ## Lifecycle
 

@@ -27,6 +27,13 @@ are implemented, tested, audited and checkpointed automatically by `run_mvp.sh`.
   with four fixed full-area choices — Mi día, Pasatiempos, Quiero hablar and Recuerdos —
   and reduce each destination to one clear task plus an unmistakable return home.
 
+## Post-MVP product evolution
+
+- **Slice 8 — Family-configured pastimes:** replace the `Pasatiempos` placeholder with
+  a small ordered set of familiar, text-first activity cards configured by authorized
+  caregivers on the web and available to the supported person offline. Calling,
+  contacts, external content and completion tracking remain out of scope.
+
 Human review occurs after the integrated Slice 6 candidate and before deployment or
 real-data use. Beta release still requires tested RLS/storage policies, offline
 recovery, privacy operations, accessible critical flows and legal/clinical wording

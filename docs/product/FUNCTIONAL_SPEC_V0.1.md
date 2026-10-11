@@ -24,6 +24,8 @@ Memora does not promise to prevent, treat or slow Alzheimer’s disease. It is n
 - Today’s routine and simple, one-step activity guidance.
 - Each routine step has a clear pending or completed state and can be corrected.
 - Familiar photographs and memories supplied by the family.
+- A small set of familiar pastime cards configured by caregivers, cached for offline
+  use and presented without scores, streaks or claims that an activity was completed.
 - Optional orientation cues and gentle reminders configured by the caregiver.
 - No advertisements, engagement loops, dense dashboards or hidden gestures.
 - Clear exit/recovery paths, large touch targets, high contrast and plain language.
@@ -33,6 +35,9 @@ Memora does not promise to prevent, treat or slow Alzheimer’s disease. It is n
 
 - Configure and adjust routines and reminders.
 - Add, edit and organize photographs, captions and memory entries.
+- Create, edit, order, activate and archive short pastime cards for the supported
+  person. Pastimes contain a title and one brief instruction; they do not launch
+  external services or imply monitoring.
 - Record weight and blood-pressure readings when the family chooses to use those
   modules. Memora stores entries but never interprets them or recommends action.
 - See sync freshness and unresolved conflicts without needing technical knowledge.
@@ -65,6 +70,12 @@ the responsive web application from a phone, tablet or desktop browser.
 5. Non-clinical logs: weight and blood pressure.
 6. Family contribution and approval.
 7. Sync status, audit history and privacy controls.
+
+## Approved post-MVP extension
+
+- Family-configured pastime cards: up to six active, short, text-first activity
+  suggestions cached for offline use. This extension does not change the MVP
+  completion scenario below.
 
 ## MVP completion scenario
 
