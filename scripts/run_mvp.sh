@@ -5,10 +5,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 START_SLICE="${1:-3}"
-MVP_SLICES=(3 4 5 6)
+MVP_SLICES=(3 4 5 6 7)
 
-[[ "$START_SLICE" =~ ^[3-6]$ ]] || {
-  echo "Usage: ./scripts/run_mvp.sh [3|4|5|6]" >&2
+[[ "$START_SLICE" =~ ^[3-7]$ ]] || {
+  echo "Usage: ./scripts/run_mvp.sh [3|4|5|6|7]" >&2
   exit 2
 }
 
@@ -33,7 +33,7 @@ esac
 
 echo "MEMORA AUTONOMOUS MVP"
 echo "Branch: $branch"
-echo "Slices: 3 → 4 → 5 → 6 (starting at $START_SLICE)"
+echo "Slices: 3 → 4 → 5 → 6 → 7 (starting at $START_SLICE)"
 echo "The run creates local checkpoint commits and never pushes or deploys."
 
 ./scripts/validate.sh

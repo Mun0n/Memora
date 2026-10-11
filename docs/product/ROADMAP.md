@@ -23,6 +23,9 @@ are implemented, tested, audited and checkpointed automatically by `run_mvp.sh`.
 - **Slice 6 — Sync integration and MVP hardening:** authenticated family-space sync,
   conflict recovery, privacy controls, end-to-end fictional demo, accessibility,
   threat-model closure and release-candidate audit.
+- **Slice 7 — Supported-person home simplification:** replace the feature dashboard
+  with four fixed full-area choices — Mi día, Pasatiempos, Quiero hablar and Recuerdos —
+  and reduce each destination to one clear task plus an unmistakable return home.
 
 Human review occurs after the integrated Slice 6 candidate and before deployment or
 real-data use. Beta release still requires tested RLS/storage policies, offline

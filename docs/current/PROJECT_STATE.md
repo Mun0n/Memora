@@ -1,6 +1,6 @@
 # Current project state
 
-- Phase: Slice 6 UI — demo sync/privacy/session composition + E2E scenario tests. QA next → AUDIT → `MVP_REVIEW`.
+- Phase: MVP candidate accepted; Slice 7 product-feedback revision ready for orchestration.
 - Implemented product functionality: caregiver/family web create/edit/order/activate/archive routines + quiet-hours reminder configure; memory manage/contribute/approve/archive + media retry chrome; weight/BP entry + chronological history with adjacent disclaimer; Help/About disclaimer; supported-person home with date/time orientation, today's active routines, one primary step action, approved-memory viewing (offline-cached; failed media never traps nav). Slice 6 UI: both shells compose `SessionBoundary.demo` + `FakeSupabaseRemote` + `SyncEngine` by default (no network/remote env); sync push/pull + caregiver conflict resolve; privacy export/deletion/session revoke contracts; Spanish-first chrome.
 - Shared packages: `packages/domain` (capabilities lockstep, `SyncEngine`, privacy/session ports, care policies), `packages/data` (in-memory adapters, `FakeSupabaseRemote`, sync bridge, audit/privacy stores), `packages/ui` (sync/privacy/session presentation + section nav).
 - App shells: `apps/user` + `apps/web` wire demo adapters + fake remote + session boundary; E2E scenario widget tests cover caregiver web + supported-person phone/tablet paths from `docs/current/MVP_E2E_SCENARIO.md`.
@@ -10,7 +10,8 @@
 - Data: fictional development data only (`Amparo Demo`, `Elena Demo`, `Familia Ejemplo`, `Casa Demo B`, reserved Slice-2–6 UUIDs); no auth credentials or production endpoints.
 - External services: none connected. Credentials injectable by **names only**. Reminder UI convenience prompts only. No LLM.
 - Approved MVP: accessible supported-person Android phone/tablet app; responsive caregiver/family web; routines, reminders, memories, weight/blood-pressure recording, local persistence and synchronization. No native caregiver app or meal tracking.
-- Next work: Slice 6 QA → AUDIT → stop at `MVP_REVIEW` (no deploy/push).
+- Next work: Slice 7 simplifies the supported-person home after first-device review;
+  caregiver/family web and backend behavior remain unchanged.
 
 ## Human handoff — run fictional demo mode
 

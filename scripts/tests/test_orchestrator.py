@@ -14,7 +14,7 @@ class OrchestratorContracts(unittest.TestCase):
             "agents/UI.md", "agents/QA.md", "agents/AUDITOR.md", "specs/SLICE_01.md",
             "specs/SLICE_02.md", "tool/run_rls_tests.sh",
             "specs/SLICE_03.md", "specs/SLICE_04.md", "specs/SLICE_05.md",
-            "specs/SLICE_06.md", "scripts/run_mvp.sh",
+            "specs/SLICE_06.md", "specs/SLICE_07.md", "scripts/run_mvp.sh",
         ]
         self.assertEqual([], [p for p in required if not (ROOT / p).is_file()])
 
@@ -64,7 +64,7 @@ class OrchestratorContracts(unittest.TestCase):
 
     def test_mvp_runner_is_bounded_and_never_pushes(self):
         runner = (ROOT / "scripts/run_mvp.sh").read_text()
-        self.assertIn("3 4 5 6", runner)
+        self.assertIn("3 4 5 6 7", runner)
         self.assertIn("run_slice.sh", runner)
         self.assertIn("git commit", runner)
         self.assertIn("START_SLICE", runner)

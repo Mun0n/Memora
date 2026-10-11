@@ -14,7 +14,13 @@ Memora does not promise to prevent, treat or slow Alzheimer’s disease. It is n
 ### Supported-person experience — Android tablet and phone
 
 - One accessible Flutter application adapts to Android tablets and phones.
-- Stable home layout with date, time, greeting and a small set of large actions.
+- The home screen is a fixed two-by-two grid that fills the usable area with exactly
+  four large actions in stable positions: `Mi día`, `Pasatiempos`, `Quiero hablar`
+  and `Recuerdos`.
+- Date, time and greeting may appear as a short orientation header, but must never
+  displace the four actions or turn the home screen into a dashboard.
+- Sync, privacy, account, diagnostic and technical status controls never appear in
+  the supported person's primary navigation.
 - Today’s routine and simple, one-step activity guidance.
 - Each routine step has a clear pending or completed state and can be corrected.
 - Familiar photographs and memories supplied by the family.
