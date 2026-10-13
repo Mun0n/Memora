@@ -41,6 +41,11 @@ are implemented, tested, audited and checkpointed automatically by `run_mvp.sh`.
   with a small set of caregiver-authored familiar topics. The app offers calm,
   turn-based invitations to speak without testing or correcting memory and without
   retaining, analyzing or reporting what the supported person says.
+- **Slice 11 — Enriched family conversation context:** let caregivers attach one
+  optional short cue and approved family-memory reference to each authored invitation.
+  The supported person reveals it explicitly with `Dame una idea`; Memora never chooses
+  context from their answer, generates content or records help use. Calls and contacts
+  remain out of scope.
 
 Human review occurs after the integrated Slice 6 candidate and before deployment or
 real-data use. Beta release still requires tested RLS/storage policies, offline

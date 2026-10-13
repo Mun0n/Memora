@@ -43,10 +43,11 @@
   caregiver/family web; routines, reminders, memories, weight/blood-pressure
   recording, local persistence and synchronization. No native caregiver app or
   meal tracking.
-- Next work: define a later slice only after explicit product direction. Richer
-  conversational context is a recorded product opportunity, not a Slice 10 blocker.
-  No chatbot, LLM, cloud speech, telephone/contact feature, deployment, real-data
-  connection or automatic Slice 11 is authorized.
+- Next work: Slice 11 enriched family conversation context is specified and approved
+  for focused local orchestration. Each prompt may receive one optional authored cue
+  and approved-memory reference, revealed only through explicit `Dame una idea` input.
+  No chatbot, LLM, semantic response interpretation, cloud speech, telephone/contact
+  feature, deployment, real-data connection or automatic Slice 12 is authorized.
 
 ## Human handoff — run fictional demo mode
 
