@@ -1,12 +1,10 @@
 # Current project state
 
-- Phase: Slice 7 accepted by human review on 2026-10-11. Slice 8 pastime contracts
-  + presentation + human-review repair through cycle 5: the Android reverse-bridge
-  launcher now supports its documented zero-argument invocation on macOS Bash 3.2,
-  preserves optional Flutter arguments and remains limited to `tcp:17808`. Full
-  `./scripts/validate.sh` passes with the launcher proof inside the gate; a fresh
-  independent audit covering cycle 5 remains before approval. Slice 6/7 baseline
-  remains for non-pastime flows.
+- Phase: Slice 8 accepted by human review on 2026-10-13 after five repair cycles.
+  Family-configured pastimes, cross-client fictional demo sync and the physical-Android
+  reverse-bridge launcher form the current approved post-MVP baseline. The launcher
+  supports its documented zero-argument invocation on macOS Bash 3.2, preserves
+  optional Flutter arguments and remains limited to `tcp:17808`.
 - Implemented product functionality: caregiver/family web create/edit/order/activate/archive routines + quiet-hours reminder configure; memory manage/contribute/approve/archive + media retry chrome; weight/BP entry + chronological history with adjacent disclaimer; Help/About disclaimer; **Slice 8** caregiver web `Pasatiempos` section (create/edit/reorder/activate/archive, ≤6 active, invalid draft preserved) and supported-person active list → calm detail (title + instruction only; drafts/archived excluded; no completion claim). Supported-person shell (Slice 7): fixed two-by-two home — `Mi día`, `Pasatiempos`, `Quiero hablar`, `Recuerdos` — with short date/time greeting header; no home scroll, feature chips, sync/privacy/session/Demo chrome or routine lists on home. `Mi día` shows one current/next step + complete/correct. `Recuerdos` reuses approved cached memories (failed media never traps). `Quiero hablar` remains an honest placeholder. Domain exposes `ConfigurePastime`, `PastimeRepository`, outbox `pastime`, and SQL `pastimes` + `viewPastimes`/`editPastimes`. Sync/privacy contracts still load behind the presentation via demo composition. Slice 6 UI: caregiver web still composes `SessionBoundary.demo` + `FakeSupabaseRemote` + `SyncEngine` by default (no network/remote env); sync push/pull + caregiver conflict resolve; privacy export/deletion/session revoke contracts; Spanish-first chrome.
 - Shared packages: `packages/domain` (capabilities lockstep incl. pastime wires, `ConfigurePastime`, `SyncEngine`, privacy/session ports, care policies), `packages/data` (in-memory adapters incl. pastimes, `FakeSupabaseRemote`, durable `LocalDemoSyncTransport`/`LocalDemoSyncServer` loopback shared demo with atomic snapshot + `LocalDemoFictionalBaseline` / `LocalDemoSharedBootstrap`, sync bridge, audit/privacy stores), `packages/ui` (user four-tile home + destinations incl. pastimes list/detail; family sync/privacy/session + `FeatureSection.pastimes` configure).
 - App shells: `apps/user` + `apps/web` select `createDemoSyncTransport` (shared
@@ -25,15 +23,15 @@
 - Validation: Slice 7 full `./scripts/validate.sh` PASS; independent audit
   `PASS_WITH_NOTES`; human product review APPROVED. Slice 8 cycles 1–5 landed;
   full validation passes, including the Bash 3.2 zero-argument launcher and optional
-  argument-forwarding proof. Fresh cycle-5 audit and human approval are next.
+  argument-forwarding proof. Fresh independent audit covers cycles 1–5 with
+  `PASS_WITH_NOTES`; human product review APPROVED on 2026-10-13.
 - Data: fictional development data only (`Amparo Demo`, `Elena Demo`, `Familia Ejemplo`, `Casa Demo B`, reserved Slice-2–8 UUIDs); no auth credentials or production endpoints.
 - External services: none connected. Credentials injectable by **names only**. Reminder UI convenience prompts only. No LLM.
 - Approved MVP: accessible supported-person Android phone/tablet app; responsive caregiver/family web; routines, reminders, memories, weight/blood-pressure recording, local persistence and synchronization. No native caregiver app or meal tracking.
-- Next work: fresh QA/audit through the Slice 8 review-repair orchestrator, explicitly
-  covering cycle 5, followed by human approval/checkpoint. Human verification must
-  freshly restart authority, web, and `./tool/run_user_android_local_demo.sh` together.
-  Slice 9 is specified but must not start until Slice 8 is accepted and the implementation
-  tree is clean. `Quiero hablar`, deployment and real-data connection remain outside
+- Next work: Slice 9 voice guidance is specified and may be started explicitly through
+  `./scripts/run_slice.sh 9`. It adds deterministic, on-device help for choosing among
+  the four supported-person home destinations; no chatbot, LLM or cloud speech service
+  is authorized. `Quiero hablar`, deployment and real-data connection remain outside
   this authorization.
 
 ## Human handoff — run fictional demo mode
