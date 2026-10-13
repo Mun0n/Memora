@@ -33,6 +33,14 @@ are implemented, tested, audited and checkpointed automatically by `run_mvp.sh`.
   a small ordered set of familiar, text-first activity cards configured by authorized
   caregivers on the web and available to the supported person offline. Calling,
   contacts, external content and completion tracking remain out of scope.
+- **Slice 9 — Voice guidance for choosing:** add an explicit, on-device `Ayúdame`
+  flow that deterministically recommends at most one existing destination and requires
+  confirmation before navigation. No transcript is retained and no cloud speech or LLM
+  is used.
+- **Slice 10 — Family-guided conversations:** replace the `Quiero hablar` placeholder
+  with a small set of caregiver-authored familiar topics. The app offers calm,
+  turn-based invitations to speak without testing or correcting memory and without
+  retaining, analyzing or reporting what the supported person says.
 
 Human review occurs after the integrated Slice 6 candidate and before deployment or
 real-data use. Beta release still requires tested RLS/storage policies, offline

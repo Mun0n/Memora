@@ -33,9 +33,12 @@
 - Data: fictional development data only (`Amparo Demo`, `Elena Demo`, `Familia Ejemplo`, `Casa Demo B`, reserved Slice-2–8 UUIDs); no auth credentials or production endpoints.
 - External services: none connected. Credentials injectable by **names only**. Reminder UI convenience prompts only. No LLM.
 - Approved MVP: accessible supported-person Android phone/tablet app; responsive caregiver/family web; routines, reminders, memories, weight/blood-pressure recording, local persistence and synchronization. No native caregiver app or meal tracking.
-- Next work: define Slice 10 only after explicit product direction. No chatbot,
-  LLM or cloud speech service is authorized. `Quiero hablar` calling, deployment
-  and real-data connection remain outside this authorization.
+- Next work: Slice 10 is defined as family-guided conversations under
+  `specs/SLICE_10.md` and awaits explicit orchestration. Authorized caregivers prepare
+  familiar topics; the supported-person app offers deterministic, turn-based,
+  on-device conversation without retaining or evaluating answers. No chatbot, LLM,
+  cloud speech, telephone/contact feature, deployment or real-data connection is
+  authorized.
 
 ## Human handoff — run fictional demo mode
 

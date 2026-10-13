@@ -76,6 +76,11 @@ the responsive web application from a phone, tablet or desktop browser.
 - Family-configured pastime cards: up to six active, short, text-first activity
   suggestions cached for offline use. This extension does not change the MVP
   completion scenario below.
+- Family-guided conversation topics: up to six active caregiver-authored topics with a
+  reassuring introduction, one to five gentle prompts and a closing, cached for offline
+  use. The supported-person app conducts a deterministic turn-based conversation using
+  on-device speech only. It does not test or correct memory, retain answers, score
+  communication or make therapeutic claims.
 
 ## MVP completion scenario
 
