@@ -27,6 +27,10 @@ if [[ -f "$ROOT/tool/check_package_boundaries.py" ]]; then
   python3 "$ROOT/tool/check_package_boundaries.py"
 fi
 
+if [[ -x "$ROOT/tool/test_run_user_android_local_demo.sh" ]]; then
+  /bin/bash "$ROOT/tool/test_run_user_android_local_demo.sh"
+fi
+
 if [[ -x "$ROOT/tool/run_rls_tests.sh" ]]; then
   "$ROOT/tool/run_rls_tests.sh"
 fi

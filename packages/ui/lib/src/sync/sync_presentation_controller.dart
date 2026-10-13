@@ -111,6 +111,55 @@ final class SyncPresentationController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Push without requiring Sync chrome.
+  ///
+  /// Returns `false` when the transport fails or reports failed rows so callers
+  /// can offer an observable retry without opening Sync chrome.
+  Future<bool> quietPush() async {
+    if (busy) {
+      return false;
+    }
+    busy = true;
+    notifyListeners();
+    var ok = false;
+    try {
+      lastPush = await _engine.pushPending();
+      unresolved = await _conflicts.listUnresolved(actor.familySpaceId);
+      ok = (lastPush?.failed ?? 0) == 0;
+    } catch (_) {
+      // Local writes remain; caller surfaces a plain-language retry path.
+      ok = false;
+    }
+    busy = false;
+    errorMessage = null;
+    notifyListeners();
+    return ok;
+  }
+
+  /// Pull without Sync chrome; failures leave the local cache untouched.
+  ///
+  /// Returns `false` on transport failure so shared-demo chrome can offer retry.
+  Future<bool> quietPull() async {
+    if (busy) {
+      return false;
+    }
+    busy = true;
+    notifyListeners();
+    var ok = false;
+    try {
+      lastPull = await _engine.pull(familySpaceId: actor.familySpaceId);
+      unresolved = await _conflicts.listUnresolved(actor.familySpaceId);
+      ok = true;
+    } catch (_) {
+      // Retain cached aggregates; never block the four-tile home.
+      ok = false;
+    }
+    busy = false;
+    errorMessage = null;
+    notifyListeners();
+    return ok;
+  }
+
   Future<void> recover() async {
     if (unresolved.isNotEmpty) {
       await load();

@@ -50,7 +50,8 @@ begin
         'media_metadata',
         'weight_observations',
         'blood_pressure_observations',
-        'audit_events'
+        'audit_events',
+        'pastimes'
       )
   loop
     if not (r.rls and r.forced) then
@@ -162,6 +163,35 @@ insert into public.audit_events (
   'req-demo-export-1'
 );
 
+insert into public.pastimes (
+  id, family_space_id, title, instruction, display_order,
+  lifecycle_status, row_version
+) values (
+  '01932f00-0008-7000-8000-000000000801',
+  '01932f00-0002-7000-8000-0000000000a1',
+  'Radio Demo',
+  'Escuchar la radio Ejemplo un rato en el sillon.',
+  0,
+  'active',
+  1
+), (
+  '01932f00-0008-7000-8000-000000000802',
+  '01932f00-0002-7000-8000-0000000000a1',
+  'Puzzle Ejemplo',
+  'Hacer un puzzle sencillo en la mesa Demo.',
+  1,
+  'draft',
+  1
+), (
+  '01932f00-0008-7000-8000-000000000803',
+  '01932f00-0002-7000-8000-0000000000a1',
+  'Fotos Ejemplo (archivado)',
+  'Mirar el album familiar Demo con calma.',
+  2,
+  'archived',
+  1
+);
+
 -- Primary: full product visibility in own family; none in Casa Demo B
 do $$
 declare
@@ -178,6 +208,9 @@ begin
 
   select count(*) into n from public.memories;
   perform pg_temp.assert_true('primary_sees_all_memories_in_space', n = 2);
+
+  select count(*) into n from public.pastimes;
+  perform pg_temp.assert_true('primary_sees_all_pastimes_in_space', n = 3);
 
   select count(*) into n from public.media_metadata;
   perform pg_temp.assert_true('primary_sees_media_metadata', n = 1);
@@ -248,6 +281,14 @@ begin
   select count(*) into n from public.weight_observations;
   perform pg_temp.assert_true('supported_cannot_view_weight', n = 0);
 
+  select count(*) into n from public.pastimes
+  where lifecycle_status = 'active';
+  perform pg_temp.assert_true('supported_views_active_pastimes', n = 1);
+
+  select count(*) into n from public.pastimes
+  where lifecycle_status in ('draft', 'archived');
+  perform pg_temp.assert_true('supported_hides_draft_archived_pastimes', n = 0);
+
   begin
     insert into public.routines (
       id, family_space_id, title, steps, lifecycle_status
@@ -265,6 +306,29 @@ begin
     when others then
       if sqlstate = '42501' then
         perform pg_temp.assert_true('supported_cannot_insert_routine', true);
+      else
+        raise;
+      end if;
+  end;
+
+  begin
+    insert into public.pastimes (
+      id, family_space_id, title, instruction, display_order, lifecycle_status
+    ) values (
+      '01932f00-0008-7000-8000-0000000008d1',
+      '01932f00-0002-7000-8000-0000000000a1',
+      'Hack Pastime',
+      'No debe insertarse desde supported person.',
+      9,
+      'active'
+    );
+    raise exception 'expected supported insert pastime to fail';
+  exception
+    when insufficient_privilege then
+      perform pg_temp.assert_true('supported_cannot_insert_pastime', true);
+    when others then
+      if sqlstate = '42501' then
+        perform pg_temp.assert_true('supported_cannot_insert_pastime', true);
       else
         raise;
       end if;
@@ -318,6 +382,32 @@ begin
   select count(*) into n from public.routines
   where family_space_id = '01932f00-0002-7000-8000-0000000000b2';
   perform pg_temp.assert_true('contributor_no_cross_family_routines', n = 0);
+
+  select count(*) into n from public.pastimes;
+  perform pg_temp.assert_true('contributor_sees_no_pastimes', n = 0);
+
+  begin
+    insert into public.pastimes (
+      id, family_space_id, title, instruction, display_order, lifecycle_status
+    ) values (
+      '01932f00-0008-7000-8000-0000000008e1',
+      '01932f00-0002-7000-8000-0000000000a1',
+      'Hack Contributor',
+      'Contributor no configura pastimes.',
+      9,
+      'draft'
+    );
+    raise exception 'expected contributor insert pastime to fail';
+  exception
+    when insufficient_privilege then
+      perform pg_temp.assert_true('contributor_cannot_insert_pastime', true);
+    when others then
+      if sqlstate = '42501' then
+        perform pg_temp.assert_true('contributor_cannot_insert_pastime', true);
+      else
+        raise;
+      end if;
+  end;
 end $$;
 
 -- Revoked / invited / outsider / anon denial on product tables
@@ -333,6 +423,8 @@ begin
   perform pg_temp.assert_true('revoked_sees_no_memories', n = 0);
   select count(*) into n from public.weight_observations;
   perform pg_temp.assert_true('revoked_sees_no_weight', n = 0);
+  select count(*) into n from public.pastimes;
+  perform pg_temp.assert_true('revoked_sees_no_pastimes', n = 0);
 end $$;
 
 do $$
@@ -412,6 +504,9 @@ begin
 
   select count(*) into n from public.weight_observations;
   perform pg_temp.assert_true('space_b_sees_no_ejemplo_weight', n = 0);
+
+  select count(*) into n from public.pastimes;
+  perform pg_temp.assert_true('space_b_sees_no_ejemplo_pastimes', n = 0);
 end $$;
 
 -- Capability spot-checks for new wires
@@ -451,6 +546,77 @@ begin
     public.memora_has_capability(
       '01932f00-0002-7000-8000-0000000000a1',
       'recordRoutineProgress'
+    )
+  );
+  perform pg_temp.assert_true(
+    'capability_supported_view_pastimes',
+    public.memora_has_capability(
+      '01932f00-0002-7000-8000-0000000000a1',
+      'viewPastimes'
+    )
+  );
+  perform pg_temp.assert_true(
+    'capability_supported_no_edit_pastimes',
+    not public.memora_has_capability(
+      '01932f00-0002-7000-8000-0000000000a1',
+      'editPastimes'
+    )
+  );
+end $$;
+
+-- Caregiver can insert/update pastime; six-active limit enforced
+do $$
+begin
+  set local role authenticated;
+  perform pg_temp.claim_as('01932f00-0002-7000-8000-000000000102');
+
+  insert into public.pastimes (
+    id, family_space_id, title, instruction, display_order, lifecycle_status
+  ) values (
+    '01932f00-0008-7000-8000-0000000008c1',
+    '01932f00-0002-7000-8000-0000000000a1',
+    'Lectura Demo',
+    'Leer un cuento corto Ejemplo en voz alta.',
+    3,
+    'draft'
+  );
+  perform pg_temp.assert_true('caregiver_can_insert_pastime', true);
+
+  update public.pastimes
+  set lifecycle_status = 'active', row_version = row_version + 1
+  where id = '01932f00-0008-7000-8000-0000000008c1';
+  perform pg_temp.assert_true('caregiver_can_activate_pastime', true);
+end $$;
+
+do $$
+begin
+  set local role authenticated;
+  perform pg_temp.claim_as('01932f00-0002-7000-8000-000000000101');
+  perform pg_temp.assert_true(
+    'capability_primary_edit_pastimes',
+    public.memora_has_capability(
+      '01932f00-0002-7000-8000-0000000000a1',
+      'editPastimes'
+    )
+  );
+end $$;
+
+do $$
+begin
+  set local role authenticated;
+  perform pg_temp.claim_as('01932f00-0002-7000-8000-000000000103');
+  perform pg_temp.assert_true(
+    'capability_contributor_no_edit_pastimes',
+    not public.memora_has_capability(
+      '01932f00-0002-7000-8000-0000000000a1',
+      'editPastimes'
+    )
+  );
+  perform pg_temp.assert_true(
+    'capability_contributor_no_view_pastimes',
+    not public.memora_has_capability(
+      '01932f00-0002-7000-8000-0000000000a1',
+      'viewPastimes'
     )
   );
 end $$;

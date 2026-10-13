@@ -2,18 +2,40 @@ import 'package:data/data.dart';
 import 'package:domain/domain.dart';
 import 'package:ui/ui.dart';
 
-/// Wires fictional in-memory adapters + fake remote for supported-person shell.
+/// Wires fictional in-memory adapters + demo sync transport for the user shell.
+///
+/// Default: private in-process [FakeSupabaseRemote] (isolated local demo).
+/// With `--dart-define=MEMORA_LOCAL_DEMO_SYNC_URL=...` (or [localDemoSyncUrl]):
+/// [LocalDemoSyncTransport] against the shared loopback demo server.
 final class UserDemoComposition {
   UserDemoComposition({
     InMemoryOfflineStore? store,
     DateTime? clock,
-    bool networkAvailable = false,
+    bool? networkAvailable,
     this.sessionBoundary = SessionBoundary.demo,
+    SyncTransportPort? transport,
     FakeSupabaseRemote? remote,
+    String? localDemoSyncUrl,
+    bool? sharedLocalDemoTransport,
   }) : store = store ?? InMemoryOfflineStore(),
-       remote = remote ?? FakeSupabaseRemote() {
+       transport =
+           transport ??
+           remote ??
+           createDemoSyncTransport(baseUrl: localDemoSyncUrl),
+       usesSharedLocalDemoTransport =
+           sharedLocalDemoTransport ??
+           ((transport ?? remote) is LocalDemoSyncTransport ||
+               ((transport ?? remote) == null &&
+                   isSharedLocalDemoTransportConfigured(
+                     baseUrl: localDemoSyncUrl,
+                   ))) {
+    final resolvedNetwork = networkAvailable ?? usesSharedLocalDemoTransport;
+    final scope = usesSharedLocalDemoTransport
+        ? DemoDataScope.sharedLocalDemo
+        : DemoDataScope.isolatedLocal;
     routines = InMemoryRoutineRepository(this.store);
     progress = InMemoryRoutineProgressRepository(this.store);
+    pastimes = InMemoryPastimeRepository(this.store);
     memories = InMemoryMemoryRepository(this.store);
     conflicts = InMemoryConflictStore();
     audit = InMemoryAuditStore();
@@ -21,7 +43,7 @@ final class UserDemoComposition {
     bridge = OfflineSyncBridge(this.store);
     engine = SyncEngine(
       outbox: this.store.outbox,
-      transport: this.remote,
+      transport: this.transport,
       conflicts: conflicts,
       payloadLoader: bridge,
       applyHandler: bridge,
@@ -38,12 +60,18 @@ final class UserDemoComposition {
       progress: progress,
       localDate: OfflineFixtures.demoLocalDate,
       clock: clock ?? DateTime(2026, 10, 10, 9, 30),
-      networkAvailable: networkAvailable,
+      networkAvailable: resolvedNetwork,
     );
     memoryController = UserMemoryController(
       actor: IdentityFixtures.amparoSupportedMembership,
       memories: memories,
-      networkAvailable: networkAvailable,
+      networkAvailable: resolvedNetwork,
+    );
+    pastimeController = UserPastimeController(
+      actor: IdentityFixtures.amparoSupportedMembership,
+      pastimes: pastimes,
+      networkAvailable: resolvedNetwork,
+      demoDataScope: scope,
     );
     syncController = SyncPresentationController(
       actor: IdentityFixtures.amparoSupportedMembership,
@@ -51,6 +79,7 @@ final class UserDemoComposition {
       conflicts: conflicts,
       sessionBoundary: sessionBoundary,
     );
+    pastimeController.quietRemotePull = syncController.quietPull;
     privacyController = PrivacyPresentationController(
       actor: IdentityFixtures.amparoSupportedMembership,
       privacy: privacy,
@@ -60,10 +89,12 @@ final class UserDemoComposition {
   }
 
   final InMemoryOfflineStore store;
-  final FakeSupabaseRemote remote;
+  final SyncTransportPort transport;
+  final bool usesSharedLocalDemoTransport;
   final SessionBoundary sessionBoundary;
   late final InMemoryRoutineRepository routines;
   late final InMemoryRoutineProgressRepository progress;
+  late final InMemoryPastimeRepository pastimes;
   late final InMemoryMemoryRepository memories;
   late final InMemoryConflictStore conflicts;
   late final InMemoryAuditStore audit;
@@ -73,13 +104,20 @@ final class UserDemoComposition {
   late final PrivacyWorkflow privacy;
   late final UserRoutineController controller;
   late final UserMemoryController memoryController;
+  late final UserPastimeController pastimeController;
   late final SyncPresentationController syncController;
   late final PrivacyPresentationController privacyController;
   var _conflictSeq = 0;
 
   static const String demoSessionId = '01932f00-0006-7000-8000-000000000690';
 
+  FakeSupabaseRemote? get fakeRemote =>
+      transport is FakeSupabaseRemote ? transport as FakeSupabaseRemote : null;
+
   /// Seeds Demo/Ejemplo morning routine + approved garden memory + demo session.
+  ///
+  /// Pastime fixtures are seeded only in isolated mode. Shared mode reconciles
+  /// from the loopback authority so private rows cannot masquerade as remote.
   Future<void> seedDemoFixtures() async {
     await routines.save(
       routine: OfflineFixtures.morningRoutine,
@@ -100,6 +138,10 @@ final class UserDemoComposition {
         'demo-memory-save-01932f00-0005-7000-8000-000000000501',
       ),
     );
+    await LocalDemoSharedBootstrap.seedPastimeFixturesIfIsolated(
+      pastimes: pastimes,
+      sharedLocalDemo: usesSharedLocalDemoTransport,
+    );
     privacyStore.seedSession(
       SessionDescriptor(
         id: demoSessionId,
@@ -118,17 +160,46 @@ final class UserDemoComposition {
     return MemoraUserApp(
       controller: controller,
       memoryController: memoryController,
+      pastimeController: pastimeController,
       syncController: syncController,
       privacyController: privacyController,
       persona: SyntheticFixtures.amparoDemo,
       autoload: autoload,
       initialDestination: initialDestination,
+      demoDataScope: usesSharedLocalDemoTransport
+          ? DemoDataScope.sharedLocalDemo
+          : DemoDataScope.isolatedLocal,
+      enableQuietRemotePull: usesSharedLocalDemoTransport,
     );
   }
 
+  /// Reconciles shared-demo pastimes from the authority before controllers load.
+  Future<void> reconcileSharedDemoIfNeeded() async {
+    if (!usesSharedLocalDemoTransport) {
+      return;
+    }
+    final t = transport;
+    try {
+      if (t is LocalDemoSyncTransport) {
+        await LocalDemoSharedBootstrap.reconcileFromAuthority(
+          engine: engine,
+          transport: t,
+        );
+      } else {
+        await engine.pull(
+          familySpaceId: IdentityFixtures.familiaEjemploSpaceId,
+        );
+      }
+    } catch (_) {
+      // Keep any local cache; destination pull retains cache on failure.
+    }
+  }
+
   Future<void> load() async {
+    await reconcileSharedDemoIfNeeded();
     await controller.load();
     await memoryController.load();
+    await pastimeController.load();
     await syncController.load();
     await privacyController.load();
   }

@@ -1,15 +1,21 @@
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 
+import '../demo/demo_data_scope.dart';
 import '../l10n/memora_copy.dart';
 import '../theme/memora_theme.dart';
 import 'sync_presentation_controller.dart';
 
 /// Sync push/pull + conflict recovery surface (Spanish plain language).
 class SyncStatusPage extends StatelessWidget {
-  const SyncStatusPage({super.key, required this.controller});
+  const SyncStatusPage({
+    super.key,
+    required this.controller,
+    this.demoDataScope = DemoDataScope.isolatedLocal,
+  });
 
   final SyncPresentationController controller;
+  final DemoDataScope demoDataScope;
 
   @override
   Widget build(BuildContext context) {
@@ -30,8 +36,22 @@ class SyncStatusPage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              MemoraCopy.syncSectionBody,
+              demoDataScope == DemoDataScope.sharedLocalDemo
+                  ? MemoraCopy.syncSectionBodyShared
+                  : MemoraCopy.syncSectionBodyIsolated,
               style: textTheme.bodyLarge?.copyWith(fontSize: 17),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              demoDataScope == DemoDataScope.sharedLocalDemo
+                  ? MemoraCopy.sharedLocalDemoNotice
+                  : MemoraCopy.isolatedLocalDemoNotice,
+              key: Key(
+                demoDataScope == DemoDataScope.sharedLocalDemo
+                    ? 'memora-shared-local-demo'
+                    : 'memora-isolated-local-demo',
+              ),
+              style: textTheme.bodyMedium?.copyWith(fontSize: 16),
             ),
             const SizedBox(height: 12),
             Text(

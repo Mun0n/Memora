@@ -18,6 +18,7 @@ abstract final class FamilyAccessPolicy {
           FamilyCapability.recordRoutineProgress,
           FamilyCapability.viewReminders,
           FamilyCapability.viewApprovedMemories,
+          FamilyCapability.viewPastimes,
         },
         FamilyRole.primaryCaregiver: {
           FamilyCapability.viewFamilySpace,
@@ -34,6 +35,8 @@ abstract final class FamilyAccessPolicy {
           FamilyCapability.viewObservations,
           FamilyCapability.recordObservations,
           FamilyCapability.resolveSyncConflicts,
+          FamilyCapability.viewPastimes,
+          FamilyCapability.editPastimes,
         },
         FamilyRole.caregiver: {
           FamilyCapability.viewFamilySpace,
@@ -48,6 +51,8 @@ abstract final class FamilyAccessPolicy {
           FamilyCapability.viewObservations,
           FamilyCapability.recordObservations,
           FamilyCapability.resolveSyncConflicts,
+          FamilyCapability.viewPastimes,
+          FamilyCapability.editPastimes,
         },
         FamilyRole.familyContributor: {
           FamilyCapability.viewFamilySpace,

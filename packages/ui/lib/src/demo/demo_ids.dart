@@ -22,6 +22,8 @@ final class DemoIds {
 
   ObservationId nextObservationId() => ObservationId(nextUuid());
 
+  PastimeId nextPastimeId() => PastimeId(nextUuid());
+
   IdempotencyKey nextIdempotencyKey(String purpose) {
     return IdempotencyKey('demo-ui-$purpose-${nextUuid()}');
   }

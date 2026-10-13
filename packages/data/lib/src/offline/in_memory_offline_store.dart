@@ -27,6 +27,9 @@ final class InMemoryOfflineStore {
     for (final memory in snapshot.memories) {
       store._memories[memory.id.value] = memory;
     }
+    for (final pastime in snapshot.pastimes) {
+      store._pastimes[pastime.id.value] = pastime;
+    }
     for (final observation in snapshot.weightObservations) {
       store._weights[observation.id.value] = observation;
     }
@@ -43,6 +46,7 @@ final class InMemoryOfflineStore {
       <String, RoutineDayProgress>{};
   final Map<String, Reminder> _reminders = <String, Reminder>{};
   final Map<String, MemoryEntry> _memories = <String, MemoryEntry>{};
+  final Map<String, Pastime> _pastimes = <String, Pastime>{};
   final Map<String, WeightObservation> _weights = <String, WeightObservation>{};
   final Map<String, BloodPressureObservation> _bloodPressures =
       <String, BloodPressureObservation>{};
@@ -53,6 +57,7 @@ final class InMemoryOfflineStore {
       routineProgress: _routineProgress.values.toList(growable: false),
       reminders: _reminders.values.toList(growable: false),
       memories: _memories.values.toList(growable: false),
+      pastimes: _pastimes.values.toList(growable: false),
       weightObservations: _weights.values.toList(growable: false),
       bloodPressureObservations: _bloodPressures.values.toList(growable: false),
       outboxEntries: outbox.captureEntries(),
@@ -166,6 +171,30 @@ final class InMemoryOfflineStore {
 
   void putMemory(MemoryEntry memory) {
     _memories[memory.id.value] = memory;
+  }
+
+  // --- Pastimes ------------------------------------------------------------
+
+  Pastime? pastimeById(PastimeId id) => _pastimes[id.value];
+
+  List<Pastime> pastimesForFamily(FamilySpaceId familySpaceId) {
+    final listed = _pastimes.values
+        .where((p) => p.familySpaceId == familySpaceId)
+        .toList();
+    listed.sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
+    return List<Pastime>.unmodifiable(listed);
+  }
+
+  List<Pastime> activePastimesForFamily(FamilySpaceId familySpaceId) {
+    final listed = _pastimes.values
+        .where((p) => p.familySpaceId == familySpaceId && p.isActiveForViewing)
+        .toList();
+    listed.sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
+    return List<Pastime>.unmodifiable(listed);
+  }
+
+  void putPastime(Pastime pastime) {
+    _pastimes[pastime.id.value] = pastime;
   }
 
   // --- Observations --------------------------------------------------------

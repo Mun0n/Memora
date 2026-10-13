@@ -4,6 +4,8 @@ import '../memories/memory_lifecycle_status.dart';
 import '../memories/memory_media_metadata.dart';
 import '../observations/blood_pressure_observation.dart';
 import '../observations/weight_observation.dart';
+import '../pastimes/pastime.dart';
+import '../pastimes/pastime_lifecycle_status.dart';
 import '../reminders/quiet_hours.dart';
 import '../reminders/reminder.dart';
 import '../routines/routine.dart';
@@ -17,7 +19,7 @@ import '../sync/idempotency_key.dart';
 import '../sync/sync_state.dart';
 import 'offline_identifiers.dart';
 
-/// Stable Demo/Ejemplo offline fixtures for Slice 3–5 contracts.
+/// Stable Demo/Ejemplo offline fixtures for Slice 3–8 contracts.
 ///
 /// Uses reserved Slice 2 family-space IDs. Values are fictional only.
 abstract final class OfflineFixtures {
@@ -61,6 +63,18 @@ abstract final class OfflineFixtures {
     '01932f00-0004-7000-8000-000000000402',
   );
 
+  static final PastimeId radioPastimeId = PastimeId(
+    '01932f00-0008-7000-8000-000000000801',
+  );
+
+  static final PastimeId draftPuzzlePastimeId = PastimeId(
+    '01932f00-0008-7000-8000-000000000802',
+  );
+
+  static final PastimeId archivedPhotosPastimeId = PastimeId(
+    '01932f00-0008-7000-8000-000000000803',
+  );
+
   static final IdempotencyKey morningRoutineSaveKey = IdempotencyKey(
     'demo-routine-save-01932f00-0003-7000-8000-000000000301',
   );
@@ -83,6 +97,10 @@ abstract final class OfflineFixtures {
 
   static final IdempotencyKey morningProgressSaveKey = IdempotencyKey(
     'demo-progress-save-01932f00-0004-7000-8000-000000000402',
+  );
+
+  static final IdempotencyKey radioPastimeSaveKey = IdempotencyKey(
+    'demo-pastime-save-01932f00-0008-7000-8000-000000000801',
   );
 
   static final DateTime demoRecordedAt = DateTime.utc(2026, 10, 10, 9, 0);
@@ -216,4 +234,40 @@ abstract final class OfflineFixtures {
         version: AggregateVersion.initial,
         syncState: SyncState.local,
       );
+
+  /// Active Demo pastime for supported-person Pasatiempos presentation.
+  static final Pastime radioPastime = Pastime(
+    id: radioPastimeId,
+    familySpaceId: IdentityFixtures.familiaEjemploSpaceId,
+    title: 'Radio Demo',
+    instruction: 'Escuchar la radio Ejemplo un rato en el sillón.',
+    displayOrder: 0,
+    lifecycleStatus: PastimeLifecycleStatus.active,
+    version: AggregateVersion.initial,
+    syncState: SyncState.local,
+  );
+
+  /// Draft Demo pastime — never shown to the supported person.
+  static final Pastime draftPuzzlePastime = Pastime(
+    id: draftPuzzlePastimeId,
+    familySpaceId: IdentityFixtures.familiaEjemploSpaceId,
+    title: 'Puzzle Ejemplo',
+    instruction: 'Hacer un puzzle sencillo en la mesa Demo.',
+    displayOrder: 1,
+    lifecycleStatus: PastimeLifecycleStatus.draft,
+    version: AggregateVersion.initial,
+    syncState: SyncState.local,
+  );
+
+  /// Archived Demo pastime — excluded from supported-person view.
+  static final Pastime archivedPhotosPastime = Pastime(
+    id: archivedPhotosPastimeId,
+    familySpaceId: IdentityFixtures.familiaEjemploSpaceId,
+    title: 'Fotos Ejemplo (archivado)',
+    instruction: 'Mirar el álbum familiar Demo con calma.',
+    displayOrder: 2,
+    lifecycleStatus: PastimeLifecycleStatus.archived,
+    version: AggregateVersion.initial,
+    syncState: SyncState.local,
+  );
 }

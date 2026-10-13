@@ -81,6 +81,8 @@ void main() {
         'viewObservations',
         'recordObservations',
         'resolveSyncConflicts',
+        'viewPastimes',
+        'editPastimes',
       });
     });
   });

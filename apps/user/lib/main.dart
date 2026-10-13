@@ -4,7 +4,9 @@ import 'demo_composition.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final composition = UserDemoComposition(networkAvailable: false);
+  // Connectivity derives from shared local demo transport when configured;
+  // default remains isolated offline (no hard-coded networkAvailable: false).
+  final composition = UserDemoComposition();
   await composition.seedDemoFixtures();
   await composition.load();
   runApp(composition.buildApp());

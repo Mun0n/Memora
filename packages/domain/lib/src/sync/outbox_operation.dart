@@ -10,6 +10,7 @@ enum OutboxAggregateType {
   memory,
   weightObservation,
   bloodPressureObservation,
+  pastime,
 }
 
 /// One pending (or historically attempted) local mutation for sync.

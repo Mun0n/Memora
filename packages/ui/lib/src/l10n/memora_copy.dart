@@ -15,6 +15,19 @@ abstract final class MemoraCopy {
       'Sin datos reales. Sin conexión remota de producción.';
   static const String notMedical =
       'Memora no es un servicio médico ni de emergencias.';
+  static const String isolatedLocalDemoNotice =
+      'Demostración local aislada: los cambios de este cliente no aparecen '
+      'en otra aplicación.';
+  static const String sharedLocalDemoNotice =
+      'Demostración local compartida en este ordenador. '
+      'Sin servidor de producción.';
+  static const String sharedLocalDemoPending =
+      'Actualizando la lista compartida…';
+  static const String sharedLocalDemoPullFailed =
+      'No se pudo actualizar desde la demostración compartida. '
+      'Se muestra lo guardado aquí.';
+  static const String sharedLocalDemoDeliveryFailed =
+      'El cambio se guardó aquí, pero aún no llegó al otro dispositivo.';
 
   // Sync / recovery (plain language)
   static const String syncLocal = 'Guardado en este dispositivo';
@@ -35,6 +48,7 @@ abstract final class MemoraCopy {
 
   // Navigation
   static const String navRoutines = 'Rutinas';
+  static const String navPastimes = 'Pasatiempos';
   static const String navMemories = 'Recuerdos';
   static const String navObservations = 'Observaciones';
   static const String navSync = 'Sincronización';
@@ -55,6 +69,12 @@ abstract final class MemoraCopy {
   static const String syncSectionBody =
       'Los cambios se guardan primero en este dispositivo. '
       'Puedes enviar y recibir cuando quieras (modo demo local).';
+  static const String syncSectionBodyIsolated =
+      'Los cambios se guardan solo en este cliente. '
+      'No se comparten con otra aplicación en esta demostración aislada.';
+  static const String syncSectionBodyShared =
+      'Los cambios se guardan primero aquí y se envían solos al demo local '
+      'compartido en este ordenador. Sin producción.';
   static const String syncPushAction = 'Enviar cambios';
   static const String syncPullAction = 'Recibir cambios';
   static const String syncBusy = 'Sincronizando…';
@@ -115,15 +135,55 @@ abstract final class MemoraCopy {
   static const String miDiaEmptyBody =
       'Hoy no hay un paso pendiente. Puedes volver al inicio cuando quieras.';
 
-  // Pasatiempos / Quiero hablar — honest placeholders (no activity/call success)
+  // Pasatiempos — family-configured cards (no completion / performed claim)
   static const String pasatiemposTitle = 'Pasatiempos';
   static const String pasatiemposBody =
       'Aquí aparecerán las actividades que configure tu familia. '
       'De momento no hay ninguna preparada.';
+  static const String pasatiemposBackToList = 'Volver a Pasatiempos';
+  static const String pasatiemposOpenHint = 'Ver indicación';
+  static const String pasatiemposLoading = 'Cargando pasatiempos…';
+  static const String pasatiemposOffline =
+      'Sin red. Los pasatiempos guardados siguen disponibles.';
+  static const String pasatiemposIsolatedDemoNotice =
+      'Esta lista es solo de demostración en este dispositivo.';
+  static const String pasatiemposSharedPullFailed =
+      'No se pudieron cargar los cambios de tu familia. '
+      'Se muestran las actividades guardadas aquí.';
+  static const String pasatiemposSharedPending =
+      'Actualizando las actividades…';
+
+  // Quiero hablar — honest placeholder (no call success)
   static const String quieroHablarTitle = 'Quiero hablar';
   static const String quieroHablarBody =
       'Aquí aparecerán las personas de confianza que configure tu familia. '
       'Desde aquí no se hace ninguna llamada.';
+
+  // Family web — pastime configure
+  static const String pastimesSectionTitle = 'Pasatiempos de la familia';
+  static const String pastimesSectionBody =
+      'Prepara hasta seis actividades activas con un título y una indicación '
+      'breve. No se marca si se hizo la actividad.';
+  static const String createPastime = 'Crear pasatiempo';
+  static const String editPastime = 'Editar pasatiempo';
+  static const String savePastime = 'Guardar pasatiempo';
+  static const String activatePastime = 'Activar';
+  static const String archivePastime = 'Archivar';
+  static const String movePastimeUp = 'Subir';
+  static const String movePastimeDown = 'Bajar';
+  static const String pastimeTitleLabel = 'Título';
+  static const String pastimeInstructionLabel = 'Indicación breve';
+  static const String pastimeLifecycleDraft = 'Borrador';
+  static const String pastimeLifecycleActive = 'Activo';
+  static const String pastimeLifecycleArchived = 'Archivado';
+  static const String pastimesEmptyConfigure =
+      'Aún no hay pasatiempos. Crea uno para la persona apoyada.';
+  static const String pastimesValidationError =
+      'Título (1–60) e indicación (1–240) son obligatorios.';
+  static const String pastimesUnauthorized =
+      'Tu rol no puede configurar pasatiempos.';
+  static const String pastimesActiveLimitError =
+      'Ya hay seis pasatiempos activos. Archiva uno antes de activar otro.';
 
   // Family web configure
   static const String familyHomeTitle = 'Rutinas y recordatorios';

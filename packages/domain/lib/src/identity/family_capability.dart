@@ -17,7 +17,9 @@ enum FamilyCapability {
   manageMediaMetadata('manageMediaMetadata'),
   viewObservations('viewObservations'),
   recordObservations('recordObservations'),
-  resolveSyncConflicts('resolveSyncConflicts');
+  resolveSyncConflicts('resolveSyncConflicts'),
+  viewPastimes('viewPastimes'),
+  editPastimes('editPastimes');
 
   const FamilyCapability(this.wireName);
 

@@ -2,19 +2,41 @@ import 'package:data/data.dart';
 import 'package:domain/domain.dart';
 import 'package:ui/ui.dart';
 
-/// Wires fictional in-memory adapters + fake remote for caregiver/family web.
+/// Wires fictional in-memory adapters + demo sync transport for caregiver web.
+///
+/// Default: private in-process [FakeSupabaseRemote] (isolated local demo).
+/// With `--dart-define=MEMORA_LOCAL_DEMO_SYNC_URL=...` (or [localDemoSyncUrl]):
+/// [LocalDemoSyncTransport] against the shared loopback demo server.
 final class FamilyWebDemoComposition {
   FamilyWebDemoComposition({
     InMemoryOfflineStore? store,
     FamilyMembership? actor,
-    bool networkAvailable = false,
+    bool? networkAvailable,
     this.sessionBoundary = SessionBoundary.demo,
+    SyncTransportPort? transport,
     FakeSupabaseRemote? remote,
+    String? localDemoSyncUrl,
+    bool? sharedLocalDemoTransport,
   }) : store = store ?? InMemoryOfflineStore(),
-       remote = remote ?? FakeSupabaseRemote() {
+       transport =
+           transport ??
+           remote ??
+           createDemoSyncTransport(baseUrl: localDemoSyncUrl),
+       usesSharedLocalDemoTransport =
+           sharedLocalDemoTransport ??
+           ((transport ?? remote) is LocalDemoSyncTransport ||
+               ((transport ?? remote) == null &&
+                   isSharedLocalDemoTransportConfigured(
+                     baseUrl: localDemoSyncUrl,
+                   ))) {
     final membership = actor ?? IdentityFixtures.elenaPrimaryMembership;
+    final resolvedNetwork = networkAvailable ?? usesSharedLocalDemoTransport;
+    final scope = usesSharedLocalDemoTransport
+        ? DemoDataScope.sharedLocalDemo
+        : DemoDataScope.isolatedLocal;
     routines = InMemoryRoutineRepository(this.store);
     reminders = InMemoryReminderRepository(this.store);
+    pastimes = InMemoryPastimeRepository(this.store);
     memories = InMemoryMemoryRepository(this.store);
     weights = InMemoryWeightObservationRepository(this.store);
     bloodPressures = InMemoryBloodPressureObservationRepository(this.store);
@@ -24,7 +46,7 @@ final class FamilyWebDemoComposition {
     bridge = OfflineSyncBridge(this.store);
     engine = SyncEngine(
       outbox: this.store.outbox,
-      transport: this.remote,
+      transport: this.transport,
       conflicts: conflicts,
       payloadLoader: bridge,
       applyHandler: bridge,
@@ -39,18 +61,24 @@ final class FamilyWebDemoComposition {
       actor: membership,
       routines: routines,
       reminders: reminders,
-      networkAvailable: networkAvailable,
+      networkAvailable: resolvedNetwork,
+    );
+    pastimeController = FamilyPastimeController(
+      actor: membership,
+      pastimes: pastimes,
+      networkAvailable: resolvedNetwork,
+      demoDataScope: scope,
     );
     memoryController = FamilyMemoryController(
       actor: membership,
       memories: memories,
-      networkAvailable: networkAvailable,
+      networkAvailable: resolvedNetwork,
     );
     observationController = FamilyObservationController(
       actor: membership,
       weights: weights,
       bloodPressures: bloodPressures,
-      networkAvailable: networkAvailable,
+      networkAvailable: resolvedNetwork,
       clock: DateTime(2026, 10, 10, 12, 0),
     );
     syncController = SyncPresentationController(
@@ -65,13 +93,19 @@ final class FamilyWebDemoComposition {
       sessionBoundary: sessionBoundary,
       clock: DateTime.utc(2026, 10, 10, 12, 0),
     );
+    if (usesSharedLocalDemoTransport) {
+      pastimeController.afterLocalWrite = syncController.quietPush;
+      pastimeController.quietRemotePull = syncController.quietPull;
+    }
   }
 
   final InMemoryOfflineStore store;
-  final FakeSupabaseRemote remote;
+  final SyncTransportPort transport;
+  final bool usesSharedLocalDemoTransport;
   final SessionBoundary sessionBoundary;
   late final InMemoryRoutineRepository routines;
   late final InMemoryReminderRepository reminders;
+  late final InMemoryPastimeRepository pastimes;
   late final InMemoryMemoryRepository memories;
   late final InMemoryWeightObservationRepository weights;
   late final InMemoryBloodPressureObservationRepository bloodPressures;
@@ -82,6 +116,7 @@ final class FamilyWebDemoComposition {
   late final SyncEngine engine;
   late final PrivacyWorkflow privacy;
   late final FamilyRoutineController controller;
+  late final FamilyPastimeController pastimeController;
   late final FamilyMemoryController memoryController;
   late final FamilyObservationController observationController;
   late final SyncPresentationController syncController;
@@ -90,7 +125,13 @@ final class FamilyWebDemoComposition {
 
   static const String demoSessionId = '01932f00-0006-7000-8000-000000000680';
 
+  FakeSupabaseRemote? get fakeRemote =>
+      transport is FakeSupabaseRemote ? transport as FakeSupabaseRemote : null;
+
   /// Seeds Demo/Ejemplo routines, memories, observations and demo session.
+  ///
+  /// Pastime fixtures are seeded only in isolated mode. Shared mode reconciles
+  /// from the loopback authority so private rows cannot masquerade as remote.
   Future<void> seedDemoFixtures() async {
     await routines.save(
       routine: OfflineFixtures.morningRoutine,
@@ -124,6 +165,10 @@ final class FamilyWebDemoComposition {
       observation: OfflineFixtures.amparoBloodPressure,
       idempotencyKey: OfflineFixtures.bloodPressureAppendKey,
     );
+    await LocalDemoSharedBootstrap.seedPastimeFixturesIfIsolated(
+      pastimes: pastimes,
+      sharedLocalDemo: usesSharedLocalDemoTransport,
+    );
     privacyStore.seedSession(
       SessionDescriptor(
         id: demoSessionId,
@@ -137,6 +182,10 @@ final class FamilyWebDemoComposition {
 
   /// Forces a concurrent routine edit conflict for demo/tests (fake remote).
   Future<void> forceRoutineConflict() async {
+    final remote = fakeRemote;
+    if (remote == null) {
+      return;
+    }
     final local = store.routineById(OfflineFixtures.morningRoutineId);
     if (local == null) {
       return;
@@ -184,6 +233,7 @@ final class FamilyWebDemoComposition {
   }) {
     return MemoraFamilyWebApp(
       controller: controller,
+      pastimeController: pastimeController,
       memoryController: memoryController,
       observationController: observationController,
       syncController: syncController,
@@ -191,11 +241,39 @@ final class FamilyWebDemoComposition {
       persona: SyntheticFixtures.familiaEjemplo,
       autoload: autoload,
       initialSection: initialSection,
+      demoDataScope: usesSharedLocalDemoTransport
+          ? DemoDataScope.sharedLocalDemo
+          : DemoDataScope.isolatedLocal,
+      enableQuietRemotePull: usesSharedLocalDemoTransport,
     );
   }
 
+  /// Reconciles shared-demo pastimes from the authority before controllers load.
+  Future<void> reconcileSharedDemoIfNeeded() async {
+    if (!usesSharedLocalDemoTransport) {
+      return;
+    }
+    final t = transport;
+    try {
+      if (t is LocalDemoSyncTransport) {
+        await LocalDemoSharedBootstrap.reconcileFromAuthority(
+          engine: engine,
+          transport: t,
+        );
+      } else {
+        await engine.pull(
+          familySpaceId: IdentityFixtures.familiaEjemploSpaceId,
+        );
+      }
+    } catch (_) {
+      // Keep any local cache; pastime chrome surfaces pull failure on refresh.
+    }
+  }
+
   Future<void> load() async {
+    await reconcileSharedDemoIfNeeded();
     await controller.load();
+    await pastimeController.load();
     await memoryController.load();
     await observationController.load();
     await syncController.load();

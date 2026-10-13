@@ -1,4 +1,4 @@
-# Supabase draft (Slices 2 + 6)
+# Supabase draft (Slices 2 + 6 + 8)
 
 Local, versioned PostgreSQL contracts for family-space identity and product tables.
 No remote project linking, no client credentials, no production seeds.
@@ -12,14 +12,15 @@ No remote project linking, no client credentials, no production seeds.
 
 Must stay identical to `packages/domain` `FamilyAccessPolicy` wire names:
 
-| Active role | Identity | Routines | Reminders | Memories | Media meta | Observations | Conflicts |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| supportedPerson | viewFamilySpace | viewRoutines, recordRoutineProgress | viewReminders | viewApprovedMemories | — | — | — |
-| primaryCaregiver | all identity | view+edit | view+configure | view+manage | manageMediaMetadata | view+record | resolveSyncConflicts |
-| caregiver | viewFamilySpace, viewMemberships | view+edit | view+configure | view+manage | manageMediaMetadata | view+record | resolveSyncConflicts |
-| familyContributor | viewFamilySpace | viewRoutines | — | viewApproved + contribute | (via contribute insert) | — | — |
+| Active role | Identity | Routines | Reminders | Memories | Pastimes | Media meta | Observations | Conflicts |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| supportedPerson | viewFamilySpace | viewRoutines, recordRoutineProgress | viewReminders | viewApprovedMemories | viewPastimes (active only) | — | — | — |
+| primaryCaregiver | all identity | view+edit | view+configure | view+manage | view+edit | manageMediaMetadata | view+record | resolveSyncConflicts |
+| caregiver | viewFamilySpace, viewMemberships | view+edit | view+configure | view+manage | view+edit | manageMediaMetadata | view+record | resolveSyncConflicts |
+| familyContributor | viewFamilySpace | viewRoutines | — | viewApproved + contribute | — | (via contribute insert) | — | — |
 
 Media is **metadata-only** (no storage bucket policies in v0.1).
+Pastimes enforce ≤6 active rows per family via trigger; no media/links/games.
 
 ## Run
 

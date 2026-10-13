@@ -201,7 +201,7 @@ void main() {
     expect(find.byKey(const Key('memora-user-home')), findsOneWidget);
   });
 
-  testWidgets('Pasatiempos / Quiero hablar placeholders are honest', (
+  testWidgets('Pasatiempos shows active Demo card; Quiero hablar unchanged', (
     tester,
   ) async {
     await pumpUser(tester, size: phoneSize);
@@ -211,7 +211,8 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('memora-user-pasatiempos')), findsOneWidget);
-    expect(find.textContaining('aparecerán las actividades'), findsOneWidget);
+    expect(find.text('Radio Demo'), findsOneWidget);
+    expect(find.textContaining('Puzzle Ejemplo'), findsNothing);
     expect(find.textContaining('llamada'), findsNothing);
     expect(find.textContaining('emergencia'), findsNothing);
     await tester.tap(find.byKey(const Key('memora-user-return-home')));

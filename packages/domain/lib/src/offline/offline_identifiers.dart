@@ -96,6 +96,27 @@ final class ObservationId {
   String toString() => 'ObservationId($value)';
 }
 
+/// Opaque pastime identifier (UUID string).
+final class PastimeId {
+  factory PastimeId(String raw) {
+    _assertUuid(raw, 'PastimeId');
+    return PastimeId._(raw.toLowerCase());
+  }
+
+  const PastimeId._(this.value);
+
+  final String value;
+
+  @override
+  bool operator ==(Object other) => other is PastimeId && other.value == value;
+
+  @override
+  int get hashCode => value.hashCode;
+
+  @override
+  String toString() => 'PastimeId($value)';
+}
+
 /// Opaque routine day-progress identifier (UUID string).
 final class RoutineProgressId {
   factory RoutineProgressId(String raw) {

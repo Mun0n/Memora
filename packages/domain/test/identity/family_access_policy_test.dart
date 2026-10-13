@@ -42,6 +42,8 @@ void main() {
         FamilyCapability.resolveSyncConflicts,
         false,
       ),
+      (FamilyRole.supportedPerson, FamilyCapability.viewPastimes, true),
+      (FamilyRole.supportedPerson, FamilyCapability.editPastimes, false),
       (FamilyRole.primaryCaregiver, FamilyCapability.editRoutines, true),
       (FamilyRole.primaryCaregiver, FamilyCapability.configureReminders, true),
       (FamilyRole.primaryCaregiver, FamilyCapability.manageMemories, true),
@@ -58,11 +60,15 @@ void main() {
         false,
       ),
       (FamilyRole.primaryCaregiver, FamilyCapability.contributeMemories, false),
+      (FamilyRole.primaryCaregiver, FamilyCapability.viewPastimes, true),
+      (FamilyRole.primaryCaregiver, FamilyCapability.editPastimes, true),
       (FamilyRole.caregiver, FamilyCapability.editRoutines, true),
       (FamilyRole.caregiver, FamilyCapability.manageMemories, true),
       (FamilyRole.caregiver, FamilyCapability.recordObservations, true),
       (FamilyRole.caregiver, FamilyCapability.resolveSyncConflicts, true),
       (FamilyRole.caregiver, FamilyCapability.contributeMemories, false),
+      (FamilyRole.caregiver, FamilyCapability.viewPastimes, true),
+      (FamilyRole.caregiver, FamilyCapability.editPastimes, true),
       (FamilyRole.familyContributor, FamilyCapability.viewRoutines, true),
       (FamilyRole.familyContributor, FamilyCapability.contributeMemories, true),
       (
@@ -86,6 +92,8 @@ void main() {
         FamilyCapability.resolveSyncConflicts,
         false,
       ),
+      (FamilyRole.familyContributor, FamilyCapability.viewPastimes, false),
+      (FamilyRole.familyContributor, FamilyCapability.editPastimes, false),
     ];
 
     for (final (role, capability, expected) in cases) {
@@ -240,6 +248,33 @@ void main() {
       expect(
         ObservationCarePolicy.canRecordObservations(
           IdentityFixtures.amparoSupportedMembership,
+        ),
+        isFalse,
+      );
+    });
+
+    test('PastimeCarePolicy mirrors viewPastimes / editPastimes', () {
+      expect(
+        PastimeCarePolicy.canEditPastimes(
+          IdentityFixtures.elenaPrimaryMembership,
+        ),
+        isTrue,
+      );
+      expect(
+        PastimeCarePolicy.canViewPastimes(
+          IdentityFixtures.amparoSupportedMembership,
+        ),
+        isTrue,
+      );
+      expect(
+        PastimeCarePolicy.canEditPastimes(
+          IdentityFixtures.luciaContributorMembership,
+        ),
+        isFalse,
+      );
+      expect(
+        PastimeCarePolicy.canViewPastimes(
+          IdentityFixtures.luciaContributorMembership,
         ),
         isFalse,
       );

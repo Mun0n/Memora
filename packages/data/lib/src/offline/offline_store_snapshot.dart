@@ -7,6 +7,7 @@ final class OfflineStoreSnapshot {
     required this.routineProgress,
     required this.reminders,
     required this.memories,
+    required this.pastimes,
     required this.weightObservations,
     required this.bloodPressureObservations,
     required this.outboxEntries,
@@ -16,6 +17,7 @@ final class OfflineStoreSnapshot {
   final List<RoutineDayProgress> routineProgress;
   final List<Reminder> reminders;
   final List<MemoryEntry> memories;
+  final List<Pastime> pastimes;
   final List<WeightObservation> weightObservations;
   final List<BloodPressureObservation> bloodPressureObservations;
   final List<OutboxOperation> outboxEntries;

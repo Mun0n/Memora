@@ -68,6 +68,23 @@ final class OfflineSyncBridge implements SyncPayloadLoader, SyncApplyHandler {
               'mediaPath': memory.media!.familyScopedPath,
           },
         );
+      case OutboxAggregateType.pastime:
+        final pastime = _store.pastimeById(PastimeId(operation.aggregateId));
+        if (pastime == null) {
+          return null;
+        }
+        return SyncEnvelope(
+          operation: operation,
+          familySpaceId: pastime.familySpaceId.value,
+          payload: <String, Object?>{
+            'title': pastime.title,
+            'instruction': pastime.instruction,
+            'displayOrder': pastime.displayOrder,
+            'lifecycle': pastime.lifecycleStatus.wireName,
+            'tombstoned': pastime.isDeleted,
+            'version': pastime.version.value,
+          },
+        );
       case OutboxAggregateType.weightObservation:
         final observation = _store.weightById(
           ObservationId(operation.aggregateId),
@@ -241,6 +258,33 @@ final class OfflineSyncBridge implements SyncPayloadLoader, SyncApplyHandler {
           ),
         );
         return SyncApplyOutcome.applied;
+      case OutboxAggregateType.pastime:
+        final local = _store.pastimeById(PastimeId(record.aggregateId));
+        if (local != null && !local.version.isBefore(record.version)) {
+          return SyncApplyOutcome.skipped;
+        }
+        _store.putPastime(
+          Pastime(
+            id: PastimeId(record.aggregateId),
+            familySpaceId: FamilySpaceId(record.familySpaceId),
+            title: record.payload['title']! as String,
+            instruction: record.payload['instruction']! as String,
+            displayOrder: record.payload['displayOrder'] as int? ?? 0,
+            lifecycleStatus: PastimeLifecycleStatus.parse(
+              record.payload['lifecycle'] as String? ?? 'draft',
+            ),
+            version: record.version,
+            syncState: SyncState.synced,
+            tombstone: record.tombstoned
+                ? Tombstone(
+                    aggregateId: record.aggregateId,
+                    version: record.version,
+                    deletedAt: DateTime.now().toUtc(),
+                  )
+                : null,
+          ),
+        );
+        return SyncApplyOutcome.applied;
       case OutboxAggregateType.weightObservation:
         return _applyWeight(record, preserveBoth: preserveBoth);
       case OutboxAggregateType.bloodPressureObservation:
@@ -324,6 +368,10 @@ final class OfflineSyncBridge implements SyncPayloadLoader, SyncApplyHandler {
 
   @override
   Future<void> applyConflictResolution(SyncConflict conflict) async {
+    if (conflict.aggregateType == OutboxAggregateType.pastime) {
+      await _applyPastimeConflictResolution(conflict);
+      return;
+    }
     if (conflict.aggregateType != OutboxAggregateType.routine) {
       return;
     }
@@ -394,6 +442,55 @@ final class OfflineSyncBridge implements SyncPayloadLoader, SyncApplyHandler {
     }
   }
 
+  Future<void> _applyPastimeConflictResolution(SyncConflict conflict) async {
+    final payload = switch (conflict.resolution) {
+      SyncConflictResolution.keepLocal => conflict.localPayload,
+      SyncConflictResolution.keepRemote => conflict.remotePayload,
+      SyncConflictResolution.keepBoth => conflict.localPayload,
+      SyncConflictResolution.unresolved => null,
+    };
+    if (payload == null) {
+      return;
+    }
+    final version = conflict.resolution == SyncConflictResolution.keepRemote
+        ? conflict.remoteVersion
+        : AggregateVersion(
+            conflict.localVersion.value > conflict.remoteVersion.value
+                ? conflict.localVersion.value
+                : conflict.remoteVersion.value,
+          );
+    _store.putPastime(
+      Pastime(
+        id: PastimeId(conflict.aggregateId),
+        familySpaceId: conflict.familySpaceId,
+        title: payload['title']! as String,
+        instruction: payload['instruction']! as String,
+        displayOrder: payload['displayOrder'] as int? ?? 0,
+        lifecycleStatus: PastimeLifecycleStatus.parse(
+          payload['lifecycle'] as String? ?? 'draft',
+        ),
+        version: version,
+        syncState: SyncState.synced,
+      ),
+    );
+    if (conflict.resolution == SyncConflictResolution.keepBoth) {
+      _store.putPastime(
+        Pastime(
+          id: PastimeId(_forkUuid(conflict.aggregateId)),
+          familySpaceId: conflict.familySpaceId,
+          title: conflict.remotePayload['title']! as String,
+          instruction: conflict.remotePayload['instruction']! as String,
+          displayOrder: conflict.remotePayload['displayOrder'] as int? ?? 0,
+          lifecycleStatus: PastimeLifecycleStatus.parse(
+            conflict.remotePayload['lifecycle'] as String? ?? 'draft',
+          ),
+          version: conflict.remoteVersion,
+          syncState: SyncState.synced,
+        ),
+      );
+    }
+  }
+
   /// Deterministic valid UUID for a keep-both remote fork.
   static String _forkUuid(String aggregateId) {
     return '${aggregateId.substring(0, aggregateId.length - 2)}f1';
@@ -423,6 +520,13 @@ final class OfflineSyncBridge implements SyncPayloadLoader, SyncApplyHandler {
         final current = _store.memoryById(MemoryId(operation.aggregateId));
         if (current != null) {
           _store.putMemory(
+            current.copyWith(syncState: state, version: version),
+          );
+        }
+      case OutboxAggregateType.pastime:
+        final current = _store.pastimeById(PastimeId(operation.aggregateId));
+        if (current != null) {
+          _store.putPastime(
             current.copyWith(syncState: state, version: version),
           );
         }

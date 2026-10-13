@@ -49,6 +49,7 @@ class _NavChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final label = switch (section) {
       FeatureSection.routines => MemoraCopy.navRoutines,
+      FeatureSection.pastimes => MemoraCopy.navPastimes,
       FeatureSection.memories => MemoraCopy.navMemories,
       FeatureSection.observations => MemoraCopy.navObservations,
       FeatureSection.sync => MemoraCopy.navSync,
@@ -57,6 +58,7 @@ class _NavChip extends StatelessWidget {
     };
     final keyName = switch (section) {
       FeatureSection.routines => 'memora-nav-routines',
+      FeatureSection.pastimes => 'memora-nav-pastimes',
       FeatureSection.memories => 'memora-nav-memories',
       FeatureSection.observations => 'memora-nav-observations',
       FeatureSection.sync => 'memora-nav-sync',
