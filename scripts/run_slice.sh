@@ -32,6 +32,7 @@ REPORT_REL=".agent/reports/slice_${PAD}"
 REPORT_DIR="$ROOT/$REPORT_REL"
 TMP="$ROOT/.agent/tmp"
 MAX_REPAIR=3
+DEFAULT_COMPLETION_SOUND="${HOME:-}/Downloads/139-item-catch.mp3"
 
 required=(
   "$SPEC" AGENTS.md .agent/workflow.md .agent/context_defaults.json .agent/path_guards.json
@@ -114,12 +115,55 @@ write_prompt() {
   python3 scripts/lib/orch.py prompt-metrics "$dest"
 }
 
+show_progress() {
+  local worker_pid="$1" label="$2"
+  [[ -t 1 ]] || return 0
+  local frames='|/-\\'
+  local frame=0
+  local started="$SECONDS"
+  while kill -0 "$worker_pid" 2>/dev/null; do
+    printf '\r[%s] %s... %ss' "${frames:$((frame % 4)):1}" "$label" "$((SECONDS - started))"
+    frame=$((frame + 1))
+    sleep 0.2
+  done
+  printf '\r%-78s\r' ' '
+}
+
+run_logged_validation() {
+  local label="$1"
+  ./scripts/validate.sh >"$REPORT_DIR/validation.log" 2>&1 &
+  local worker_pid=$!
+  show_progress "$worker_pid" "$label"
+  wait "$worker_pid"
+}
+
+play_completion_sound() {
+  [[ "${MEMORA_DISABLE_COMPLETION_SOUND:-0}" != "1" ]] || return 0
+  local sound_path="${MEMORA_COMPLETION_SOUND:-$DEFAULT_COMPLETION_SOUND}"
+  if [[ ! -f "$sound_path" ]]; then
+    echo "INFO: completion sound not found: $sound_path" >&2
+    return 0
+  fi
+  if ! command -v afplay >/dev/null 2>&1; then
+    echo "INFO: afplay is unavailable; completion sound skipped." >&2
+    return 0
+  fi
+  echo "Completion sound: $sound_path"
+  afplay "$sound_path" >/dev/null 2>&1 || {
+    echo "INFO: completion sound could not be played." >&2
+    return 0
+  }
+}
+
 invoke() {
   local role="$1" extra="$2" before="$TMP/${role}.before.json"
   write_prompt "$role" "$extra"
   python3 scripts/lib/orch.py snapshot "$before"
   echo "[$role] starting fresh Cursor context"
-  if ! cursor_cli_run "$CLI" "$TMP/${role}.prompt.md" >"$REPORT_DIR/${role}.stdout.txt" 2>"$REPORT_DIR/${role}.stderr.txt"; then
+  cursor_cli_run "$CLI" "$TMP/${role}.prompt.md" >"$REPORT_DIR/${role}.stdout.txt" 2>"$REPORT_DIR/${role}.stderr.txt" &
+  local worker_pid=$!
+  show_progress "$worker_pid" "$role trabajando"
+  if ! wait "$worker_pid"; then
     echo "ERROR: $role invocation failed; see $REPORT_REL/${role}.stderr.txt" >&2; return 1
   fi
   if ! python3 scripts/lib/orch.py guard "$role" "$before" >"$REPORT_DIR/${role}.path_guard.log"; then
@@ -148,6 +192,7 @@ done
 if [[ "$DRY_RUN" -eq 1 ]]; then
   echo "DRY RUN PASS: contracts, spec, CLI discovery, prompt budgets and local validation are ready."
   echo "No agent was invoked and no application functionality was implemented."
+  play_completion_sound
   exit 0
 fi
 
@@ -166,15 +211,15 @@ iteration=0
 skip_qa_once="$RESUME_AUDIT"
 while true; do
   if [[ "$skip_qa_once" -eq 1 ]]; then
-    if ! ./scripts/validate.sh >"$REPORT_DIR/validation.log" 2>&1; then
+    if ! run_logged_validation "Validando antes de AUDITOR"; then
       echo "ERROR: fresh validation failed; audit resume stopped before AUDITOR" >&2
       exit 1
     fi
     skip_qa_once=0
   else
-    ./scripts/validate.sh >"$REPORT_DIR/validation.log" 2>&1 || true
+    run_logged_validation "Validando antes de QA" || true
     invoke QA "Evaluate every acceptance criterion using validation.log and current tree. If present, include ${REPORT_REL}/human_review.md findings. Write ${REPORT_REL}/qa.md with PASS, FAIL or BLOCKED."
-    ./scripts/validate.sh >"$REPORT_DIR/validation.log" 2>&1 || true
+    run_logged_validation "Revalidando antes de AUDITOR" || true
   fi
   git status --short >"$REPORT_DIR/changed_files.log"
   git diff --binary >"$REPORT_DIR/diff.patch"
@@ -223,3 +268,4 @@ if [[ "$AUTO_CONTINUE" -eq 1 ]]; then
 else
   echo "HUMAN_REVIEW"
 fi
+play_completion_sound

@@ -77,7 +77,7 @@ class OrchestratorContracts(unittest.TestCase):
     def test_qa_changes_are_revalidated_before_audit(self):
         runner = (ROOT / "scripts/run_slice.sh").read_text()
         qa = runner.index('invoke QA')
-        revalidation = runner.index('./scripts/validate.sh >"$REPORT_DIR/validation.log"', qa)
+        revalidation = runner.index('run_logged_validation "Revalidando antes de AUDITOR"', qa)
         audit = runner.index('invoke AUDITOR', revalidation)
         self.assertLess(qa, revalidation)
         self.assertLess(revalidation, audit)
@@ -99,5 +99,16 @@ class OrchestratorContracts(unittest.TestCase):
         self.assertIn("audit resume requires an existing uncommitted slice implementation", runner)
         self.assertIn("RESUMED_AFTER_QA_GUARD", runner)
         self.assertIn('skip_qa_once="$RESUME_AUDIT"', runner)
+
+    def test_terminal_progress_and_completion_sound_are_non_blocking_contracts(self):
+        runner = (ROOT / "scripts/run_slice.sh").read_text()
+        self.assertIn("show_progress", runner)
+        self.assertIn("run_logged_validation", runner)
+        self.assertIn("[[ -t 1 ]]", runner)
+        self.assertIn("139-item-catch.mp3", runner)
+        self.assertIn("MEMORA_COMPLETION_SOUND", runner)
+        self.assertIn("MEMORA_DISABLE_COMPLETION_SOUND", runner)
+        self.assertIn("command -v afplay", runner)
+        self.assertIn("play_completion_sound", runner)
 
 if __name__ == "__main__": unittest.main()

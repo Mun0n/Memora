@@ -57,6 +57,11 @@ Soft limits warn at 10 initial files or approximately 20,000 prompt characters. 
   that guard. It requires an existing passing `qa.md`, a dirty slice implementation
   and no existing `audit.md`; it revalidates and starts with a fresh AUDITOR without
   repeating implementation roles.
+- Interactive terminal runs show a spinner and elapsed seconds while an agent or a
+  redirected validation phase is running. A successful terminal outcome plays
+  `~/Downloads/139-item-catch.mp3` through macOS `afplay` when available. Override with
+  `MEMORA_COMPLETION_SOUND=/absolute/file.mp3` or disable with
+  `MEMORA_DISABLE_COMPLETION_SOUND=1`; missing audio never changes the run result.
 - Dirty implementation paths are rejected when the MVP run begins.
 - The runner creates a dedicated branch and local commits only after an accepted audit.
 - No push, deployment, Git rewrite, production connection or automatic use of real data.
