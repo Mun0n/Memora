@@ -8,12 +8,14 @@ class DraftTextField extends StatefulWidget {
     required this.initialText,
     required this.onChanged,
     required this.labelText,
+    this.maxLines = 1,
   });
 
   final Object revision;
   final String initialText;
   final ValueChanged<String> onChanged;
   final String labelText;
+  final int? maxLines;
 
   @override
   State<DraftTextField> createState() => _DraftTextFieldState();
@@ -48,6 +50,7 @@ class _DraftTextFieldState extends State<DraftTextField> {
       controller: _controller,
       decoration: InputDecoration(labelText: widget.labelText),
       onChanged: widget.onChanged,
+      maxLines: widget.maxLines,
     );
   }
 }

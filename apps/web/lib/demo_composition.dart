@@ -37,6 +37,7 @@ final class FamilyWebDemoComposition {
     routines = InMemoryRoutineRepository(this.store);
     reminders = InMemoryReminderRepository(this.store);
     pastimes = InMemoryPastimeRepository(this.store);
+    conversationTopics = InMemoryConversationTopicRepository(this.store);
     memories = InMemoryMemoryRepository(this.store);
     weights = InMemoryWeightObservationRepository(this.store);
     bloodPressures = InMemoryBloodPressureObservationRepository(this.store);
@@ -69,6 +70,12 @@ final class FamilyWebDemoComposition {
       networkAvailable: resolvedNetwork,
       demoDataScope: scope,
     );
+    conversationTopicController = FamilyConversationTopicController(
+      actor: membership,
+      topics: conversationTopics,
+      networkAvailable: resolvedNetwork,
+      demoDataScope: scope,
+    );
     memoryController = FamilyMemoryController(
       actor: membership,
       memories: memories,
@@ -96,6 +103,8 @@ final class FamilyWebDemoComposition {
     if (usesSharedLocalDemoTransport) {
       pastimeController.afterLocalWrite = syncController.quietPush;
       pastimeController.quietRemotePull = syncController.quietPull;
+      conversationTopicController.afterLocalWrite = syncController.quietPush;
+      conversationTopicController.quietRemotePull = syncController.quietPull;
     }
   }
 
@@ -106,6 +115,7 @@ final class FamilyWebDemoComposition {
   late final InMemoryRoutineRepository routines;
   late final InMemoryReminderRepository reminders;
   late final InMemoryPastimeRepository pastimes;
+  late final InMemoryConversationTopicRepository conversationTopics;
   late final InMemoryMemoryRepository memories;
   late final InMemoryWeightObservationRepository weights;
   late final InMemoryBloodPressureObservationRepository bloodPressures;
@@ -117,6 +127,7 @@ final class FamilyWebDemoComposition {
   late final PrivacyWorkflow privacy;
   late final FamilyRoutineController controller;
   late final FamilyPastimeController pastimeController;
+  late final FamilyConversationTopicController conversationTopicController;
   late final FamilyMemoryController memoryController;
   late final FamilyObservationController observationController;
   late final SyncPresentationController syncController;
@@ -167,6 +178,10 @@ final class FamilyWebDemoComposition {
     );
     await LocalDemoSharedBootstrap.seedPastimeFixturesIfIsolated(
       pastimes: pastimes,
+      sharedLocalDemo: usesSharedLocalDemoTransport,
+    );
+    await LocalDemoSharedBootstrap.seedConversationTopicFixturesIfIsolated(
+      topics: conversationTopics,
       sharedLocalDemo: usesSharedLocalDemoTransport,
     );
     privacyStore.seedSession(
@@ -234,6 +249,7 @@ final class FamilyWebDemoComposition {
     return MemoraFamilyWebApp(
       controller: controller,
       pastimeController: pastimeController,
+      conversationTopicController: conversationTopicController,
       memoryController: memoryController,
       observationController: observationController,
       syncController: syncController,
@@ -274,7 +290,9 @@ final class FamilyWebDemoComposition {
     await reconcileSharedDemoIfNeeded();
     await controller.load();
     await pastimeController.load();
+    await conversationTopicController.load();
     await memoryController.load();
+    conversationTopicController.setApprovedMemories(memoryController.memories);
     await observationController.load();
     await syncController.load();
     await privacyController.load();

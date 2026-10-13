@@ -2,6 +2,7 @@ import 'package:data/data.dart';
 import 'package:domain/domain.dart';
 import 'package:ui/ui.dart';
 
+import 'android_local_speech_output.dart';
 import 'android_on_device_speech_recognizer.dart';
 
 /// Wires fictional in-memory adapters + demo sync transport for the user shell.
@@ -10,8 +11,8 @@ import 'android_on_device_speech_recognizer.dart';
 /// With `--dart-define=MEMORA_LOCAL_DEMO_SYNC_URL=...` (or [localDemoSyncUrl]):
 /// [LocalDemoSyncTransport] against the shared loopback demo server.
 ///
-/// Speech uses the real on-device adapter on Android. Tests and non-Android
-/// demo hosts keep the deterministic [FakeSpeechRecognizer].
+/// Speech uses the real on-device adapters on Android. Tests and non-Android
+/// demo hosts keep deterministic [FakeSpeechRecognizer] / [FakeSpeechOutput].
 final class UserDemoComposition {
   UserDemoComposition({
     InMemoryOfflineStore? store,
@@ -23,6 +24,7 @@ final class UserDemoComposition {
     String? localDemoSyncUrl,
     bool? sharedLocalDemoTransport,
     SpeechRecognizerPort? speechRecognizer,
+    SpeechOutputPort? speechOutput,
   }) : store = store ?? InMemoryOfflineStore(),
        transport =
            transport ??
@@ -39,7 +41,12 @@ final class UserDemoComposition {
            speechRecognizer ??
            (AndroidOnDeviceSpeechRecognizer.isSupportedPlatform
                ? AndroidOnDeviceSpeechRecognizer()
-               : FakeSpeechRecognizer()) {
+               : FakeSpeechRecognizer()),
+       speechOutput =
+           speechOutput ??
+           (AndroidLocalSpeechOutput.isSupportedPlatform
+               ? AndroidLocalSpeechOutput()
+               : FakeSpeechOutput()) {
     final resolvedNetwork = networkAvailable ?? usesSharedLocalDemoTransport;
     final scope = usesSharedLocalDemoTransport
         ? DemoDataScope.sharedLocalDemo
@@ -47,6 +54,7 @@ final class UserDemoComposition {
     routines = InMemoryRoutineRepository(this.store);
     progress = InMemoryRoutineProgressRepository(this.store);
     pastimes = InMemoryPastimeRepository(this.store);
+    conversationTopics = InMemoryConversationTopicRepository(this.store);
     memories = InMemoryMemoryRepository(this.store);
     conflicts = InMemoryConflictStore();
     audit = InMemoryAuditStore();
@@ -84,6 +92,13 @@ final class UserDemoComposition {
       networkAvailable: resolvedNetwork,
       demoDataScope: scope,
     );
+    conversationTopicController = UserConversationTopicController(
+      actor: IdentityFixtures.amparoSupportedMembership,
+      topics: conversationTopics,
+      networkAvailable: resolvedNetwork,
+      demoDataScope: scope,
+      approvedMemoryLookup: () => memoryController.memories,
+    );
     syncController = SyncPresentationController(
       actor: IdentityFixtures.amparoSupportedMembership,
       engine: engine,
@@ -91,6 +106,7 @@ final class UserDemoComposition {
       sessionBoundary: sessionBoundary,
     );
     pastimeController.quietRemotePull = syncController.quietPull;
+    conversationTopicController.quietRemotePull = syncController.quietPull;
     privacyController = PrivacyPresentationController(
       actor: IdentityFixtures.amparoSupportedMembership,
       privacy: privacy,
@@ -104,9 +120,11 @@ final class UserDemoComposition {
   final bool usesSharedLocalDemoTransport;
   final SessionBoundary sessionBoundary;
   final SpeechRecognizerPort speechRecognizer;
+  final SpeechOutputPort speechOutput;
   late final InMemoryRoutineRepository routines;
   late final InMemoryRoutineProgressRepository progress;
   late final InMemoryPastimeRepository pastimes;
+  late final InMemoryConversationTopicRepository conversationTopics;
   late final InMemoryMemoryRepository memories;
   late final InMemoryConflictStore conflicts;
   late final InMemoryAuditStore audit;
@@ -117,6 +135,7 @@ final class UserDemoComposition {
   late final UserRoutineController controller;
   late final UserMemoryController memoryController;
   late final UserPastimeController pastimeController;
+  late final UserConversationTopicController conversationTopicController;
   late final SyncPresentationController syncController;
   late final PrivacyPresentationController privacyController;
   var _conflictSeq = 0;
@@ -154,6 +173,10 @@ final class UserDemoComposition {
       pastimes: pastimes,
       sharedLocalDemo: usesSharedLocalDemoTransport,
     );
+    await LocalDemoSharedBootstrap.seedConversationTopicFixturesIfIsolated(
+      topics: conversationTopics,
+      sharedLocalDemo: usesSharedLocalDemoTransport,
+    );
     privacyStore.seedSession(
       SessionDescriptor(
         id: demoSessionId,
@@ -173,9 +196,11 @@ final class UserDemoComposition {
       controller: controller,
       memoryController: memoryController,
       pastimeController: pastimeController,
+      conversationTopicController: conversationTopicController,
       syncController: syncController,
       privacyController: privacyController,
       speechRecognizer: speechRecognizer,
+      speechOutput: speechOutput,
       persona: SyntheticFixtures.amparoDemo,
       autoload: autoload,
       initialDestination: initialDestination,
@@ -213,6 +238,7 @@ final class UserDemoComposition {
     await controller.load();
     await memoryController.load();
     await pastimeController.load();
+    await conversationTopicController.load();
     await syncController.load();
     await privacyController.load();
   }

@@ -14,16 +14,24 @@ final class LocalDemoSyncSnapshotException implements Exception {
 
 /// Single documented initializer for the shared local demo authority.
 ///
-/// Publishes the deterministic Familia Ejemplo pastime baseline when the
-/// authority has no pastime rows for that fictional family space. Independent
-/// clients must not each seed competing private pastime fixtures in shared mode.
+/// Publishes the deterministic Familia Ejemplo pastime and conversation-topic
+/// baselines when those aggregates are missing for that fictional family space.
+/// Independent clients must not each seed competing private fixtures in shared
+/// mode.
 abstract final class LocalDemoFictionalBaseline {
   static const int schemaVersion = 1;
 
   static FamilySpaceId get familySpaceId =>
       IdentityFixtures.familiaEjemploSpaceId;
 
-  /// Returns `true` when this call published the baseline.
+  /// Ensures pastimes and conversation topics. Returns true if either published.
+  static bool ensureBaseline(InMemorySyncAuthority authority) {
+    final pastimes = ensurePastimes(authority);
+    final topics = ensureConversationTopics(authority);
+    return pastimes || topics;
+  }
+
+  /// Returns `true` when this call published the pastime baseline.
   static bool ensurePastimes(InMemorySyncAuthority authority) {
     if (authority.hasPastimeRowsFor(familySpaceId.value)) {
       return false;
@@ -41,6 +49,29 @@ abstract final class LocalDemoFictionalBaseline {
     _seedPastime(
       authority,
       pastime: OfflineFixtures.archivedPhotosPastime,
+      version: AggregateVersion(1),
+    );
+    return true;
+  }
+
+  /// Returns `true` when this call published the conversation-topic baseline.
+  static bool ensureConversationTopics(InMemorySyncAuthority authority) {
+    if (authority.hasConversationTopicRowsFor(familySpaceId.value)) {
+      return false;
+    }
+    _seedTopic(
+      authority,
+      topic: OfflineFixtures.gardenTalkTopic,
+      version: AggregateVersion(1),
+    );
+    _seedTopic(
+      authority,
+      topic: OfflineFixtures.draftKitchenTopic,
+      version: AggregateVersion(1),
+    );
+    _seedTopic(
+      authority,
+      topic: OfflineFixtures.archivedMusicTopic,
       version: AggregateVersion(1),
     );
     return true;
@@ -65,6 +96,33 @@ abstract final class LocalDemoFictionalBaseline {
         'version': version.value,
       },
       tombstoned: pastime.isDeleted,
+    );
+  }
+
+  static void _seedTopic(
+    InMemorySyncAuthority authority, {
+    required ConversationTopic topic,
+    required AggregateVersion version,
+  }) {
+    authority.seed(
+      aggregateType: OutboxAggregateType.conversationTopic,
+      aggregateId: topic.id.value,
+      familySpaceId: topic.familySpaceId.value,
+      version: version,
+      payload: <String, Object?>{
+        'title': topic.title,
+        'introduction': topic.introduction,
+        'prompts': topic.prompts
+            .map((p) => <String, Object?>{'order': p.order, 'text': p.text})
+            .toList(growable: false),
+        'closing': topic.closing,
+        'displayOrder': topic.displayOrder,
+        'lifecycle': topic.lifecycleStatus.wireName,
+        'memoryId': topic.memoryId?.value,
+        'tombstoned': topic.isDeleted,
+        'version': version.value,
+      },
+      tombstoned: topic.isDeleted,
     );
   }
 }

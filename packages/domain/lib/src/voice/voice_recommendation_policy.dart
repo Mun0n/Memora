@@ -58,11 +58,15 @@ abstract final class VoiceRecommendationPolicy {
         return VoiceGuidanceDecision.nothingPrepared(intent: intent);
 
       case VoiceIntentClass.explicitTalk:
-        // Honest placeholder only — never claims a call is available.
-        return VoiceGuidanceDecision.suggest(
-          destination: HomeGuidanceDestination.quieroHablar,
-          intent: intent,
-        );
+        // Availability depends on cached active topics; still confirm-before-nav.
+        // Never a telephone feature.
+        if (content.hasActiveConversationTopics) {
+          return VoiceGuidanceDecision.suggest(
+            destination: HomeGuidanceDestination.quieroHablar,
+            intent: intent,
+          );
+        }
+        return VoiceGuidanceDecision.nothingPrepared(intent: intent);
 
       case VoiceIntentClass.genericHelp:
         return _genericPriority(content);
@@ -70,7 +74,7 @@ abstract final class VoiceRecommendationPolicy {
   }
 
   /// Normative generic priority: Mi día → Pasatiempos → Recuerdos.
-  /// `Quiero hablar` is excluded until it becomes functional.
+  /// `Quiero hablar` is never selected by profiling conversation need.
   static VoiceGuidanceDecision _genericPriority(VoiceContentSnapshot content) {
     const intent = VoiceIntentClass.genericHelp;
     if (content.hasCurrentOrPendingMiDia) {

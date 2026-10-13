@@ -32,6 +32,16 @@ final class InMemorySyncAuthority {
     );
   }
 
+  /// Whether any conversation-topic row exists for [familySpaceId].
+  bool hasConversationTopicRowsFor(String familySpaceId) {
+    final trimmed = familySpaceId.trim();
+    return _rows.values.any(
+      (row) =>
+          row.familySpaceId == trimmed &&
+          row.aggregateType == OutboxAggregateType.conversationTopic,
+    );
+  }
+
   /// Clears all rows and idempotency keys (documented local demo reset).
   void reset() {
     _rows.clear();

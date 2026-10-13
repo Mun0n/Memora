@@ -83,6 +83,8 @@ void main() {
         'resolveSyncConflicts',
         'viewPastimes',
         'editPastimes',
+        'viewConversationTopics',
+        'editConversationTopics',
       });
     });
   });

@@ -49,6 +49,7 @@ abstract final class MemoraCopy {
   // Navigation
   static const String navRoutines = 'Rutinas';
   static const String navPastimes = 'Pasatiempos';
+  static const String navConversations = 'Conversaciones';
   static const String navMemories = 'Recuerdos';
   static const String navObservations = 'Observaciones';
   static const String navSync = 'Sincronización';
@@ -153,11 +154,54 @@ abstract final class MemoraCopy {
   static const String pasatiemposSharedPending =
       'Actualizando las actividades…';
 
-  // Quiero hablar — honest placeholder (no call success)
+  // Quiero hablar — family-guided conversation topics (never a telephone)
   static const String quieroHablarTitle = 'Quiero hablar';
-  static const String quieroHablarBody =
-      'Aquí aparecerán las personas de confianza que configure tu familia. '
-      'Desde aquí no se hace ninguna llamada.';
+  static const String quieroHablarInvitation =
+      'Elige un tema familiar cuando quieras hablar un rato.';
+  static const String quieroHablarEmptyBody =
+      'Tu familia aún no ha preparado una conversación. Puedes volver al inicio.';
+  static const String quieroHablarPickForMe = 'Elige tú por mí';
+  static const String quieroHablarStart = 'Empezar';
+  static const String quieroHablarContinue = 'Continuar';
+  static const String quieroHablarFinishedSpeaking = 'He terminado';
+  static const String quieroHablarRepeat = 'Repetir';
+  static const String quieroHablarChangeTopic = 'Cambiar de tema';
+  static const String quieroHablarFinish = 'Terminar';
+  static const String quieroHablarBackToTopics = 'Volver a los temas';
+  static const String quieroHablarListening =
+      'Te escucho… Puedes hablar con calma.';
+  static const String quieroHablarMemoraSpeaking = 'Memora está hablando';
+  static const String quieroHablarMicReleased = 'Micrófono liberado';
+  static const String quieroHablarManualSpeak = 'Hablar';
+  static const String quieroHablarSpeechOutputUnavailable =
+      'Ahora no puedo hablar en voz alta. Puedes leer el texto y pulsar '
+      'Hablar cuando quieras que te escuche.';
+  static const String quieroHablarSharedPullFailed =
+      'No se pudieron cargar los cambios de tu familia. '
+      'Se muestran los temas guardados aquí.';
+  static const String quieroHablarSharedPending = 'Actualizando los temas…';
+  static const String quieroHablarIsolatedDemoNotice =
+      'Esta lista es solo de demostración en este dispositivo.';
+  static const String quieroHablarOffline =
+      'Sin red. Los temas guardados siguen disponibles.';
+  static const String quieroHablarOpenHint = 'Ver tema';
+  static const String quieroHablarNeutralAck = 'Gracias por contármelo';
+  static const String quieroHablarSilenceRecovery =
+      'No pasa nada. Podemos seguir, cambiar de tema o terminar';
+  static const String quieroHablarNoMeAcuerdoRecovery =
+      'No pasa nada. Podemos hablar de otra cosa';
+  static const String quieroHablarRecognitionFailure =
+      'No te he entendido. Puedes repetir, cambiar de tema o terminar';
+  static const String quieroHablarUnavailable =
+      'Ahora no puedo escucharte. Puedes leer el tema y usar los botones '
+      'para seguir o terminar';
+  static const String quieroHablarSafetyLimitation =
+      'Memora no es un servicio médico ni de emergencias. No diagnostica, '
+      'no aconseja tratamientos ni afirma que se haya contactado con ayuda. '
+      'Si necesitas ayuda urgente, usa los canales de emergencia de tu zona.';
+
+  /// Kept for destination chrome keys; body is invitation / empty / session.
+  static const String quieroHablarBody = quieroHablarInvitation;
 
   // Voice guidance — Slice 9 (mirrors VoiceGuidanceCopy; tap-gated, on-device)
   static const String homeAyudameLabel = 'Ayúdame';
@@ -201,8 +245,8 @@ abstract final class MemoraCopy {
   static const String voiceSuggestRecuerdos =
       'Te recomiendo Recuerdos. ¿Quieres ir ahora?';
   static const String voiceSuggestQuieroHablar =
-      'Te recomiendo Quiero hablar. Desde aquí no se hace ninguna llamada. '
-      '¿Quieres ir ahora?';
+      'Te recomiendo Quiero hablar. Es un espacio para conversar con temas '
+      'de tu familia; desde aquí no se hace ninguna llamada. ¿Quieres ir ahora?';
   static const String voiceGoToMiDia = 'Ir a Mi día';
   static const String voiceGoToPasatiempos = 'Ir a Pasatiempos';
   static const String voiceGoToRecuerdos = 'Ir a Recuerdos';
@@ -233,6 +277,47 @@ abstract final class MemoraCopy {
       'Tu rol no puede configurar pasatiempos.';
   static const String pastimesActiveLimitError =
       'Ya hay seis pasatiempos activos. Archiva uno antes de activar otro.';
+
+  // Family web — conversation topic configure
+  static const String conversationsSectionTitle =
+      'Conversaciones guiadas de la familia';
+  static const String conversationsSectionBody =
+      'Prepara hasta seis temas activos con una introducción, invitaciones '
+      'para hablar y un cierre. El contenido debe invitar, no examinar.';
+  static const String conversationsGuidance =
+      'Evita formulaciones como «¿Te acuerdas de…?», preguntas con una sola '
+      'respuesta correcta, instrucciones de corrección, afirmaciones médicas '
+      'o escenarios de emergencia.';
+  static const String createConversationTopic = 'Crear tema';
+  static const String editConversationTopic = 'Editar tema';
+  static const String saveConversationTopic = 'Guardar tema';
+  static const String activateConversationTopic = 'Activar';
+  static const String archiveConversationTopic = 'Archivar';
+  static const String moveConversationTopicUp = 'Subir';
+  static const String moveConversationTopicDown = 'Bajar';
+  static const String conversationTopicTitleLabel = 'Título';
+  static const String conversationIntroductionLabel = 'Introducción';
+  static const String conversationPromptsLabel = 'Invitaciones para hablar';
+  static const String conversationPromptLabel = 'Invitación';
+  static const String conversationClosingLabel = 'Cierre';
+  static const String conversationMemoryLinkLabel =
+      'Recuerdo aprobado (opcional)';
+  static const String conversationMemoryLinkNone = 'Sin recuerdo vinculado';
+  static const String conversationAddPrompt = 'Añadir invitación';
+  static const String conversationRemovePrompt = 'Quitar invitación';
+  static const String conversationPreviewTitle = 'Vista de la persona apoyada';
+  static const String conversationLifecycleDraft = 'Borrador';
+  static const String conversationLifecycleActive = 'Activo';
+  static const String conversationLifecycleArchived = 'Archivado';
+  static const String conversationsEmptyConfigure =
+      'Aún no hay temas. Crea uno para la persona apoyada.';
+  static const String conversationsValidationError =
+      'Título (1–60), introducción (1–240), entre 1 y 5 invitaciones '
+      '(1–240 cada una) y cierre (1–160) son obligatorios.';
+  static const String conversationsUnauthorized =
+      'Tu rol no puede configurar conversaciones.';
+  static const String conversationsActiveLimitError =
+      'Ya hay seis temas activos. Archiva uno antes de activar otro.';
 
   // Family web configure
   static const String familyHomeTitle = 'Rutinas y recordatorios';

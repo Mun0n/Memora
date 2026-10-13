@@ -9,6 +9,7 @@ library;
 
 export 'src/identity/family_membership_dto.dart';
 export 'src/identity/family_space_dto.dart';
+export 'src/offline/in_memory_conversation_topic_repository.dart';
 export 'src/offline/in_memory_memory_repository.dart';
 export 'src/offline/in_memory_observation_repositories.dart';
 export 'src/offline/in_memory_offline_store.dart';

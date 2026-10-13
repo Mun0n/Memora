@@ -48,6 +48,12 @@ abstract final class VoiceUtteranceFixtures {
     hasActivePastimes: true,
     hasApprovedMemories: true,
   );
+  static const VoiceContentSnapshot _topicsOnly = VoiceContentSnapshot(
+    hasCurrentOrPendingMiDia: false,
+    hasActivePastimes: false,
+    hasApprovedMemories: false,
+    hasActiveConversationTopics: true,
+  );
 
   static const List<VoiceUtteranceFixture> all = <VoiceUtteranceFixture>[
     // --- Routine / now → Mi día ---
@@ -142,7 +148,7 @@ abstract final class VoiceUtteranceFixtures {
       expectedKind: VoiceGuidanceKind.nothingPrepared,
     ),
 
-    // --- Explicit talk → Quiero hablar with honesty ---
+    // --- Explicit talk → Quiero hablar when active topics cached ---
     VoiceUtteranceFixture(
       id: 'talk_quiero_hablar',
       utterance: 'Quiero hablar',
@@ -156,7 +162,7 @@ abstract final class VoiceUtteranceFixtures {
       id: 'talk_llamar',
       utterance: 'Quiero llamar',
       expectedIntent: VoiceIntentClass.explicitTalk,
-      content: _none,
+      content: _topicsOnly,
       expectedKind: VoiceGuidanceKind.suggestDestination,
       expectedDestination: HomeGuidanceDestination.quieroHablar,
       expectTalkPlaceholder: true,
@@ -169,6 +175,13 @@ abstract final class VoiceUtteranceFixtures {
       expectedKind: VoiceGuidanceKind.suggestDestination,
       expectedDestination: HomeGuidanceDestination.quieroHablar,
       expectTalkPlaceholder: true,
+    ),
+    VoiceUtteranceFixture(
+      id: 'talk_skip_unavailable',
+      utterance: 'Quiero hablar',
+      expectedIntent: VoiceIntentClass.explicitTalk,
+      content: _none,
+      expectedKind: VoiceGuidanceKind.nothingPrepared,
     ),
 
     // --- Generic priority ---

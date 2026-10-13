@@ -49,8 +49,12 @@ void main() {
               expect(decision.message, VoiceGuidanceCopy.suggestQuieroHablar);
               expect(
                 decision.message.toLowerCase(),
-                contains('no se hace ninguna llamada'),
+                allOf(
+                  contains('no se hace ninguna llamada'),
+                  contains('conversar'),
+                ),
               );
+              expect(decision.usesTalkHonestyWording, isTrue);
             }
           case VoiceGuidanceKind.unclear:
             expect(decision.message, VoiceGuidanceCopy.unclear);
@@ -79,6 +83,7 @@ void main() {
         hasCurrentOrPendingMiDia: false,
         hasActivePastimes: false,
         hasApprovedMemories: false,
+        hasActiveConversationTopics: true,
       );
       final decision = VoiceRecommendationPolicy.recommend(
         textInMemory: 'No sé qué hacer',
@@ -87,20 +92,36 @@ void main() {
       expect(decision.kind, VoiceGuidanceKind.nothingPrepared);
       expect(decision.destination, isNot(HomeGuidanceDestination.quieroHablar));
 
-      // Even if somehow only talk were "available", generic still excludes it.
-      final withEverythingExceptFunctionalTalk =
-          VoiceRecommendationPolicy.forIntent(
-            intent: VoiceIntentClass.genericHelp,
-            content: VoiceContentSnapshot.allAvailable,
-          );
+      // Active topics must not cause generic help to profile conversation need.
+      final withEverything = VoiceRecommendationPolicy.forIntent(
+        intent: VoiceIntentClass.genericHelp,
+        content: VoiceContentSnapshot.allAvailable,
+      );
       expect(
-        withEverythingExceptFunctionalTalk.destination,
+        withEverything.destination,
         isNot(HomeGuidanceDestination.quieroHablar),
       );
-      expect(
-        withEverythingExceptFunctionalTalk.destination,
-        HomeGuidanceDestination.miDia,
+      expect(withEverything.destination, HomeGuidanceDestination.miDia);
+    });
+
+    test('explicit talk requires cached active topics', () {
+      final available = VoiceRecommendationPolicy.forIntent(
+        intent: VoiceIntentClass.explicitTalk,
+        content: const VoiceContentSnapshot(
+          hasCurrentOrPendingMiDia: false,
+          hasActivePastimes: false,
+          hasApprovedMemories: false,
+          hasActiveConversationTopics: true,
+        ),
       );
+      expect(available.destination, HomeGuidanceDestination.quieroHablar);
+
+      final unavailable = VoiceRecommendationPolicy.forIntent(
+        intent: VoiceIntentClass.explicitTalk,
+        content: VoiceContentSnapshot.empty,
+      );
+      expect(unavailable.kind, VoiceGuidanceKind.nothingPrepared);
+      expect(unavailable.destination, isNull);
     });
 
     test('skips unavailable steps in priority order', () {

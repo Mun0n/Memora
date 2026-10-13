@@ -25,7 +25,7 @@ final class VoiceGuidanceDecision {
     required this.intent,
     required this.message,
     this.destination,
-    this.usesTalkPlaceholderWording = false,
+    this.usesTalkHonestyWording = false,
   });
 
   final VoiceGuidanceKind kind;
@@ -37,8 +37,11 @@ final class VoiceGuidanceDecision {
   /// Present only when [kind] is [VoiceGuidanceKind.suggestDestination].
   final HomeGuidanceDestination? destination;
 
-  /// True when suggesting `Quiero hablar` with honest placeholder wording.
-  final bool usesTalkPlaceholderWording;
+  /// True when suggesting `Quiero hablar` with honest non-telephone wording.
+  final bool usesTalkHonestyWording;
+
+  /// Backward-compatible alias used by Slice 9 tests/callers.
+  bool get usesTalkPlaceholderWording => usesTalkHonestyWording;
 
   bool get suggestsDestination =>
       kind == VoiceGuidanceKind.suggestDestination && destination != null;
@@ -52,7 +55,7 @@ final class VoiceGuidanceDecision {
       kind: VoiceGuidanceKind.suggestDestination,
       intent: intent,
       destination: destination,
-      usesTalkPlaceholderWording: talk,
+      usesTalkHonestyWording: talk,
       message: VoiceGuidanceCopy.suggestDestination(destination),
     );
   }

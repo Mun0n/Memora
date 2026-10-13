@@ -2,6 +2,7 @@
 enum FeatureSection {
   routines,
   pastimes,
+  conversations,
   memories,
   observations,
   sync,

@@ -24,6 +24,9 @@ final class DemoIds {
 
   PastimeId nextPastimeId() => PastimeId(nextUuid());
 
+  ConversationTopicId nextConversationTopicId() =>
+      ConversationTopicId(nextUuid());
+
   IdempotencyKey nextIdempotencyKey(String purpose) {
     return IdempotencyKey('demo-ui-$purpose-${nextUuid()}');
   }

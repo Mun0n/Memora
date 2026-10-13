@@ -2,9 +2,10 @@
 
 ## Status
 
-APPROVED POST-MVP PRODUCT SLICE, gated on Slice 9 validation, independent audit and
-human acceptance. Slice 9 and its stable four-choice home plus central `Ayúdame`
-control are the accepted baseline.
+HUMAN ACCEPTED on 2026-10-13 after full validation, independent `PASS_WITH_NOTES`
+audit and physical-device review of audible local prompts followed by automatic turn
+capture. Slice 9 and its stable four-choice home plus central `Ayúdame` control remain
+the accepted baseline.
 
 ## Product decision
 
@@ -16,7 +17,9 @@ An authorized caregiver creates a small set of conversation topics in the respon
 web application. Each topic contains a reassuring contextual introduction, a short
 ordered sequence of gentle invitations to speak and a closing. The supported-person
 application presents those topics and conducts a turn-based spoken conversation using
-only deterministic, family-authored content.
+only deterministic, family-authored content. In the normal Android experience Memora
+both writes and speaks its introduction, prompts, acknowledgements and closing. It
+starts listening automatically only after its spoken turn has finished.
 
 The purpose is to offer an enjoyable opportunity to communicate. Memora never scores
 recall, fluency, accuracy, participation or cognitive ability and never claims to
@@ -78,25 +81,34 @@ correcting, interrupting or retaining what the person says.
 ### Turn-based conversation
 
 1. The person chooses a topic and explicitly starts the conversation.
-2. Memora presents the contextual introduction, for example:
+2. Memora writes and reads aloud the contextual introduction, for example:
    `Tu familia me ha contado que te gustaba cuidar el jardín`.
-3. Memora presents one invitation at a time, for example:
+3. Memora writes and reads aloud one invitation at a time, for example:
    `Si te apetece, puedes contarme qué era lo que más te gustaba plantar`.
-4. Listening is visibly active only for the person's turn. The person can press
+4. The microphone remains closed while Memora is speaking. When the audible prompt
+   finishes, Memora leaves a brief natural pause and starts the on-device recognizer
+   automatically; no second confirmation or microphone tap is required within the
+   explicitly started conversation.
+5. Listening is visibly active only for the person's turn. The person can press
    `He terminado`, `Repetir`, `Cambiar de tema` or `Terminar` at any time.
-5. After speech ends, Memora uses a neutral acknowledgement such as
-   `Gracias por contármelo`, releases the microphone and offers the next authored
-   prompt. It does not claim to understand, agree with or verify any detail.
-6. The final authored closing is shown after the last prompt. The person may return to
-   the topic list or home.
+6. After speech ends, Memora releases the microphone and writes and speaks a neutral
+   acknowledgement such as `Gracias por contármelo`, followed by the next authored
+   prompt. Only after that spoken turn completes may listening start again. Memora does
+   not claim to understand, agree with or verify any detail.
+7. The final authored closing is written and spoken after the last prompt. The
+   microphone remains closed; the person may return to the topic list or home.
 
 - There is no countdown, target duration, required number of turns or automatic score.
 - A long answer is not interrupted by a short visual timer. Speech completion can use
   calm silence detection plus the visible `He terminado` action.
 - Memora never asks another prompt while the microphone is active and never listens
-  while it is speaking.
-- The written introduction, prompt, acknowledgement and controls remain sufficient;
-  speech output is optional enhancement only.
+  while it is speaking. Speech output and recognition are serialized through explicit
+  completion callbacks, not timing guesses.
+- The normal path speaks at a calm, natural Spanish rate: slightly slower than the
+  platform default but not labored. Start with a `0.90` speech-rate setting and verify
+  the perceived pace on the target physical device during human review.
+- The written introduction, prompt, acknowledgement and controls remain sufficient as
+  an accessible fallback when an installed local voice is unavailable.
 
 ## Gentle recovery behavior
 
@@ -116,8 +128,8 @@ correcting, interrupting or retaining what the person says.
 ## Deterministic conversation engine
 
 - Implement a small conversation-session state machine with explicit phases such as
-  topic introduction, prompt ready, listening, acknowledgement, next prompt, closing,
-  cancelled and unavailable.
+  topic introduction, speaking, prompt ready, listening, acknowledgement, next prompt,
+  closing, cancelled and unavailable.
 - All user-facing conversational sentences come from family-authored topic content or
   reviewed fixed application copy.
 - The engine may recognize only a minimal fixed command vocabulary needed for control,
@@ -137,9 +149,17 @@ correcting, interrupting or retaining what the person says.
 - The explicit start of a conversation authorizes only the visible turn-based session;
   the microphone still opens and closes for individual turns and never remains active
   in background.
-- Optional spoken prompts use an installed on-device platform voice only. If an
-  on-device voice is unavailable, the complete written experience remains usable and
-  no network voice fallback occurs.
+- Spoken conversation turns are required in the normal Android path and use an
+  installed Spanish on-device platform voice only. The adapter must reject voices that
+  require a network connection and signal completion or failure for each utterance.
+- After a spoken prompt completes, wait only a brief natural transition and then open
+  on-device recognition automatically. A stale completion callback after cancel,
+  navigation or lifecycle pause must never reopen the microphone.
+- Speech output must stop and release on cancellation, navigation, lifecycle pause and
+  disposal, just like recognition. Output and input must never be active together, so
+  the app cannot recognize its own prompt.
+- If an on-device voice is unavailable, the complete written experience remains usable,
+  offers an explicit manual `Hablar` action and no network voice fallback occurs.
 - Permission denial, missing language support or unavailable recognition keeps topic
   reading and manual navigation usable.
 - Do not add phone, contacts, location, storage or unrelated Android permissions.
@@ -212,9 +232,12 @@ correcting, interrupting or retaining what the person says.
 4. Phone and tablet widget tests at text scales 1.0 and 1.5 show ordered topic cards,
    honest empty/offline states and predictable return home without overflow or targets
    at or below 48 dp.
-5. Conversation-state tests prove explicit session start, one prompt at a time,
-   microphone release between turns, no listen while Memora speaks and release on every
-   completion, cancellation, lifecycle and navigation path.
+5. Conversation-state tests prove explicit session start, one prompt at a time, the
+   ordered sequence `speak → speech-complete → listen`, microphone release between
+   turns, no output/input overlap, no listen while Memora speaks and release of both
+   resources on every completion, cancellation, lifecycle and navigation path. Tests
+   also prove repeat re-speaks the prompt, a stale output callback cannot open the mic,
+   and unavailable local speech output falls back to written text plus manual `Hablar`.
 6. Tests cover ordinary speech, a long turn, silence, `no me acuerdo`, repeat, change
    topic, finish, recognition failure, permission denial, unavailable on-device speech
    and safety-sensitive language without traps or fabricated understanding.
@@ -238,7 +261,8 @@ correcting, interrupting or retaining what the person says.
   packages.
 - Caregiver/family web topic configuration and preview.
 - Supported-person `Quiero hablar` topic selection and guided-conversation surfaces.
-- Minimal reuse/extension of on-device speech and optional local speech-output adapters.
+- Reuse/extension of on-device recognition plus a required local speech-output port,
+  Android adapter and deterministic fake.
 - Family-scoped Supabase migration, RLS contracts and local tests.
 - Focused accessibility, privacy, offline, cross-client and state-machine tests.
 - `docs/current/PROJECT_STATE.md`, product roadmap/spec updates and Slice 10 reports.
@@ -264,6 +288,9 @@ correcting, interrupting or retaining what the person says.
   answer rather than deterministic authored progression.
 - An implementation persists or transmits user speech or session behavior.
 - On-device speech cannot be guaranteed without silent network fallback.
+- A local Spanish speech-output voice cannot be selected without accepting a
+  network-required voice or the implementation cannot reliably sequence
+  output-complete before recognition starts.
 - The UI cannot keep listening state and exit controls obvious at required sizes and
   text scales.
 - Authorization cannot isolate topic content by active family membership and explicit
@@ -279,8 +306,12 @@ correcting, interrupting or retaining what the person says.
   early finish; confirm none produces pressure, criticism or a trap.
 - Confirm prompts are paced calmly, do not interrupt and do not pretend to understand
   details from the answer.
-- Verify written controls remain sufficient without speech output and the microphone is
-  visibly released between turns, on pause and on exit.
+- Verify introduction, prompts, acknowledgements and closing are spoken at a calm but
+  natural pace; the microphone opens automatically only after each spoken prompt ends.
+- Confirm there is no audible clipping, excessive delay, output/input overlap or capture
+  of Memora's own voice on the target Android device.
+- Verify written controls remain sufficient when local speech output is unavailable and
+  both audio resources are visibly released between turns, on pause and on exit.
 - Configure a fictional topic on the web and verify it reaches the physical Android
   device through shared local demo sync and remains usable offline.
 - Review all fictional prompts for potentially distressing content and confirm topics

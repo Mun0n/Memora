@@ -30,6 +30,46 @@ void main() {
       expect(await fake.listen(), isA<SpeechTimeout>());
     });
 
+    test('fake speech output retains no utterance after completion', () async {
+      final fake = FakeSpeechOutput();
+      await fake.speak('Introducción Demo que no debe persistir');
+      expect(fake.retainedUtteranceForTest, isNull);
+      expect(fake.isSpeaking, isFalse);
+    });
+
+    test('fake speech output clears utterance on release', () async {
+      final fake = FakeSpeechOutput(autoComplete: false);
+      final future = fake.speak('Cierre Demo efímero');
+      expect(fake.retainedUtteranceForTest, isNotNull);
+      await fake.release();
+      expect(fake.retainedUtteranceForTest, isNull);
+      expect(await future, isA<SpeechSpeakCancelled>());
+    });
+
+    test(
+      'conversation privacy exclusions cover synthesized speech surfaces',
+      () {
+        expect(
+          FamilyContentScope.excludedConversationSessionSurfaces,
+          containsAll(<String>[
+            'audio',
+            'synthesizedAudio',
+            'utteranceHistory',
+            'speechOutputCache',
+            'transcript',
+          ]),
+        );
+        // Caregiver-authored topics stay in export/deletion; session speech
+        // never becomes a FamilyContentType.
+        expect(FamilyContentScope.includesConversationTopics(), isTrue);
+        final wireNames = FamilyContentType.values
+            .map((e) => e.wireName)
+            .toSet();
+        expect(wireNames, isNot(contains('synthesizedAudio')));
+        expect(wireNames, isNot(contains('utteranceHistory')));
+      },
+    );
+
     test(
       'voice lib sources do not reference sync/audit/outbox persistence',
       () {

@@ -59,7 +59,7 @@ final class LocalDemoSyncServer {
     final resolvedAuthority =
         authority ?? store?.load() ?? InMemorySyncAuthority();
     if (ensureFictionalBaselineWhenEmpty) {
-      LocalDemoFictionalBaseline.ensurePastimes(resolvedAuthority);
+      LocalDemoFictionalBaseline.ensureBaseline(resolvedAuthority);
     }
     final httpServer = await HttpServer.bind(host, port);
     final demo = LocalDemoSyncServer._(
@@ -78,7 +78,7 @@ final class LocalDemoSyncServer {
   Future<void> reset() async {
     authority.reset();
     if (ensureFictionalBaselineWhenEmpty) {
-      LocalDemoFictionalBaseline.ensurePastimes(authority);
+      LocalDemoFictionalBaseline.ensureBaseline(authority);
     }
     await _persist();
   }
@@ -114,6 +114,9 @@ final class LocalDemoSyncServer {
           'pastimeBaseline': authority.hasPastimeRowsFor(
             LocalDemoFictionalBaseline.familySpaceId.value,
           ),
+          'conversationTopicBaseline': authority.hasConversationTopicRowsFor(
+            LocalDemoFictionalBaseline.familySpaceId.value,
+          ),
         });
         return;
       }
@@ -126,13 +129,14 @@ final class LocalDemoSyncServer {
         return;
       }
       if (request.method == 'POST' && path == '/v1/bootstrap') {
-        final published = LocalDemoFictionalBaseline.ensurePastimes(authority);
+        final published = LocalDemoFictionalBaseline.ensureBaseline(authority);
         if (published) {
           await _persist();
         }
         _writeJson(request.response, HttpStatus.ok, {
           'initialized': published,
           'pastimeBaseline': true,
+          'conversationTopicBaseline': true,
         });
         return;
       }

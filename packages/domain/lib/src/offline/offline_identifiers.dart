@@ -117,6 +117,28 @@ final class PastimeId {
   String toString() => 'PastimeId($value)';
 }
 
+/// Opaque conversation-topic identifier (UUID string).
+final class ConversationTopicId {
+  factory ConversationTopicId(String raw) {
+    _assertUuid(raw, 'ConversationTopicId');
+    return ConversationTopicId._(raw.toLowerCase());
+  }
+
+  const ConversationTopicId._(this.value);
+
+  final String value;
+
+  @override
+  bool operator ==(Object other) =>
+      other is ConversationTopicId && other.value == value;
+
+  @override
+  int get hashCode => value.hashCode;
+
+  @override
+  String toString() => 'ConversationTopicId($value)';
+}
+
 /// Opaque routine day-progress identifier (UUID string).
 final class RoutineProgressId {
   factory RoutineProgressId(String raw) {

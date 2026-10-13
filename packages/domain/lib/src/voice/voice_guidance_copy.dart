@@ -1,6 +1,6 @@
 import 'home_guidance_destination.dart';
 
-/// Normative Spanish strings for voice guidance outcomes (Slice 9).
+/// Normative Spanish strings for voice guidance outcomes (Slice 9–10).
 ///
 /// Presentation may mirror these in `MemoraCopy`; tests assert against these
 /// constants so copy stays locked to the specification.
@@ -26,10 +26,10 @@ abstract final class VoiceGuidanceCopy {
   static const String recognizerUnavailable =
       'Ahora no puedo escucharte. Puedes elegir una de las cuatro opciones';
 
-  /// Honest `Quiero hablar` suggestion — never claims a call is available.
+  /// Honest `Quiero hablar` suggestion — conversation space, never a call.
   static const String suggestQuieroHablar =
-      'Te recomiendo Quiero hablar. Desde aquí no se hace ninguna llamada. '
-      '¿Quieres ir ahora?';
+      'Te recomiendo Quiero hablar. Es un espacio para conversar con temas '
+      'de tu familia; desde aquí no se hace ninguna llamada. ¿Quieres ir ahora?';
 
   static String suggestDestination(HomeGuidanceDestination destination) {
     return switch (destination) {

@@ -85,6 +85,18 @@ final class OfflineSyncBridge implements SyncPayloadLoader, SyncApplyHandler {
             'version': pastime.version.value,
           },
         );
+      case OutboxAggregateType.conversationTopic:
+        final topic = _store.conversationTopicById(
+          ConversationTopicId(operation.aggregateId),
+        );
+        if (topic == null) {
+          return null;
+        }
+        return SyncEnvelope(
+          operation: operation,
+          familySpaceId: topic.familySpaceId.value,
+          payload: _conversationTopicPayload(topic),
+        );
       case OutboxAggregateType.weightObservation:
         final observation = _store.weightById(
           ObservationId(operation.aggregateId),
@@ -285,6 +297,24 @@ final class OfflineSyncBridge implements SyncPayloadLoader, SyncApplyHandler {
           ),
         );
         return SyncApplyOutcome.applied;
+      case OutboxAggregateType.conversationTopic:
+        final local = _store.conversationTopicById(
+          ConversationTopicId(record.aggregateId),
+        );
+        if (local != null && !local.version.isBefore(record.version)) {
+          return SyncApplyOutcome.skipped;
+        }
+        _store.putConversationTopic(
+          _topicFromPayload(
+            aggregateId: record.aggregateId,
+            familySpaceId: record.familySpaceId,
+            payload: record.payload,
+            version: record.version,
+            tombstoned: record.tombstoned,
+            syncState: SyncState.synced,
+          ),
+        );
+        return SyncApplyOutcome.applied;
       case OutboxAggregateType.weightObservation:
         return _applyWeight(record, preserveBoth: preserveBoth);
       case OutboxAggregateType.bloodPressureObservation:
@@ -370,6 +400,10 @@ final class OfflineSyncBridge implements SyncPayloadLoader, SyncApplyHandler {
   Future<void> applyConflictResolution(SyncConflict conflict) async {
     if (conflict.aggregateType == OutboxAggregateType.pastime) {
       await _applyPastimeConflictResolution(conflict);
+      return;
+    }
+    if (conflict.aggregateType == OutboxAggregateType.conversationTopic) {
+      await _applyConversationTopicConflictResolution(conflict);
       return;
     }
     if (conflict.aggregateType != OutboxAggregateType.routine) {
@@ -491,6 +525,108 @@ final class OfflineSyncBridge implements SyncPayloadLoader, SyncApplyHandler {
     }
   }
 
+  Future<void> _applyConversationTopicConflictResolution(
+    SyncConflict conflict,
+  ) async {
+    final payload = switch (conflict.resolution) {
+      SyncConflictResolution.keepLocal => conflict.localPayload,
+      SyncConflictResolution.keepRemote => conflict.remotePayload,
+      SyncConflictResolution.keepBoth => conflict.localPayload,
+      SyncConflictResolution.unresolved => null,
+    };
+    if (payload == null) {
+      return;
+    }
+    final version = conflict.resolution == SyncConflictResolution.keepRemote
+        ? conflict.remoteVersion
+        : AggregateVersion(
+            conflict.localVersion.value > conflict.remoteVersion.value
+                ? conflict.localVersion.value
+                : conflict.remoteVersion.value,
+          );
+    _store.putConversationTopic(
+      _topicFromPayload(
+        aggregateId: conflict.aggregateId,
+        familySpaceId: conflict.familySpaceId.value,
+        payload: payload,
+        version: version,
+        tombstoned: false,
+        syncState: SyncState.synced,
+      ),
+    );
+    if (conflict.resolution == SyncConflictResolution.keepBoth) {
+      _store.putConversationTopic(
+        _topicFromPayload(
+          aggregateId: _forkUuid(conflict.aggregateId),
+          familySpaceId: conflict.familySpaceId.value,
+          payload: conflict.remotePayload,
+          version: conflict.remoteVersion,
+          tombstoned: false,
+          syncState: SyncState.synced,
+        ),
+      );
+    }
+  }
+
+  static Map<String, Object?> _conversationTopicPayload(
+    ConversationTopic topic,
+  ) {
+    return <String, Object?>{
+      'title': topic.title,
+      'introduction': topic.introduction,
+      'prompts': topic.prompts
+          .map((p) => <String, Object?>{'order': p.order, 'text': p.text})
+          .toList(growable: false),
+      'closing': topic.closing,
+      'displayOrder': topic.displayOrder,
+      'lifecycle': topic.lifecycleStatus.wireName,
+      'memoryId': topic.memoryId?.value,
+      'tombstoned': topic.isDeleted,
+      'version': topic.version.value,
+    };
+  }
+
+  static ConversationTopic _topicFromPayload({
+    required String aggregateId,
+    required String familySpaceId,
+    required Map<String, Object?> payload,
+    required AggregateVersion version,
+    required bool tombstoned,
+    required SyncState syncState,
+  }) {
+    final rawPrompts = payload['prompts'] as List<dynamic>? ?? const [];
+    final prompts = rawPrompts.map((raw) {
+      final map = Map<String, Object?>.from(raw as Map);
+      return ConversationPrompt(
+        order: map['order']! as int,
+        text: map['text']! as String,
+      );
+    }).toList();
+    final memoryRaw = payload['memoryId'] as String?;
+    return ConversationTopic(
+      id: ConversationTopicId(aggregateId),
+      familySpaceId: FamilySpaceId(familySpaceId),
+      title: payload['title']! as String,
+      introduction: payload['introduction']! as String,
+      prompts: prompts,
+      closing: payload['closing']! as String,
+      displayOrder: payload['displayOrder'] as int? ?? 0,
+      lifecycleStatus: ConversationTopicLifecycleStatus.parse(
+        payload['lifecycle'] as String? ?? 'draft',
+      ),
+      version: version,
+      syncState: syncState,
+      memoryId: memoryRaw == null ? null : MemoryId(memoryRaw),
+      tombstone: tombstoned
+          ? Tombstone(
+              aggregateId: aggregateId,
+              version: version,
+              deletedAt: DateTime.now().toUtc(),
+            )
+          : null,
+    );
+  }
+
   /// Deterministic valid UUID for a keep-both remote fork.
   static String _forkUuid(String aggregateId) {
     return '${aggregateId.substring(0, aggregateId.length - 2)}f1';
@@ -527,6 +663,15 @@ final class OfflineSyncBridge implements SyncPayloadLoader, SyncApplyHandler {
         final current = _store.pastimeById(PastimeId(operation.aggregateId));
         if (current != null) {
           _store.putPastime(
+            current.copyWith(syncState: state, version: version),
+          );
+        }
+      case OutboxAggregateType.conversationTopic:
+        final current = _store.conversationTopicById(
+          ConversationTopicId(operation.aggregateId),
+        );
+        if (current != null) {
+          _store.putConversationTopic(
             current.copyWith(syncState: state, version: version),
           );
         }

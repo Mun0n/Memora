@@ -44,6 +44,16 @@ void main() {
       ),
       (FamilyRole.supportedPerson, FamilyCapability.viewPastimes, true),
       (FamilyRole.supportedPerson, FamilyCapability.editPastimes, false),
+      (
+        FamilyRole.supportedPerson,
+        FamilyCapability.viewConversationTopics,
+        true,
+      ),
+      (
+        FamilyRole.supportedPerson,
+        FamilyCapability.editConversationTopics,
+        false,
+      ),
       (FamilyRole.primaryCaregiver, FamilyCapability.editRoutines, true),
       (FamilyRole.primaryCaregiver, FamilyCapability.configureReminders, true),
       (FamilyRole.primaryCaregiver, FamilyCapability.manageMemories, true),
@@ -62,6 +72,16 @@ void main() {
       (FamilyRole.primaryCaregiver, FamilyCapability.contributeMemories, false),
       (FamilyRole.primaryCaregiver, FamilyCapability.viewPastimes, true),
       (FamilyRole.primaryCaregiver, FamilyCapability.editPastimes, true),
+      (
+        FamilyRole.primaryCaregiver,
+        FamilyCapability.viewConversationTopics,
+        true,
+      ),
+      (
+        FamilyRole.primaryCaregiver,
+        FamilyCapability.editConversationTopics,
+        true,
+      ),
       (FamilyRole.caregiver, FamilyCapability.editRoutines, true),
       (FamilyRole.caregiver, FamilyCapability.manageMemories, true),
       (FamilyRole.caregiver, FamilyCapability.recordObservations, true),
@@ -69,6 +89,8 @@ void main() {
       (FamilyRole.caregiver, FamilyCapability.contributeMemories, false),
       (FamilyRole.caregiver, FamilyCapability.viewPastimes, true),
       (FamilyRole.caregiver, FamilyCapability.editPastimes, true),
+      (FamilyRole.caregiver, FamilyCapability.viewConversationTopics, true),
+      (FamilyRole.caregiver, FamilyCapability.editConversationTopics, true),
       (FamilyRole.familyContributor, FamilyCapability.viewRoutines, true),
       (FamilyRole.familyContributor, FamilyCapability.contributeMemories, true),
       (
@@ -94,6 +116,16 @@ void main() {
       ),
       (FamilyRole.familyContributor, FamilyCapability.viewPastimes, false),
       (FamilyRole.familyContributor, FamilyCapability.editPastimes, false),
+      (
+        FamilyRole.familyContributor,
+        FamilyCapability.viewConversationTopics,
+        false,
+      ),
+      (
+        FamilyRole.familyContributor,
+        FamilyCapability.editConversationTopics,
+        false,
+      ),
     ];
 
     for (final (role, capability, expected) in cases) {

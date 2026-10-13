@@ -233,7 +233,10 @@ void main() {
 
   testWidgets('Help/About disclaimer reachable from nav', (tester) async {
     await pumpWeb(tester, size: narrowSize);
-    await tester.tap(find.byKey(const Key('memora-nav-help')));
+    // Conversaciones nav chip wraps Help below the fold on phone width.
+    final help = find.byKey(const Key('memora-nav-help'));
+    await tester.ensureVisible(help);
+    await tester.tap(help);
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('memora-help-disclaimer')), findsOneWidget);
     expect(find.textContaining('no interpreta'), findsWidgets);

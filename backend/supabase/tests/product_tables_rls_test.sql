@@ -51,7 +51,8 @@ begin
         'weight_observations',
         'blood_pressure_observations',
         'audit_events',
-        'pastimes'
+        'pastimes',
+        'conversation_topics'
       )
   loop
     if not (r.rls and r.forced) then
@@ -192,6 +193,41 @@ insert into public.pastimes (
   1
 );
 
+insert into public.conversation_topics (
+  id, family_space_id, title, introduction, prompts, closing,
+  display_order, lifecycle_status, row_version
+) values (
+  '01932f00-0010-7000-8000-000000001001',
+  '01932f00-0002-7000-8000-0000000000a1',
+  'El jardin Demo',
+  'Tu familia me ha contado que te gustaba cuidar el jardin Ejemplo.',
+  '[{"order":0,"text":"Si te apetece, puedes contarme que era lo que mas te gustaba plantar."},{"order":1,"text":"Cuando quieras, habla un poco de las flores de la casa Demo."}]'::jsonb,
+  'Gracias por compartir un rato. Podemos hablar otro dia.',
+  0,
+  'active',
+  1
+), (
+  '01932f00-0010-7000-8000-000000001002',
+  '01932f00-0002-7000-8000-0000000000a1',
+  'Cocina Ejemplo',
+  'Tu familia recuerda las mananas en la cocina Demo con calma.',
+  '[{"order":0,"text":"Si quieres, cuentame un olor que te gustaba por la manana."}]'::jsonb,
+  'Cuando quieras, podemos dejarlo aqui.',
+  1,
+  'draft',
+  1
+), (
+  '01932f00-0010-7000-8000-000000001003',
+  '01932f00-0002-7000-8000-0000000000a1',
+  'Musica Ejemplo (archivado)',
+  'Tu familia me ha contado que te gustaba escuchar musica Demo.',
+  '[{"order":0,"text":"Si te apetece, habla de una cancion que te gustaba."}]'::jsonb,
+  'Podemos terminar cuando quieras.',
+  2,
+  'archived',
+  1
+);
+
 -- Primary: full product visibility in own family; none in Casa Demo B
 do $$
 declare
@@ -211,6 +247,9 @@ begin
 
   select count(*) into n from public.pastimes;
   perform pg_temp.assert_true('primary_sees_all_pastimes_in_space', n = 3);
+
+  select count(*) into n from public.conversation_topics;
+  perform pg_temp.assert_true('primary_sees_all_conversation_topics', n = 3);
 
   select count(*) into n from public.media_metadata;
   perform pg_temp.assert_true('primary_sees_media_metadata', n = 1);
@@ -289,6 +328,17 @@ begin
   where lifecycle_status in ('draft', 'archived');
   perform pg_temp.assert_true('supported_hides_draft_archived_pastimes', n = 0);
 
+  select count(*) into n from public.conversation_topics
+  where lifecycle_status = 'active';
+  perform pg_temp.assert_true('supported_views_active_conversation_topics', n = 1);
+
+  select count(*) into n from public.conversation_topics
+  where lifecycle_status in ('draft', 'archived');
+  perform pg_temp.assert_true(
+    'supported_hides_draft_archived_conversation_topics',
+    n = 0
+  );
+
   begin
     insert into public.routines (
       id, family_space_id, title, steps, lifecycle_status
@@ -329,6 +379,38 @@ begin
     when others then
       if sqlstate = '42501' then
         perform pg_temp.assert_true('supported_cannot_insert_pastime', true);
+      else
+        raise;
+      end if;
+  end;
+
+  begin
+    insert into public.conversation_topics (
+      id, family_space_id, title, introduction, prompts, closing,
+      display_order, lifecycle_status
+    ) values (
+      '01932f00-0010-7000-8000-0000000010d1',
+      '01932f00-0002-7000-8000-0000000000a1',
+      'Hack Topic',
+      'No debe insertarse desde supported person.',
+      '[{"order":0,"text":"Hack prompt Demo."}]'::jsonb,
+      'Cierre hack.',
+      9,
+      'active'
+    );
+    raise exception 'expected supported insert conversation topic to fail';
+  exception
+    when insufficient_privilege then
+      perform pg_temp.assert_true(
+        'supported_cannot_insert_conversation_topic',
+        true
+      );
+    when others then
+      if sqlstate = '42501' then
+        perform pg_temp.assert_true(
+          'supported_cannot_insert_conversation_topic',
+          true
+        );
       else
         raise;
       end if;
@@ -386,6 +468,9 @@ begin
   select count(*) into n from public.pastimes;
   perform pg_temp.assert_true('contributor_sees_no_pastimes', n = 0);
 
+  select count(*) into n from public.conversation_topics;
+  perform pg_temp.assert_true('contributor_sees_no_conversation_topics', n = 0);
+
   begin
     insert into public.pastimes (
       id, family_space_id, title, instruction, display_order, lifecycle_status
@@ -408,6 +493,38 @@ begin
         raise;
       end if;
   end;
+
+  begin
+    insert into public.conversation_topics (
+      id, family_space_id, title, introduction, prompts, closing,
+      display_order, lifecycle_status
+    ) values (
+      '01932f00-0010-7000-8000-0000000010e1',
+      '01932f00-0002-7000-8000-0000000000a1',
+      'Hack Contributor Topic',
+      'Contributor no configura temas.',
+      '[{"order":0,"text":"Hack prompt contributor."}]'::jsonb,
+      'Cierre hack.',
+      9,
+      'draft'
+    );
+    raise exception 'expected contributor insert conversation topic to fail';
+  exception
+    when insufficient_privilege then
+      perform pg_temp.assert_true(
+        'contributor_cannot_insert_conversation_topic',
+        true
+      );
+    when others then
+      if sqlstate = '42501' then
+        perform pg_temp.assert_true(
+          'contributor_cannot_insert_conversation_topic',
+          true
+        );
+      else
+        raise;
+      end if;
+  end;
 end $$;
 
 -- Revoked / invited / outsider / anon denial on product tables
@@ -425,6 +542,8 @@ begin
   perform pg_temp.assert_true('revoked_sees_no_weight', n = 0);
   select count(*) into n from public.pastimes;
   perform pg_temp.assert_true('revoked_sees_no_pastimes', n = 0);
+  select count(*) into n from public.conversation_topics;
+  perform pg_temp.assert_true('revoked_sees_no_conversation_topics', n = 0);
 end $$;
 
 do $$
@@ -507,6 +626,12 @@ begin
 
   select count(*) into n from public.pastimes;
   perform pg_temp.assert_true('space_b_sees_no_ejemplo_pastimes', n = 0);
+
+  select count(*) into n from public.conversation_topics;
+  perform pg_temp.assert_true(
+    'space_b_sees_no_ejemplo_conversation_topics',
+    n = 0
+  );
 end $$;
 
 -- Capability spot-checks for new wires
@@ -562,6 +687,20 @@ begin
       'editPastimes'
     )
   );
+  perform pg_temp.assert_true(
+    'capability_supported_view_conversation_topics',
+    public.memora_has_capability(
+      '01932f00-0002-7000-8000-0000000000a1',
+      'viewConversationTopics'
+    )
+  );
+  perform pg_temp.assert_true(
+    'capability_supported_no_edit_conversation_topics',
+    not public.memora_has_capability(
+      '01932f00-0002-7000-8000-0000000000a1',
+      'editConversationTopics'
+    )
+  );
 end $$;
 
 -- Caregiver can insert/update pastime; six-active limit enforced
@@ -586,6 +725,29 @@ begin
   set lifecycle_status = 'active', row_version = row_version + 1
   where id = '01932f00-0008-7000-8000-0000000008c1';
   perform pg_temp.assert_true('caregiver_can_activate_pastime', true);
+
+  insert into public.conversation_topics (
+    id, family_space_id, title, introduction, prompts, closing,
+    display_order, lifecycle_status
+  ) values (
+    '01932f00-0010-7000-8000-0000000010c1',
+    '01932f00-0002-7000-8000-0000000000a1',
+    'Paseo Demo',
+    'Tu familia recuerda los paseos Demo por el parque Ejemplo.',
+    '[{"order":0,"text":"Si te apetece, cuentame que veias en el paseo."}]'::jsonb,
+    'Cuando quieras, podemos dejarlo aqui.',
+    3,
+    'draft'
+  );
+  perform pg_temp.assert_true('caregiver_can_insert_conversation_topic', true);
+
+  update public.conversation_topics
+  set lifecycle_status = 'active', row_version = row_version + 1
+  where id = '01932f00-0010-7000-8000-0000000010c1';
+  perform pg_temp.assert_true(
+    'caregiver_can_activate_conversation_topic',
+    true
+  );
 end $$;
 
 do $$
@@ -597,6 +759,13 @@ begin
     public.memora_has_capability(
       '01932f00-0002-7000-8000-0000000000a1',
       'editPastimes'
+    )
+  );
+  perform pg_temp.assert_true(
+    'capability_primary_edit_conversation_topics',
+    public.memora_has_capability(
+      '01932f00-0002-7000-8000-0000000000a1',
+      'editConversationTopics'
     )
   );
 end $$;
@@ -617,6 +786,20 @@ begin
     not public.memora_has_capability(
       '01932f00-0002-7000-8000-0000000000a1',
       'viewPastimes'
+    )
+  );
+  perform pg_temp.assert_true(
+    'capability_contributor_no_edit_conversation_topics',
+    not public.memora_has_capability(
+      '01932f00-0002-7000-8000-0000000000a1',
+      'editConversationTopics'
+    )
+  );
+  perform pg_temp.assert_true(
+    'capability_contributor_no_view_conversation_topics',
+    not public.memora_has_capability(
+      '01932f00-0002-7000-8000-0000000000a1',
+      'viewConversationTopics'
     )
   );
 end $$;

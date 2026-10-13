@@ -78,9 +78,10 @@ the responsive web application from a phone, tablet or desktop browser.
   completion scenario below.
 - Family-guided conversation topics: up to six active caregiver-authored topics with a
   reassuring introduction, one to five gentle prompts and a closing, cached for offline
-  use. The supported-person app conducts a deterministic turn-based conversation using
-  on-device speech only. It does not test or correct memory, retain answers, score
-  communication or make therapeutic claims.
+  use. The supported-person app writes and speaks each turn with a local platform voice,
+  then starts on-device recognition only after its speech has completed. It conducts a
+  deterministic turn-based conversation without testing or correcting memory, retaining
+  answers, scoring communication or making therapeutic claims.
 
 ## MVP completion scenario
 

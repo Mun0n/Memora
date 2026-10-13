@@ -4,6 +4,9 @@ import '../memories/memory_lifecycle_status.dart';
 import '../memories/memory_media_metadata.dart';
 import '../observations/blood_pressure_observation.dart';
 import '../observations/weight_observation.dart';
+import '../conversations/conversation_prompt.dart';
+import '../conversations/conversation_topic.dart';
+import '../conversations/conversation_topic_lifecycle_status.dart';
 import '../pastimes/pastime.dart';
 import '../pastimes/pastime_lifecycle_status.dart';
 import '../reminders/quiet_hours.dart';
@@ -19,7 +22,7 @@ import '../sync/idempotency_key.dart';
 import '../sync/sync_state.dart';
 import 'offline_identifiers.dart';
 
-/// Stable Demo/Ejemplo offline fixtures for Slice 3–8 contracts.
+/// Stable Demo/Ejemplo offline fixtures for Slice 3–10 contracts.
 ///
 /// Uses reserved Slice 2 family-space IDs. Values are fictional only.
 abstract final class OfflineFixtures {
@@ -75,6 +78,18 @@ abstract final class OfflineFixtures {
     '01932f00-0008-7000-8000-000000000803',
   );
 
+  static final ConversationTopicId gardenTalkTopicId = ConversationTopicId(
+    '01932f00-0010-7000-8000-000000001001',
+  );
+
+  static final ConversationTopicId draftKitchenTopicId = ConversationTopicId(
+    '01932f00-0010-7000-8000-000000001002',
+  );
+
+  static final ConversationTopicId archivedMusicTopicId = ConversationTopicId(
+    '01932f00-0010-7000-8000-000000001003',
+  );
+
   static final IdempotencyKey morningRoutineSaveKey = IdempotencyKey(
     'demo-routine-save-01932f00-0003-7000-8000-000000000301',
   );
@@ -101,6 +116,10 @@ abstract final class OfflineFixtures {
 
   static final IdempotencyKey radioPastimeSaveKey = IdempotencyKey(
     'demo-pastime-save-01932f00-0008-7000-8000-000000000801',
+  );
+
+  static final IdempotencyKey gardenTalkTopicSaveKey = IdempotencyKey(
+    'demo-topic-save-01932f00-0010-7000-8000-000000001001',
   );
 
   static final DateTime demoRecordedAt = DateTime.utc(2026, 10, 10, 9, 0);
@@ -267,6 +286,72 @@ abstract final class OfflineFixtures {
     instruction: 'Mirar el álbum familiar Demo con calma.',
     displayOrder: 2,
     lifecycleStatus: PastimeLifecycleStatus.archived,
+    version: AggregateVersion.initial,
+    syncState: SyncState.local,
+  );
+
+  /// Active Demo conversation topic for supported-person Quiero hablar.
+  static final ConversationTopic gardenTalkTopic = ConversationTopic(
+    id: gardenTalkTopicId,
+    familySpaceId: IdentityFixtures.familiaEjemploSpaceId,
+    title: 'El jardín Demo',
+    introduction:
+        'Tu familia me ha contado que te gustaba cuidar el jardín Ejemplo.',
+    prompts: <ConversationPrompt>[
+      ConversationPrompt(
+        order: 0,
+        text:
+            'Si te apetece, puedes contarme qué era lo que más te gustaba plantar.',
+      ),
+      ConversationPrompt(
+        order: 1,
+        text: 'Cuando quieras, habla un poco de las flores de la casa Demo.',
+      ),
+    ],
+    closing: 'Gracias por compartir un rato. Podemos hablar otro día.',
+    displayOrder: 0,
+    lifecycleStatus: ConversationTopicLifecycleStatus.active,
+    version: AggregateVersion.initial,
+    syncState: SyncState.local,
+    memoryId: gardenMemoryId,
+  );
+
+  /// Draft Demo topic — never shown to the supported person.
+  static final ConversationTopic draftKitchenTopic = ConversationTopic(
+    id: draftKitchenTopicId,
+    familySpaceId: IdentityFixtures.familiaEjemploSpaceId,
+    title: 'Cocina Ejemplo',
+    introduction:
+        'Tu familia recuerda las mañanas en la cocina Demo con calma.',
+    prompts: <ConversationPrompt>[
+      ConversationPrompt(
+        order: 0,
+        text: 'Si quieres, cuéntame un olor que te gustaba por la mañana.',
+      ),
+    ],
+    closing: 'Cuando quieras, podemos dejarlo aquí.',
+    displayOrder: 1,
+    lifecycleStatus: ConversationTopicLifecycleStatus.draft,
+    version: AggregateVersion.initial,
+    syncState: SyncState.local,
+  );
+
+  /// Archived Demo topic — excluded from supported-person view.
+  static final ConversationTopic archivedMusicTopic = ConversationTopic(
+    id: archivedMusicTopicId,
+    familySpaceId: IdentityFixtures.familiaEjemploSpaceId,
+    title: 'Música Ejemplo (archivado)',
+    introduction:
+        'Tu familia me ha contado que te gustaba escuchar música Demo.',
+    prompts: <ConversationPrompt>[
+      ConversationPrompt(
+        order: 0,
+        text: 'Si te apetece, habla de una canción que te gustaba.',
+      ),
+    ],
+    closing: 'Podemos terminar cuando quieras.',
+    displayOrder: 2,
+    lifecycleStatus: ConversationTopicLifecycleStatus.archived,
     version: AggregateVersion.initial,
     syncState: SyncState.local,
   );

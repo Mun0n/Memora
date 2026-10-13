@@ -4,6 +4,61 @@ import '../routines/unauthorized_care_action_exception.dart';
 import 'audit_port.dart';
 import 'audit_record.dart';
 
+/// Family content types included when export/deletion contracts enumerate scope.
+///
+/// Caregiver-authored conversation topics are in scope. Ephemeral conversation
+/// session surfaces (audio, transcripts, answers, durations, topic choice,
+/// commands, history) are never included.
+enum FamilyContentType {
+  routines('routines'),
+  reminders('reminders'),
+  memories('memories'),
+  pastimes('pastimes'),
+  conversationTopics('conversationTopics'),
+  weightObservations('weightObservations'),
+  bloodPressureObservations('bloodPressureObservations');
+
+  const FamilyContentType(this.wireName);
+
+  final String wireName;
+}
+
+/// Normative export/deletion content scope for family-authored records.
+abstract final class FamilyContentScope {
+  static const List<FamilyContentType> exportAndDeletion = <FamilyContentType>[
+    FamilyContentType.routines,
+    FamilyContentType.reminders,
+    FamilyContentType.memories,
+    FamilyContentType.pastimes,
+    FamilyContentType.conversationTopics,
+    FamilyContentType.weightObservations,
+    FamilyContentType.bloodPressureObservations,
+  ];
+
+  /// Surfaces that must never appear in persistence, outbox, sync, audit or
+  /// export packages for guided conversations.
+  static const Set<String> excludedConversationSessionSurfaces = <String>{
+    'audio',
+    'synthesizedAudio',
+    'utteranceHistory',
+    'speechOutputCache',
+    'transcript',
+    'recognizedText',
+    'answerContent',
+    'duration',
+    'wordCount',
+    'silence',
+    'chosenTopic',
+    'command',
+    'conversationHistory',
+    'participationScore',
+    'completionEvent',
+  };
+
+  static bool includesConversationTopics() =>
+      exportAndDeletion.contains(FamilyContentType.conversationTopics);
+}
+
 /// Export package request (contract only — no hosted delivery).
 final class ExportPackageRequest {
   ExportPackageRequest({

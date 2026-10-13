@@ -19,7 +19,9 @@ enum FamilyCapability {
   recordObservations('recordObservations'),
   resolveSyncConflicts('resolveSyncConflicts'),
   viewPastimes('viewPastimes'),
-  editPastimes('editPastimes');
+  editPastimes('editPastimes'),
+  viewConversationTopics('viewConversationTopics'),
+  editConversationTopics('editConversationTopics');
 
   const FamilyCapability(this.wireName);
 
