@@ -50,6 +50,13 @@ Soft limits warn at 10 initial files or approximately 20,000 prompt characters. 
 - Each mutating role is surrounded by a filesystem snapshot. Changes outside its allowed paths stop the run.
 - QA runs `./scripts/validate.sh`; validation is run again after QA so the auditor
   never relies on stale evidence.
+- QA may repair tests and fictional fixtures in the app/package test directories
+  enumerated by `.agent/path_guards.json`; production paths remain forbidden.
+- If a run stops after a passing QA because an orchestration guard itself was stale,
+  `run_slice.sh <n> --resume-audit` may be used only after correcting and checkpointing
+  that guard. It requires an existing passing `qa.md`, a dirty slice implementation
+  and no existing `audit.md`; it revalidates and starts with a fresh AUDITOR without
+  repeating implementation roles.
 - Dirty implementation paths are rejected when the MVP run begins.
 - The runner creates a dedicated branch and local commits only after an accepted audit.
 - No push, deployment, Git rewrite, production connection or automatic use of real data.

@@ -10,7 +10,17 @@
   "allowed": {
     "DOMAIN": ["packages/domain/", "packages/data/", "backend/", "test/", "tool/", "docs/current/", ".agent/reports/"],
     "UI": ["apps/", "packages/ui/", "test/", "docs/current/", ".agent/reports/"],
-    "QA": ["test/", "scripts/validate.sh", "docs/current/", ".agent/reports/"],
+    "QA": [
+      "test/",
+      "apps/user/test/",
+      "apps/web/test/",
+      "packages/data/test/",
+      "packages/domain/test/",
+      "packages/ui/test/",
+      "scripts/validate.sh",
+      "docs/current/",
+      ".agent/reports/"
+    ],
     "SUPERVISOR": [".agent/reports/"],
     "AUDITOR": [".agent/reports/"]
   }

@@ -82,4 +82,22 @@ class OrchestratorContracts(unittest.TestCase):
         self.assertLess(qa, revalidation)
         self.assertLess(revalidation, audit)
 
+    def test_qa_guard_allows_only_test_surfaces_in_apps_and_packages(self):
+        guards = json.loads((ROOT / ".agent/path_guards.json").read_text())
+        qa = set(guards["allowed"]["QA"])
+        self.assertTrue({
+            "apps/user/test/", "apps/web/test/", "packages/data/test/",
+            "packages/domain/test/", "packages/ui/test/",
+        }.issubset(qa))
+        self.assertNotIn("apps/", qa)
+        self.assertNotIn("packages/", qa)
+
+    def test_audit_resume_is_bounded_to_passing_qa(self):
+        runner = (ROOT / "scripts/run_slice.sh").read_text()
+        self.assertIn("--resume-audit", runner)
+        self.assertIn("audit resume requires a PASS verdict", runner)
+        self.assertIn("audit resume requires an existing uncommitted slice implementation", runner)
+        self.assertIn("RESUMED_AFTER_QA_GUARD", runner)
+        self.assertIn('skip_qa_once="$RESUME_AUDIT"', runner)
+
 if __name__ == "__main__": unittest.main()
