@@ -63,6 +63,8 @@ void main() {
       expect(find.text(MemoraCopy.homeTilePasatiempos), findsOneWidget);
       expect(find.text(MemoraCopy.homeTileQuieroHablar), findsOneWidget);
       expect(find.text(MemoraCopy.homeTileRecuerdos), findsOneWidget);
+      expect(find.byKey(const Key('memora-user-home-ayudame')), findsOneWidget);
+      expect(find.text(MemoraCopy.homeAyudameLabel), findsOneWidget);
 
       final miDia = tester.getTopLeft(
         find.byKey(const Key('memora-user-home-tile-mi-dia')),
@@ -135,6 +137,7 @@ void main() {
         const Key('memora-user-home-tile-pasatiempos'),
         const Key('memora-user-home-tile-quiero-hablar'),
         const Key('memora-user-home-tile-recuerdos'),
+        const Key('memora-user-home-ayudame'),
       ]) {
         final size = tester.getSize(find.byKey(key));
         expect(size.width, greaterThan(48));
@@ -151,6 +154,10 @@ void main() {
       );
       expect(
         find.bySemanticsLabel(MemoraCopy.homeTileRecuerdos),
+        findsOneWidget,
+      );
+      expect(
+        find.bySemanticsLabel(MemoraCopy.homeAyudameSemantics),
         findsOneWidget,
       );
     } finally {

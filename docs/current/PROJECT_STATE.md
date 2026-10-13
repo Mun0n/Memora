@@ -1,12 +1,12 @@
 # Current project state
 
-- Phase: Slice 8 accepted by human review on 2026-10-13 after five repair cycles.
-  Family-configured pastimes, cross-client fictional demo sync and the physical-Android
-  reverse-bridge launcher form the current approved post-MVP baseline. The launcher
-  supports its documented zero-argument invocation on macOS Bash 3.2, preserves
-  optional Flutter arguments and remains limited to `tcp:17808`.
-- Implemented product functionality: caregiver/family web create/edit/order/activate/archive routines + quiet-hours reminder configure; memory manage/contribute/approve/archive + media retry chrome; weight/BP entry + chronological history with adjacent disclaimer; Help/About disclaimer; **Slice 8** caregiver web `Pasatiempos` section (create/edit/reorder/activate/archive, ≤6 active, invalid draft preserved) and supported-person active list → calm detail (title + instruction only; drafts/archived excluded; no completion claim). Supported-person shell (Slice 7): fixed two-by-two home — `Mi día`, `Pasatiempos`, `Quiero hablar`, `Recuerdos` — with short date/time greeting header; no home scroll, feature chips, sync/privacy/session/Demo chrome or routine lists on home. `Mi día` shows one current/next step + complete/correct. `Recuerdos` reuses approved cached memories (failed media never traps). `Quiero hablar` remains an honest placeholder. Domain exposes `ConfigurePastime`, `PastimeRepository`, outbox `pastime`, and SQL `pastimes` + `viewPastimes`/`editPastimes`. Sync/privacy contracts still load behind the presentation via demo composition. Slice 6 UI: caregiver web still composes `SessionBoundary.demo` + `FakeSupabaseRemote` + `SyncEngine` by default (no network/remote env); sync push/pull + caregiver conflict resolve; privacy export/deletion/session revoke contracts; Spanish-first chrome.
-- Shared packages: `packages/domain` (capabilities lockstep incl. pastime wires, `ConfigurePastime`, `SyncEngine`, privacy/session ports, care policies), `packages/data` (in-memory adapters incl. pastimes, `FakeSupabaseRemote`, durable `LocalDemoSyncTransport`/`LocalDemoSyncServer` loopback shared demo with atomic snapshot + `LocalDemoFictionalBaseline` / `LocalDemoSharedBootstrap`, sync bridge, audit/privacy stores), `packages/ui` (user four-tile home + destinations incl. pastimes list/detail; family sync/privacy/session + `FeatureSection.pastimes` configure).
+- Phase: Slice 9 human-review fixes in progress (gated on Slice 8 human acceptance
+  2026-10-13; DOMAIN contracts landed). Slice 8 pastimes, cross-client fictional demo sync and
+  the physical-Android reverse-bridge launcher remain the approved baseline. The
+  launcher supports its documented zero-argument invocation on macOS Bash 3.2,
+  preserves optional Flutter arguments and remains limited to `tcp:17808`.
+- Implemented product functionality includes the Slice 7 four-tile supported-person home and Slice 8 family-configured pastimes. **Slice 9** adds the central `Ayúdame` microphone flow: contextual permission, animated listening, temporary “He entendido” feedback, one deterministic suggestion and explicit confirmation before navigation. Android uses API 31+ on-device recognition by default and refuses network fallback; tests and non-Android hosts use `FakeSpeechRecognizer`. No voice transcript is persisted, logged, synchronized or audited; no LLM or cloud speech is used. Existing routine, memory, pastime, sync and privacy contracts remain unchanged.
+- Shared packages: `packages/domain` (capabilities lockstep incl. pastime wires, `ConfigurePastime`, `SyncEngine`, privacy/session ports, care policies, Slice 9 voice guidance port/matcher/policy + fake recognizer), `packages/data` (in-memory adapters incl. pastimes, `FakeSupabaseRemote`, durable `LocalDemoSyncTransport`/`LocalDemoSyncServer` loopback shared demo with atomic snapshot + `LocalDemoFictionalBaseline` / `LocalDemoSharedBootstrap`, sync bridge, audit/privacy stores — unchanged this slice), `packages/ui` (user four-tile home + central `Ayúdame` + voice-guidance controller/panel; destinations incl. pastimes list/detail; family sync/privacy/session + `FeatureSection.pastimes` configure).
 - App shells: `apps/user` + `apps/web` select `createDemoSyncTransport` (shared
   `LocalDemoSyncTransport` when `MEMORA_LOCAL_DEMO_SYNC_URL` is set; else private
   `FakeSupabaseRemote`). Connectivity derives from that selection (no hard-coded
@@ -17,7 +17,9 @@
   pull/reconcile from authority before ready). Caregiver Pasatiempos entry
   quiet-pulls; shared push/pull failures show plain-language retry. E2E +
   pastime widget tests cover configure, a11y sizes, auto push/pull, HTTP
-  delivery failure/retry, re-enter refresh and offline cache.
+  delivery failure/retry, re-enter refresh and offline cache. User demo wires
+  the real on-device speech adapter by default on Android; tests and non-Android
+  hosts use `FakeSpeechRecognizer`.
 - Persistence: Android Drift/SQLite documented; proofs use in-memory + snapshot restart + fake remote (pastimes included). Media metadata-only (no storage bucket).
 - Backend: `backend/supabase/migrations` family-identity + product tables + `pastimes` with forced RLS and extended `memora_has_capability` wires matching Dart.
 - Validation: Slice 7 full `./scripts/validate.sh` PASS; independent audit
@@ -28,10 +30,9 @@
 - Data: fictional development data only (`Amparo Demo`, `Elena Demo`, `Familia Ejemplo`, `Casa Demo B`, reserved Slice-2–8 UUIDs); no auth credentials or production endpoints.
 - External services: none connected. Credentials injectable by **names only**. Reminder UI convenience prompts only. No LLM.
 - Approved MVP: accessible supported-person Android phone/tablet app; responsive caregiver/family web; routines, reminders, memories, weight/blood-pressure recording, local persistence and synchronization. No native caregiver app or meal tracking.
-- Next work: Slice 9 voice guidance is specified and may be started explicitly through
-  `./scripts/run_slice.sh 9`. It adds deterministic, on-device help for choosing among
-  the four supported-person home destinations; no chatbot, LLM or cloud speech service
-  is authorized. `Quiero hablar`, deployment and real-data connection remain outside
+- Next work: Slice 9 QA runs full `./scripts/validate.sh` against the UI + DOMAIN
+  voice guidance surface. No chatbot, LLM or cloud speech service is authorized.
+  `Quiero hablar` calling, deployment and real-data connection remain outside
   this authorization.
 
 ## Human handoff — run fictional demo mode
@@ -39,7 +40,7 @@
 ### Isolated offline demo (default)
 
 ```bash
-# Supported-person (phone/tablet shell)
+# Supported-person (phone/tablet shell) — real on-device speech on Android
 cd apps/user && flutter run
 
 # Caregiver/family web
@@ -49,7 +50,8 @@ cd apps/web && flutter run -d chrome
 Both start in offline demo mode (`SessionBoundary.demo`). No `MEMORA_SUPABASE_*`
 env vars required. Default sync uses a **private in-process** `FakeSupabaseRemote`
 per process — web and app do **not** share pastime state unless the shared local
-demo transport below is configured.
+demo transport below is configured. Android speech opens only after the person taps
+`Ayúdame`, accepts the in-context explanation and grants the system permission.
 
 ### Shared local demo sync (cross-client, fictional only)
 
@@ -146,3 +148,5 @@ masquerade as remote data.
 4. Non-clinical observation disclaimer placement beside entry + Help/About.
 5. Slice 8 pastime configure + supported-person list/detail calmness (fictional demo).
 6. Cross-client pastime demo via local demo sync (activate/archive/reorder).
+7. Slice 9 voice guidance calmness: central `Ayúdame`, confirm-before-nav, honest
+   `Quiero hablar`, on-device-only recognition on the target Android class.

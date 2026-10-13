@@ -2,11 +2,16 @@ import 'package:data/data.dart';
 import 'package:domain/domain.dart';
 import 'package:ui/ui.dart';
 
+import 'android_on_device_speech_recognizer.dart';
+
 /// Wires fictional in-memory adapters + demo sync transport for the user shell.
 ///
 /// Default: private in-process [FakeSupabaseRemote] (isolated local demo).
 /// With `--dart-define=MEMORA_LOCAL_DEMO_SYNC_URL=...` (or [localDemoSyncUrl]):
 /// [LocalDemoSyncTransport] against the shared loopback demo server.
+///
+/// Speech uses the real on-device adapter on Android. Tests and non-Android
+/// demo hosts keep the deterministic [FakeSpeechRecognizer].
 final class UserDemoComposition {
   UserDemoComposition({
     InMemoryOfflineStore? store,
@@ -17,6 +22,7 @@ final class UserDemoComposition {
     FakeSupabaseRemote? remote,
     String? localDemoSyncUrl,
     bool? sharedLocalDemoTransport,
+    SpeechRecognizerPort? speechRecognizer,
   }) : store = store ?? InMemoryOfflineStore(),
        transport =
            transport ??
@@ -28,7 +34,12 @@ final class UserDemoComposition {
                ((transport ?? remote) == null &&
                    isSharedLocalDemoTransportConfigured(
                      baseUrl: localDemoSyncUrl,
-                   ))) {
+                   ))),
+       speechRecognizer =
+           speechRecognizer ??
+           (AndroidOnDeviceSpeechRecognizer.isSupportedPlatform
+               ? AndroidOnDeviceSpeechRecognizer()
+               : FakeSpeechRecognizer()) {
     final resolvedNetwork = networkAvailable ?? usesSharedLocalDemoTransport;
     final scope = usesSharedLocalDemoTransport
         ? DemoDataScope.sharedLocalDemo
@@ -92,6 +103,7 @@ final class UserDemoComposition {
   final SyncTransportPort transport;
   final bool usesSharedLocalDemoTransport;
   final SessionBoundary sessionBoundary;
+  final SpeechRecognizerPort speechRecognizer;
   late final InMemoryRoutineRepository routines;
   late final InMemoryRoutineProgressRepository progress;
   late final InMemoryPastimeRepository pastimes;
@@ -163,6 +175,7 @@ final class UserDemoComposition {
       pastimeController: pastimeController,
       syncController: syncController,
       privacyController: privacyController,
+      speechRecognizer: speechRecognizer,
       persona: SyntheticFixtures.amparoDemo,
       autoload: autoload,
       initialDestination: initialDestination,

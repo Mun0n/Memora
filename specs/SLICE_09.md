@@ -52,9 +52,9 @@ meaning, order or availability of the four home destinations.
    background.
 4. Hold the recognized text in memory only long enough to classify the request. Do not
    display it by default, persist it, place it in logs or send it to Memora services.
-5. Show exactly one suggestion in plain language, for example
-   `Puedes probar Pasatiempos`, with `Ir a Pasatiempos`, `Volver a intentarlo` and
-   `Cancelar`.
+5. Show the recognized phrase as short-lived visual feedback, then exactly one
+   suggestion in plain language, for example `Te recomiendo Pasatiempos. ¿Quieres ir
+   ahora?`, with `Ir a Pasatiempos`, `Volver a intentarlo` and `No, ahora no`.
 6. Navigate only after `Ir a …` is pressed. Recognition alone never changes page.
 7. Return and cancellation restore the unchanged home in a predictable state.
 
@@ -93,7 +93,8 @@ as explicit intent fixtures rather than probabilistic or generative output.
 
 - Use Android on-device speech recognition only. Check platform availability before
   requesting permission or listening. Do not silently fall back to a network recognizer.
-- No audio, transcript, inferred intent, suggestion choice or usage history is stored,
+- The recognized phrase may be shown while the result panel is open, but no audio,
+  transcript, inferred intent, suggestion choice or usage history is persisted,
   synchronized, audited or analyzed.
 - No audio or transcript is sent to the Memora backend, a caregiver, analytics, crash
   reporting or an external speech/AI endpoint.
@@ -161,8 +162,9 @@ as explicit intent fixtures rather than probabilistic or generative output.
    current/pending `Mi día`, active `Pasatiempos`, approved `Recuerdos`.
 7. Navigation occurs only after visible user confirmation. Retry, cancel, permission
    denial, silence, timeout and recognition error never trap the person.
-8. Tests/static checks prove audio, transcript, intent and recommendation history are
-   not persisted, logged, synchronized or sent over Memora transports.
+8. Tests/static checks prove the visible phrase is cleared when the flow closes and
+   audio, transcript, intent and recommendation history are not persisted, logged,
+   synchronized or sent over Memora transports.
 9. `Quiero hablar` remains honest: no real contact, call success, availability or
    emergency coverage is implied; no phone/contact permission or call launcher is added.
 10. Existing `Mi día`, pastime, memory, four-tile layout, offline, sync and caregiver-web

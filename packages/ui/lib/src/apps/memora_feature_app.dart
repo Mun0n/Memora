@@ -29,6 +29,8 @@ import '../user/user_pastimes_page.dart';
 import '../user/user_placeholder_page.dart';
 import '../user/user_routine_controller.dart';
 import '../user/user_routine_home.dart';
+import '../user/user_voice_guidance_controller.dart';
+import '../user/user_voice_guidance_panel.dart';
 import '../widgets/shell_scaffold.dart';
 
 /// Supported-person app shell: four-tile home and calm destinations.
@@ -44,6 +46,7 @@ class MemoraUserApp extends StatefulWidget {
     this.pastimeController,
     this.syncController,
     this.privacyController,
+    this.speechRecognizer,
     this.autoload = true,
     this.initialDestination = UserHomeDestination.home,
     this.demoDataScope = DemoDataScope.isolatedLocal,
@@ -55,6 +58,9 @@ class MemoraUserApp extends StatefulWidget {
   final UserPastimeController? pastimeController;
   final SyncPresentationController? syncController;
   final PrivacyPresentationController? privacyController;
+
+  /// Tap-gated speech port. Defaults to [FakeSpeechRecognizer] (no real mic).
+  final SpeechRecognizerPort? speechRecognizer;
   final SyntheticPersona persona;
 
   /// When true, triggers load after the first frame.
@@ -72,6 +78,8 @@ class MemoraUserApp extends StatefulWidget {
 class _MemoraUserAppState extends State<MemoraUserApp>
     with WidgetsBindingObserver {
   late UserHomeDestination _destination;
+  late final SpeechRecognizerPort _speechRecognizer;
+  late final UserVoiceGuidanceController _voiceGuidance;
 
   /// Monotonic token so overlapping quiet pulls never apply stale refreshes.
   var _quietPullGeneration = 0;
@@ -81,6 +89,11 @@ class _MemoraUserAppState extends State<MemoraUserApp>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _destination = widget.initialDestination;
+    _speechRecognizer = widget.speechRecognizer ?? FakeSpeechRecognizer();
+    _voiceGuidance = UserVoiceGuidanceController(
+      recognizer: _speechRecognizer,
+      contentSnapshot: _buildVoiceContentSnapshot,
+    );
     if (widget.autoload) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         await widget.controller.load();
@@ -99,9 +112,19 @@ class _MemoraUserAppState extends State<MemoraUserApp>
     }
   }
 
+  VoiceContentSnapshot _buildVoiceContentSnapshot() {
+    return VoiceContentSnapshot(
+      hasCurrentOrPendingMiDia: widget.controller.hasCurrentOrPendingMiDiaStep,
+      hasActivePastimes: widget.pastimeController?.pastimes.isNotEmpty ?? false,
+      hasApprovedMemories:
+          widget.memoryController?.memories.isNotEmpty ?? false,
+    );
+  }
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _voiceGuidance.dispose();
     super.dispose();
   }
 
@@ -109,6 +132,12 @@ class _MemoraUserAppState extends State<MemoraUserApp>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _quietPullPastimes();
+    } else if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.detached) {
+      // Spec: release microphone on lifecycle pause / navigation away.
+      _voiceGuidance.releaseForLifecycle();
     }
   }
 
@@ -128,13 +157,24 @@ class _MemoraUserAppState extends State<MemoraUserApp>
     }
   }
 
-  void _goHome() => setState(() => _destination = UserHomeDestination.home);
+  void _goHome() {
+    _voiceGuidance.releaseForLifecycle();
+    setState(() => _destination = UserHomeDestination.home);
+  }
 
   void _open(UserHomeDestination destination) {
+    _voiceGuidance.releaseForLifecycle();
     setState(() => _destination = destination);
     if (destination == UserHomeDestination.pasatiempos) {
       // Cached cards already painted; quiet pull refreshes without trapping nav.
       _quietPullPastimes();
+    }
+  }
+
+  Future<void> _confirmVoiceNavigate() async {
+    final target = await _voiceGuidance.confirmNavigate();
+    if (target != null && mounted) {
+      _open(target);
     }
   }
 
@@ -148,9 +188,12 @@ class _MemoraUserAppState extends State<MemoraUserApp>
         routineController: widget.controller,
         memoryController: widget.memoryController,
         pastimeController: widget.pastimeController,
+        voiceGuidance: _voiceGuidance,
         destination: _destination,
         onOpen: _open,
         onReturnHome: _goHome,
+        onAyudame: _voiceGuidance.startFromExplicitTap,
+        onConfirmVoiceNavigate: _confirmVoiceNavigate,
       ),
     );
   }
@@ -161,21 +204,27 @@ class _UserShell extends StatelessWidget {
     required this.routineController,
     required this.memoryController,
     required this.pastimeController,
+    required this.voiceGuidance,
     required this.destination,
     required this.onOpen,
     required this.onReturnHome,
+    required this.onAyudame,
+    required this.onConfirmVoiceNavigate,
   });
 
   final UserRoutineController routineController;
   final UserMemoryController? memoryController;
   final UserPastimeController? pastimeController;
+  final UserVoiceGuidanceController voiceGuidance;
   final UserHomeDestination destination;
   final ValueChanged<UserHomeDestination> onOpen;
   final VoidCallback onReturnHome;
+  final VoidCallback onAyudame;
+  final VoidCallback onConfirmVoiceNavigate;
 
   @override
   Widget build(BuildContext context) {
-    final listenables = <Listenable>[routineController];
+    final listenables = <Listenable>[routineController, voiceGuidance];
     if (memoryController != null) {
       listenables.add(memoryController!);
     }
@@ -189,25 +238,37 @@ class _UserShell extends StatelessWidget {
         if (destination == UserHomeDestination.home) {
           return Scaffold(
             backgroundColor: MemoraTheme.highContrastSurface,
-            body: SafeArea(
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal:
-                      MediaQuery.sizeOf(context).width >=
-                          MemoraTheme.expandedBreakpoint
-                      ? 40
-                      : 24,
-                  vertical:
-                      MediaQuery.sizeOf(context).width >=
-                          MemoraTheme.expandedBreakpoint
-                      ? 28
-                      : 20,
+            body: Stack(
+              children: [
+                SafeArea(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal:
+                          MediaQuery.sizeOf(context).width >=
+                              MemoraTheme.expandedBreakpoint
+                          ? 40
+                          : 24,
+                      vertical:
+                          MediaQuery.sizeOf(context).width >=
+                              MemoraTheme.expandedBreakpoint
+                          ? 28
+                          : 20,
+                    ),
+                    child: UserHomeGrid(
+                      orientationLabel: routineController.orientationLabel,
+                      onSelect: onOpen,
+                      onAyudame: onAyudame,
+                    ),
+                  ),
                 ),
-                child: UserHomeGrid(
-                  orientationLabel: routineController.orientationLabel,
-                  onSelect: onOpen,
-                ),
-              ),
+                if (voiceGuidance.isActive)
+                  Positioned.fill(
+                    child: UserVoiceGuidancePanel(
+                      controller: voiceGuidance,
+                      onConfirmNavigate: onConfirmVoiceNavigate,
+                    ),
+                  ),
+              ],
             ),
           );
         }

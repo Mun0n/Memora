@@ -38,6 +38,8 @@ export 'src/user/user_pastimes_page.dart';
 export 'src/user/user_placeholder_page.dart';
 export 'src/user/user_routine_controller.dart';
 export 'src/user/user_routine_home.dart';
+export 'src/user/user_voice_guidance_controller.dart';
+export 'src/user/user_voice_guidance_panel.dart';
 export 'src/widgets/demo_banner.dart';
 export 'src/widgets/draft_text_field.dart';
 export 'src/widgets/shell_scaffold.dart';

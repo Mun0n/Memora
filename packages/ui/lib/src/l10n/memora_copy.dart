@@ -159,6 +159,55 @@ abstract final class MemoraCopy {
       'Aquí aparecerán las personas de confianza que configure tu familia. '
       'Desde aquí no se hace ninguna llamada.';
 
+  // Voice guidance — Slice 9 (mirrors VoiceGuidanceCopy; tap-gated, on-device)
+  static const String homeAyudameLabel = 'Ayúdame';
+  static const String homeAyudameSemantics = 'Ayúdame a elegir';
+  static const String voicePermissionExplain =
+      'El micrófono se usa solo mientras te ayudamos a elegir';
+  static const String voicePermissionRequesting =
+      'Esperando permiso para usar el micrófono…';
+  static const String voiceListeningPrompt =
+      'Te estoy escuchando… Dime qué te gustaría hacer';
+  static const String voiceProcessing = 'He terminado de escuchar';
+  static const String voiceUnderstood = 'He entendido:';
+  static const String voiceUnclear =
+      'No te he entendido. Puedo ayudarte a elegir entre las opciones de '
+      'esta pantalla';
+  static const String voiceNothingPrepared =
+      'Ahora mismo no tengo una actividad preparada para recomendarte';
+  static const String voiceSafetyLimitation =
+      'Memora no es un servicio médico ni de emergencias. No diagnostica, '
+      'no aconseja tratamientos ni afirma que se haya contactado con ayuda. '
+      'Si necesitas ayuda urgente, usa los canales de emergencia de tu zona.';
+  static const String voiceRecognizerUnavailable =
+      'Ahora no puedo escucharte. Puedes elegir una de las cuatro opciones';
+  static const String voicePermissionDenied =
+      'No puedo usar el micrófono. Puedes elegir una de las cuatro opciones.';
+  static const String voiceSilence =
+      'No he oído nada. Puedes volver a intentarlo o elegir una opción.';
+  static const String voiceTimeout =
+      'He dejado de escuchar. Puedes volver a intentarlo o elegir una opción.';
+  static const String voiceListenError =
+      'No he podido escucharte. Puedes volver a intentarlo o elegir una opción.';
+  static const String voiceCancel = 'Cancelar';
+  static const String voiceRetry = 'Volver a intentarlo';
+  static const String voiceContinue = 'Activar micrófono';
+  static const String voiceNotNow = 'No, ahora no';
+  static const String voiceChooseManually = 'Elegir en la pantalla';
+  static const String voiceSuggestMiDia =
+      'Te recomiendo Mi día. ¿Quieres ir ahora?';
+  static const String voiceSuggestPasatiempos =
+      'Te recomiendo Pasatiempos. ¿Quieres ir ahora?';
+  static const String voiceSuggestRecuerdos =
+      'Te recomiendo Recuerdos. ¿Quieres ir ahora?';
+  static const String voiceSuggestQuieroHablar =
+      'Te recomiendo Quiero hablar. Desde aquí no se hace ninguna llamada. '
+      '¿Quieres ir ahora?';
+  static const String voiceGoToMiDia = 'Ir a Mi día';
+  static const String voiceGoToPasatiempos = 'Ir a Pasatiempos';
+  static const String voiceGoToRecuerdos = 'Ir a Recuerdos';
+  static const String voiceGoToQuieroHablar = 'Ir a Quiero hablar';
+
   // Family web — pastime configure
   static const String pastimesSectionTitle = 'Pasatiempos de la familia';
   static const String pastimesSectionBody =

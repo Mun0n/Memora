@@ -4,19 +4,27 @@ import '../l10n/memora_copy.dart';
 import '../theme/memora_theme.dart';
 import 'user_home_destination.dart';
 
-/// Fixed two-by-two home choices. Positions never depend on sync or content.
+/// Fixed two-by-two home choices plus a central tap-gated `Ayúdame` control.
+///
+/// Tile order and positions never depend on sync, content or network status.
 class UserHomeGrid extends StatelessWidget {
   const UserHomeGrid({
     super.key,
     required this.orientationLabel,
     required this.onSelect,
+    this.onAyudame,
   });
 
   final String orientationLabel;
   final ValueChanged<UserHomeDestination> onSelect;
 
+  /// Central help control. When null, the control is hidden (tests only).
+  final VoidCallback? onAyudame;
+
   static const double _gap = 16;
   static const double _minTileExtent = 96;
+  static const double _ayudameExtent = 88;
+  static const double _ayudameMinExtent = 56;
 
   @override
   Widget build(BuildContext context) {
@@ -56,70 +64,98 @@ class UserHomeGrid extends StatelessWidget {
         ),
         SizedBox(height: isExpanded ? 20 : 12),
         Expanded(
-          child: Column(
-            children: [
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: _HomeTile(
-                        destination: UserHomeDestination.miDia,
-                        label: MemoraCopy.homeTileMiDia,
-                        icon: Icons.wb_sunny_outlined,
-                        tileKey: const Key('memora-user-home-tile-mi-dia'),
-                        onSelect: onSelect,
-                      ),
-                    ),
-                    const SizedBox(width: _gap),
-                    Expanded(
-                      child: _HomeTile(
-                        destination: UserHomeDestination.pasatiempos,
-                        label: MemoraCopy.homeTilePasatiempos,
-                        icon: Icons.extension_outlined,
-                        tileKey: const Key('memora-user-home-tile-pasatiempos'),
-                        onSelect: onSelect,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: _gap),
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: _HomeTile(
-                        destination: UserHomeDestination.quieroHablar,
-                        label: MemoraCopy.homeTileQuieroHablar,
-                        icon: Icons.chat_bubble_outline,
-                        tileKey: const Key(
-                          'memora-user-home-tile-quiero-hablar',
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Column(
+                    children: [
+                      Expanded(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              child: _HomeTile(
+                                destination: UserHomeDestination.miDia,
+                                label: MemoraCopy.homeTileMiDia,
+                                icon: Icons.wb_sunny_outlined,
+                                tileKey: const Key(
+                                  'memora-user-home-tile-mi-dia',
+                                ),
+                                onSelect: onSelect,
+                                contentBias: _TileContentBias.topLeft,
+                              ),
+                            ),
+                            const SizedBox(width: _gap),
+                            Expanded(
+                              child: _HomeTile(
+                                destination: UserHomeDestination.pasatiempos,
+                                label: MemoraCopy.homeTilePasatiempos,
+                                icon: Icons.extension_outlined,
+                                tileKey: const Key(
+                                  'memora-user-home-tile-pasatiempos',
+                                ),
+                                onSelect: onSelect,
+                                contentBias: _TileContentBias.topRight,
+                              ),
+                            ),
+                          ],
                         ),
-                        onSelect: onSelect,
+                      ),
+                      const SizedBox(height: _gap),
+                      Expanded(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              child: _HomeTile(
+                                destination: UserHomeDestination.quieroHablar,
+                                label: MemoraCopy.homeTileQuieroHablar,
+                                icon: Icons.chat_bubble_outline,
+                                tileKey: const Key(
+                                  'memora-user-home-tile-quiero-hablar',
+                                ),
+                                onSelect: onSelect,
+                                contentBias: _TileContentBias.bottomLeft,
+                              ),
+                            ),
+                            const SizedBox(width: _gap),
+                            Expanded(
+                              child: _HomeTile(
+                                destination: UserHomeDestination.recuerdos,
+                                label: MemoraCopy.homeTileRecuerdos,
+                                icon: Icons.photo_album_outlined,
+                                tileKey: const Key(
+                                  'memora-user-home-tile-recuerdos',
+                                ),
+                                onSelect: onSelect,
+                                contentBias: _TileContentBias.bottomRight,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (onAyudame != null)
+                    Center(
+                      child: _AyudameControl(
+                        onPressed: onAyudame!,
+                        maxExtent: constraints.biggest.shortestSide * 0.28,
                       ),
                     ),
-                    const SizedBox(width: _gap),
-                    Expanded(
-                      child: _HomeTile(
-                        destination: UserHomeDestination.recuerdos,
-                        label: MemoraCopy.homeTileRecuerdos,
-                        icon: Icons.photo_album_outlined,
-                        tileKey: const Key('memora-user-home-tile-recuerdos'),
-                        onSelect: onSelect,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+                ],
+              );
+            },
           ),
         ),
       ],
     );
   }
 }
+
+enum _TileContentBias { topLeft, topRight, bottomLeft, bottomRight }
 
 class _HomeTile extends StatelessWidget {
   const _HomeTile({
@@ -128,6 +164,7 @@ class _HomeTile extends StatelessWidget {
     required this.icon,
     required this.tileKey,
     required this.onSelect,
+    required this.contentBias,
   });
 
   final UserHomeDestination destination;
@@ -135,10 +172,18 @@ class _HomeTile extends StatelessWidget {
   final IconData icon;
   final Key tileKey;
   final ValueChanged<UserHomeDestination> onSelect;
+  final _TileContentBias contentBias;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    // Bias icon+label away from the centre so `Ayúdame` never covers tile text.
+    final edge = switch (contentBias) {
+      _TileContentBias.topLeft => const EdgeInsets.only(right: 28, bottom: 28),
+      _TileContentBias.topRight => const EdgeInsets.only(left: 28, bottom: 28),
+      _TileContentBias.bottomLeft => const EdgeInsets.only(right: 28, top: 28),
+      _TileContentBias.bottomRight => const EdgeInsets.only(left: 28, top: 28),
+    };
 
     return Semantics(
       button: true,
@@ -156,24 +201,84 @@ class _HomeTile extends StatelessWidget {
               minHeight: UserHomeGrid._minTileExtent,
             ),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(12).add(edge),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(icon, size: 48, color: MemoraTheme.accentOnBand),
-                  const SizedBox(height: 12),
+                  Icon(icon, size: 44, color: MemoraTheme.accentOnBand),
+                  const SizedBox(height: 10),
                   Text(
                     label,
                     textAlign: TextAlign.center,
                     style: textTheme.titleLarge?.copyWith(
                       color: MemoraTheme.accentOnBand,
                       fontWeight: FontWeight.w700,
-                      fontSize: 22,
+                      fontSize: 20,
                       height: 1.15,
                     ),
                   ),
                 ],
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AyudameControl extends StatelessWidget {
+  const _AyudameControl({required this.onPressed, required this.maxExtent});
+
+  final VoidCallback onPressed;
+  final double maxExtent;
+
+  @override
+  Widget build(BuildContext context) {
+    final extent = maxExtent
+        .clamp(UserHomeGrid._ayudameMinExtent, UserHomeGrid._ayudameExtent)
+        .toDouble();
+    final textTheme = Theme.of(context).textTheme;
+
+    return Semantics(
+      button: true,
+      enabled: true,
+      label: MemoraCopy.homeAyudameSemantics,
+      excludeSemantics: true,
+      child: Material(
+        color: MemoraTheme.highContrastInk,
+        shape: const CircleBorder(
+          side: BorderSide(color: MemoraTheme.accentOnBand, width: 3),
+        ),
+        elevation: 4,
+        shadowColor: Colors.black54,
+        child: InkWell(
+          key: const Key('memora-user-home-ayudame'),
+          customBorder: const CircleBorder(),
+          onTap: onPressed,
+          child: SizedBox(
+            width: extent,
+            height: extent,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.mic_none,
+                  size: extent * 0.34,
+                  color: MemoraTheme.accentOnBand,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  MemoraCopy.homeAyudameLabel,
+                  textAlign: TextAlign.center,
+                  style: textTheme.labelLarge?.copyWith(
+                    color: MemoraTheme.accentOnBand,
+                    fontWeight: FontWeight.w800,
+                    fontSize: extent < 72 ? 11 : 13,
+                    height: 1.05,
+                  ),
+                ),
+              ],
             ),
           ),
         ),

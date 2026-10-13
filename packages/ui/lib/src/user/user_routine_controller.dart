@@ -61,6 +61,21 @@ final class UserRoutineController extends ChangeNotifier {
 
   String get orientationLabel => SpanishDateFormat.formatDateTime(now);
 
+  /// True when Mi día has a current or pending step (voice generic priority).
+  bool get hasCurrentOrPendingMiDiaStep {
+    for (final routine in routines) {
+      final day = progressByRoutineId[routine.id.value];
+      for (final step in routine.steps) {
+        final status =
+            day?.stepAt(step.order).status ?? StepCompletionStatus.pending;
+        if (status == StepCompletionStatus.pending) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   PrimaryStepAction? get primaryAction {
     for (final routine in routines) {
       final day = progressByRoutineId[routine.id.value];

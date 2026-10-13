@@ -20,6 +20,7 @@ class UserApprovedMemoriesPage extends StatelessWidget {
       builder: (context, _) {
         final textTheme = Theme.of(context).textTheme;
         return Column(
+          key: const Key('memora-user-recuerdos'),
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
