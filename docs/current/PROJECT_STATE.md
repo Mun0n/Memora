@@ -1,7 +1,7 @@
 # Current project state
 
-- Phase: Slice 9 human-review fixes in progress (gated on Slice 8 human acceptance
-  2026-10-13; DOMAIN contracts landed). Slice 8 pastimes, cross-client fictional demo sync and
+- Phase: Slice 9 voice guidance accepted by human review on 2026-10-13.
+  Slice 8 pastimes, cross-client fictional demo sync and
   the physical-Android reverse-bridge launcher remain the approved baseline. The
   launcher supports its documented zero-argument invocation on macOS Bash 3.2,
   preserves optional Flutter arguments and remains limited to `tcp:17808`.
@@ -27,13 +27,15 @@
   full validation passes, including the Bash 3.2 zero-argument launcher and optional
   argument-forwarding proof. Fresh independent audit covers cycles 1–5 with
   `PASS_WITH_NOTES`; human product review APPROVED on 2026-10-13.
+  Slice 9 full validation and Android debug compilation pass; independent audit
+  `PASS_WITH_NOTES`; the corrected physical-device microphone flow received human
+  product approval on 2026-10-13.
 - Data: fictional development data only (`Amparo Demo`, `Elena Demo`, `Familia Ejemplo`, `Casa Demo B`, reserved Slice-2–8 UUIDs); no auth credentials or production endpoints.
 - External services: none connected. Credentials injectable by **names only**. Reminder UI convenience prompts only. No LLM.
 - Approved MVP: accessible supported-person Android phone/tablet app; responsive caregiver/family web; routines, reminders, memories, weight/blood-pressure recording, local persistence and synchronization. No native caregiver app or meal tracking.
-- Next work: Slice 9 QA runs full `./scripts/validate.sh` against the UI + DOMAIN
-  voice guidance surface. No chatbot, LLM or cloud speech service is authorized.
-  `Quiero hablar` calling, deployment and real-data connection remain outside
-  this authorization.
+- Next work: define Slice 10 only after explicit product direction. No chatbot,
+  LLM or cloud speech service is authorized. `Quiero hablar` calling, deployment
+  and real-data connection remain outside this authorization.
 
 ## Human handoff — run fictional demo mode
 
