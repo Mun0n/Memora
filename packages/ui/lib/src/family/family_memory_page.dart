@@ -22,14 +22,6 @@ class FamilyMemoryPage extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              MemoraCopy.memoriesTitle,
-              style: textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: MemoraTheme.highContrastInk,
-              ),
-            ),
-            const SizedBox(height: 12),
             if (controller.memories.isEmpty)
               Text(
                 MemoraCopy.memoriesEmpty,

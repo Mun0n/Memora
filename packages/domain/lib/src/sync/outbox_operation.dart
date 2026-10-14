@@ -12,6 +12,7 @@ enum OutboxAggregateType {
   bloodPressureObservation,
   pastime,
   conversationTopic,
+  supportedPersonProfile,
 }
 
 /// One pending (or historically attempted) local mutation for sync.

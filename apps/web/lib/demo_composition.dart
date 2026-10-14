@@ -39,6 +39,7 @@ final class FamilyWebDemoComposition {
     pastimes = InMemoryPastimeRepository(this.store);
     conversationTopics = InMemoryConversationTopicRepository(this.store);
     memories = InMemoryMemoryRepository(this.store);
+    profiles = InMemorySupportedPersonProfileRepository(this.store);
     weights = InMemoryWeightObservationRepository(this.store);
     bloodPressures = InMemoryBloodPressureObservationRepository(this.store);
     conflicts = InMemoryConflictStore();
@@ -93,6 +94,12 @@ final class FamilyWebDemoComposition {
       networkAvailable: resolvedNetwork,
       clock: DateTime(2026, 10, 10, 12, 0),
     );
+    supportedPersonProfileController = FamilySupportedPersonProfileController(
+      actor: membership,
+      profiles: profiles,
+      networkAvailable: resolvedNetwork,
+      demoDataScope: scope,
+    );
     syncController = SyncPresentationController(
       actor: membership,
       engine: engine,
@@ -110,6 +117,10 @@ final class FamilyWebDemoComposition {
       pastimeController.quietRemotePull = syncController.quietPull;
       conversationTopicController.afterLocalWrite = syncController.quietPush;
       conversationTopicController.quietRemotePull = syncController.quietPull;
+      supportedPersonProfileController.afterLocalWrite =
+          syncController.quietPush;
+      supportedPersonProfileController.quietRemotePull =
+          syncController.quietPull;
     }
   }
 
@@ -122,6 +133,7 @@ final class FamilyWebDemoComposition {
   late final InMemoryPastimeRepository pastimes;
   late final InMemoryConversationTopicRepository conversationTopics;
   late final InMemoryMemoryRepository memories;
+  late final InMemorySupportedPersonProfileRepository profiles;
   late final InMemoryWeightObservationRepository weights;
   late final InMemoryBloodPressureObservationRepository bloodPressures;
   late final InMemoryConflictStore conflicts;
@@ -135,6 +147,8 @@ final class FamilyWebDemoComposition {
   late final FamilyConversationTopicController conversationTopicController;
   late final FamilyMemoryController memoryController;
   late final FamilyObservationController observationController;
+  late final FamilySupportedPersonProfileController
+  supportedPersonProfileController;
   late final SyncPresentationController syncController;
   late final PrivacyPresentationController privacyController;
   var _conflictSeq = 0;
@@ -189,12 +203,16 @@ final class FamilyWebDemoComposition {
       topics: conversationTopics,
       sharedLocalDemo: usesSharedLocalDemoTransport,
     );
+    await LocalDemoSharedBootstrap.seedSupportedPersonProfileFixturesIfIsolated(
+      profiles: profiles,
+      sharedLocalDemo: usesSharedLocalDemoTransport,
+    );
     privacyStore.seedSession(
       SessionDescriptor(
         id: demoSessionId,
         userId: controller.actor.userId,
         familySpaceId: controller.actor.familySpaceId,
-        label: 'demo-web',
+        label: MemoraCopy.privacyCurrentBrowserSession,
         createdAt: DateTime.utc(2026, 10, 1),
       ),
     );
@@ -257,6 +275,7 @@ final class FamilyWebDemoComposition {
       conversationTopicController: conversationTopicController,
       memoryController: memoryController,
       observationController: observationController,
+      supportedPersonProfileController: supportedPersonProfileController,
       syncController: syncController,
       privacyController: privacyController,
       persona: SyntheticFixtures.familiaEjemplo,
@@ -299,6 +318,7 @@ final class FamilyWebDemoComposition {
     await memoryController.load();
     conversationTopicController.setApprovedMemories(memoryController.memories);
     await observationController.load();
+    await supportedPersonProfileController.load();
     await syncController.load();
     await privacyController.load();
   }

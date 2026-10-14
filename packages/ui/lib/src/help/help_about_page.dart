@@ -14,16 +14,8 @@ class HelpAboutPage extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          MemoraCopy.helpAboutTitle,
-          key: const Key('memora-help-title'),
-          style: textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: MemoraTheme.highContrastInk,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Text(
           MemoraCopy.helpAboutBody,
+          key: const Key('memora-help-body'),
           style: textTheme.bodyLarge?.copyWith(fontSize: 17),
         ),
         const SizedBox(height: 16),
@@ -35,16 +27,6 @@ class HelpAboutPage extends StatelessWidget {
             fontWeight: FontWeight.w600,
             color: MemoraTheme.highContrastInk,
           ),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          MemoraCopy.notMedical,
-          style: textTheme.bodyLarge?.copyWith(fontSize: 16),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          MemoraCopy.noRealData,
-          style: textTheme.bodyMedium?.copyWith(fontSize: 16),
         ),
       ],
     );

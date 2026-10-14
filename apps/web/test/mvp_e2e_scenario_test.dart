@@ -37,16 +37,29 @@ void main() {
       expect(composition.sessionBoundary.isDemoOffline, isTrue);
       expect(composition.sessionBoundary.requiresNetwork, isFalse);
       expect(find.textContaining('Rutina de mañana Demo'), findsWidgets);
-      expect(find.text(MemoraCopy.demoBanner), findsOneWidget);
+      expect(find.text(MemoraCopy.demoBanner), findsNothing);
+      expect(find.byKey(const Key('memora-brand-title')), findsOneWidget);
+      expect(find.byKey(const Key('memora-sync-status')), findsNothing);
 
-      await tester.tap(find.byKey(const Key('memora-nav-sync')));
+      final syncNav = find.byKey(const Key('memora-nav-sync'));
+      await tester.ensureVisible(syncNav);
+      await tester.tap(syncNav);
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('memora-session-label')), findsOneWidget);
-      expect(find.text(MemoraCopy.sessionDemoTitle), findsWidgets);
+      final syncSectionTitle = find.byKey(const Key('memora-section-title'));
+      expect(syncSectionTitle, findsOneWidget);
+      expect(
+        tester.widget<Text>(syncSectionTitle).data,
+        MemoraCopy.syncSectionTitle,
+      );
+      expect(find.byKey(const Key('memora-sync-title')), findsNothing);
+      expect(find.text(MemoraCopy.sessionDemoTitle), findsNothing);
+      expect(find.byKey(const Key('memora-session-label')), findsNothing);
 
       await composition.syncController.push();
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('memora-sync-push-summary')), findsOneWidget);
+      expect(find.byKey(const Key('memora-sync-feedback')), findsOneWidget);
+      expect(find.text(MemoraCopy.changesSaved), findsOneWidget);
+      expect(find.byKey(const Key('memora-sync-push-summary')), findsNothing);
       expect(composition.syncController.lastPush, isNotNull);
       expect(composition.syncController.lastPush!.failed, 0);
 
@@ -76,8 +89,13 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      expect(find.byKey(const Key('memora-privacy-body')), findsOneWidget);
+      expect(find.byKey(const Key('memora-privacy-title')), findsNothing);
+      expect(find.byKey(const Key('memora-privacy-audit-note')), findsNothing);
+      expect(find.text(MemoraCopy.privacyAuditNote), findsNothing);
+      expect(find.text('demo-web'), findsNothing);
       expect(
-        find.byKey(const Key('memora-privacy-audit-note')),
+        find.text(MemoraCopy.privacyCurrentBrowserSession),
         findsOneWidget,
       );
       await composition.privacyController.requestExport();
@@ -115,8 +133,11 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      expect(find.byKey(const Key('memora-help-title')), findsNothing);
       expect(find.byKey(const Key('memora-help-disclaimer')), findsOneWidget);
-      expect(find.textContaining('emergencias'), findsWidgets);
+      expect(find.text(MemoraCopy.helpAboutDisclaimer), findsOneWidget);
+      expect(find.text(MemoraCopy.notMedical), findsNothing);
+      expect(find.textContaining('emergencias'), findsOneWidget);
     } finally {
       semantics.dispose();
     }

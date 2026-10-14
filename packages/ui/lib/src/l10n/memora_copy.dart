@@ -21,11 +21,9 @@ abstract final class MemoraCopy {
   static const String sharedLocalDemoNotice =
       'Demostración local compartida en este ordenador. '
       'Sin servidor de producción.';
-  static const String sharedLocalDemoPending =
-      'Actualizando la lista compartida…';
+  static const String sharedLocalDemoPending = 'Actualizando…';
   static const String sharedLocalDemoPullFailed =
-      'No se pudo actualizar desde la demostración compartida. '
-      'Se muestra lo guardado aquí.';
+      'No se pudo actualizar. Se muestra lo guardado aquí.';
   static const String sharedLocalDemoDeliveryFailed =
       'El cambio se guardó aquí, pero aún no llegó al otro dispositivo.';
 
@@ -46,15 +44,26 @@ abstract final class MemoraCopy {
   static const String recoveryReviewConflict = 'Revisar conflicto';
   static const String recoveryCreateRoutine = 'Crear rutina Demo';
 
+  // Brand / product chrome
+  static const String brandTitle = 'Memora';
+  static const String familyWebSemantics = 'Memora, web familiar';
+  static const String changesSaved = 'Cambios guardados';
+  static const String configurePreferredNameCta = 'Configurar el nombre';
+  static const String syncNeedsAttention =
+      'Hay un problema de sincronización. Puedes reintentar o revisarlo.';
+
   // Navigation
   static const String navRoutines = 'Rutinas';
   static const String navPastimes = 'Pasatiempos';
   static const String navConversations = 'Conversaciones';
   static const String navMemories = 'Recuerdos';
   static const String navObservations = 'Observaciones';
+  static const String navSupportedPersonProfile = 'Persona apoyada';
   static const String navSync = 'Sincronización';
   static const String navPrivacy = 'Privacidad';
   static const String navHelp = 'Ayuda';
+  static const String navPrimarySemantics = 'Navegación principal';
+  static const String navSecondarySemantics = 'Ajustes y ayuda';
 
   // Session boundary (names only — no credential values)
   static const String sessionDemoTitle = 'Sesión de demostración (sin red)';
@@ -69,13 +78,11 @@ abstract final class MemoraCopy {
   static const String syncSectionTitle = 'Sincronización';
   static const String syncSectionBody =
       'Los cambios se guardan primero en este dispositivo. '
-      'Puedes enviar y recibir cuando quieras (modo demo local).';
+      'Puedes enviar o recibir cuando haga falta.';
   static const String syncSectionBodyIsolated =
-      'Los cambios se guardan solo en este cliente. '
-      'No se comparten con otra aplicación en esta demostración aislada.';
+      'Los cambios se guardan en este dispositivo.';
   static const String syncSectionBodyShared =
-      'Los cambios se guardan primero aquí y se envían solos al demo local '
-      'compartido en este ordenador. Sin producción.';
+      'Los cambios se guardan primero aquí y se envían cuando hay conexión.';
   static const String syncPushAction = 'Enviar cambios';
   static const String syncPullAction = 'Recibir cambios';
   static const String syncBusy = 'Sincronizando…';
@@ -98,27 +105,55 @@ abstract final class MemoraCopy {
   // Privacy contracts
   static const String privacySectionTitle = 'Privacidad y sesión';
   static const String privacySectionBody =
-      'Contratos de demostración: exportación, eliminación y sesiones. '
-      'No hay verificación remota ni envío a un servidor alojado.';
+      'Puedes solicitar la exportación o la eliminación de los datos '
+      'familiares y cerrar sesiones activas.';
   static const String privacyExportAction = 'Solicitar exportación';
   static const String privacyDeletionAction = 'Solicitar eliminación';
   static const String privacyExportConfirmed =
-      'Solicitud de exportación registrada (demostración).';
+      'Solicitud de exportación registrada.';
   static const String privacyDeletionConfirmed =
-      'Solicitud de eliminación registrada (demostración).';
-  static const String privacySessionsTitle = 'Sesiones de demostración';
+      'Solicitud de eliminación registrada.';
+  static const String privacySessionsTitle = 'Sesiones activas';
   static const String privacySessionsEmpty = 'No hay sesiones activas.';
   static const String privacyRevokeSession = 'Cerrar sesión';
-  static const String privacySessionRevoked = 'Sesión cerrada (demostración).';
+  static const String privacySessionRevoked = 'Sesión cerrada.';
+
+  /// Product-facing label for the current browser session (never fixture ids).
+  static const String privacyCurrentBrowserSession = 'Este navegador';
+
+  /// Implementation detail for redaction proofs / optional disclosures only —
+  /// not shown on the primary Privacy page.
   static const String privacyAuditNote =
       'El historial auditable guarda solo etiquetas (acción, objetivo, hora). '
       'No muestra contenido, valores de salud, tokens ni rutas de medios.';
   static const String privacyUnauthorized =
       'Tu membresía no puede usar estos contratos de privacidad.';
 
-  // User home — Slice 7 four-tile shell
+  // User home — Slice 7 four-tile shell / Slice 12 preferred-name greeting
   static const String userHomeTitle = 'Hoy';
+
+  /// Safe fallback when no cached preferred name is available.
   static const String userHomeGreeting = 'Hola';
+
+  // Family web — supported-person preferred-name profile (Slice 12)
+  static const String supportedPersonProfileSectionTitle = 'Persona apoyada';
+  static const String supportedPersonProfileSectionBody =
+      'Configura el nombre que verá la persona apoyada en la pantalla de '
+      'inicio de Memora. Solo la persona cuidadora principal puede '
+      'cambiarlo.';
+  static const String preferredNameFieldLabel = 'Nombre que verá en Memora';
+  static const String savePreferredName = 'Guardar nombre';
+  static const String correctPreferredName = 'Corregir nombre';
+  static const String supportedPersonProfileLoading = 'Cargando el perfil…';
+  static const String supportedPersonProfileEmpty =
+      'Aún no hay un nombre configurado.';
+  static const String supportedPersonProfileValidationError =
+      'Escribe un nombre de 1 a 40 caracteres, sin espacios solos.';
+  static const String supportedPersonProfileUnauthorized =
+      'Tu rol no puede cambiar el nombre de la persona apoyada.';
+  static const String supportedPersonProfileReadOnly =
+      'Puedes ver el nombre, pero solo la persona cuidadora principal '
+      'puede cambiarlo.';
   static const String homeTileMiDia = 'Mi día';
   static const String homeTilePasatiempos = 'Pasatiempos';
   static const String homeTileQuieroHablar = 'Quiero hablar';
@@ -429,8 +464,7 @@ abstract final class MemoraCopy {
   // Help / About
   static const String helpAboutTitle = 'Ayuda y acerca de';
   static const String helpAboutBody =
-      'Memora ayuda con rutinas diarias y coordinación familiar. '
-      'Usa solo datos de demostración en este entorno.';
+      'Memora ayuda con rutinas diarias y coordinación familiar.';
   static const String helpAboutDisclaimer =
       'Memora no interpreta valores de peso ni tensión. '
       'No es un servicio médico ni de emergencias.';

@@ -59,7 +59,13 @@ final class UserRoutineController extends ChangeNotifier {
 
   DateTime get now => _clock ?? DateTime.now();
 
+  /// True when orientation uses the device-local clock (no injected fake).
+  bool get usesLiveClock => _clock == null;
+
   String get orientationLabel => SpanishDateFormat.formatDateTime(now);
+
+  /// Re-reads [now] for the orientation line without reloading repositories.
+  void refreshOrientation() => notifyListeners();
 
   /// True when Mi día has a current or pending step (voice generic priority).
   bool get hasCurrentOrPendingMiDiaStep {

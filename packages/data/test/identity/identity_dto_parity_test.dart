@@ -85,6 +85,8 @@ void main() {
         'editPastimes',
         'viewConversationTopics',
         'editConversationTopics',
+        'viewSupportedPersonProfile',
+        'editSupportedPersonProfile',
       });
     });
   });

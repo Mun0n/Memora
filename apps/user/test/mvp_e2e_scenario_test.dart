@@ -45,7 +45,7 @@ void main() {
 
       expect(composition.sessionBoundary, SessionBoundary.demo);
       expect(composition.sessionBoundary.requiresNetwork, isFalse);
-      expect(find.text(MemoraCopy.userHomeGreeting), findsOneWidget);
+      expect(find.text('Hola, Amparo Demo'), findsOneWidget);
       expect(
         find.textContaining('sábado, 10 de octubre de 2026'),
         findsOneWidget,

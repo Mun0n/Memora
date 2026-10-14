@@ -52,14 +52,6 @@ class FamilyRoutineConfigureContent extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          MemoraCopy.familyHomeTitle,
-          style: textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: MemoraTheme.highContrastInk,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
           MemoraCopy.reminderConvenienceNotice,
           key: const Key('memora-reminder-convenience-notice'),
           style: textTheme.bodyLarge?.copyWith(fontSize: 17),

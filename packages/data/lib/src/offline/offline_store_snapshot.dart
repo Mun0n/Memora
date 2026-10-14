@@ -9,6 +9,7 @@ final class OfflineStoreSnapshot {
     required this.memories,
     required this.pastimes,
     required this.conversationTopics,
+    this.supportedPersonProfiles = const <SupportedPersonProfile>[],
     required this.weightObservations,
     required this.bloodPressureObservations,
     required this.outboxEntries,
@@ -20,6 +21,7 @@ final class OfflineStoreSnapshot {
   final List<MemoryEntry> memories;
   final List<Pastime> pastimes;
   final List<ConversationTopic> conversationTopics;
+  final List<SupportedPersonProfile> supportedPersonProfiles;
   final List<WeightObservation> weightObservations;
   final List<BloodPressureObservation> bloodPressureObservations;
   final List<OutboxOperation> outboxEntries;

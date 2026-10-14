@@ -21,23 +21,9 @@ class PrivacyPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              MemoraCopy.privacySectionTitle,
-              key: const Key('memora-privacy-title'),
-              style: textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: MemoraTheme.highContrastInk,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
               MemoraCopy.privacySectionBody,
+              key: const Key('memora-privacy-body'),
               style: textTheme.bodyLarge?.copyWith(fontSize: 17),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              MemoraCopy.privacyAuditNote,
-              key: const Key('memora-privacy-audit-note'),
-              style: textTheme.bodyMedium?.copyWith(fontSize: 16),
             ),
             const SizedBox(height: 16),
             FilledButton(

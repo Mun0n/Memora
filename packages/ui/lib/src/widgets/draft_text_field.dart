@@ -9,6 +9,7 @@ class DraftTextField extends StatefulWidget {
     required this.onChanged,
     required this.labelText,
     this.maxLines = 1,
+    this.readOnly = false,
   });
 
   final Object revision;
@@ -16,6 +17,7 @@ class DraftTextField extends StatefulWidget {
   final ValueChanged<String> onChanged;
   final String labelText;
   final int? maxLines;
+  final bool readOnly;
 
   @override
   State<DraftTextField> createState() => _DraftTextFieldState();
@@ -49,8 +51,10 @@ class _DraftTextFieldState extends State<DraftTextField> {
     return TextField(
       controller: _controller,
       decoration: InputDecoration(labelText: widget.labelText),
-      onChanged: widget.onChanged,
+      onChanged: widget.readOnly ? null : widget.onChanged,
       maxLines: widget.maxLines,
+      readOnly: widget.readOnly,
+      enableInteractiveSelection: !widget.readOnly,
     );
   }
 }

@@ -17,6 +17,7 @@ final class UserDemoComposition {
   UserDemoComposition({
     InMemoryOfflineStore? store,
     DateTime? clock,
+    this.enableLiveOrientation = false,
     bool? networkAvailable,
     this.sessionBoundary = SessionBoundary.demo,
     SyncTransportPort? transport,
@@ -51,11 +52,15 @@ final class UserDemoComposition {
     final scope = usesSharedLocalDemoTransport
         ? DemoDataScope.sharedLocalDemo
         : DemoDataScope.isolatedLocal;
+    // Executable demo: null clock = device-local. Tests inject a fake stamp.
+    final resolvedClock =
+        clock ?? (enableLiveOrientation ? null : DateTime(2026, 10, 10, 9, 30));
     routines = InMemoryRoutineRepository(this.store);
     progress = InMemoryRoutineProgressRepository(this.store);
     pastimes = InMemoryPastimeRepository(this.store);
     conversationTopics = InMemoryConversationTopicRepository(this.store);
     memories = InMemoryMemoryRepository(this.store);
+    profiles = InMemorySupportedPersonProfileRepository(this.store);
     conflicts = InMemoryConflictStore();
     audit = InMemoryAuditStore();
     privacyStore = InMemoryPrivacyStore();
@@ -78,7 +83,7 @@ final class UserDemoComposition {
       routines: routines,
       progress: progress,
       localDate: OfflineFixtures.demoLocalDate,
-      clock: clock ?? DateTime(2026, 10, 10, 9, 30),
+      clock: resolvedClock,
       networkAvailable: resolvedNetwork,
     );
     memoryController = UserMemoryController(
@@ -99,6 +104,12 @@ final class UserDemoComposition {
       demoDataScope: scope,
       approvedMemoryLookup: () => memoryController.memories,
     );
+    supportedPersonProfileController = UserSupportedPersonProfileController(
+      actor: IdentityFixtures.amparoSupportedMembership,
+      profiles: profiles,
+      networkAvailable: resolvedNetwork,
+      demoDataScope: scope,
+    );
     syncController = SyncPresentationController(
       actor: IdentityFixtures.amparoSupportedMembership,
       engine: engine,
@@ -107,6 +118,7 @@ final class UserDemoComposition {
     );
     pastimeController.quietRemotePull = syncController.quietPull;
     conversationTopicController.quietRemotePull = syncController.quietPull;
+    supportedPersonProfileController.quietRemotePull = syncController.quietPull;
     privacyController = PrivacyPresentationController(
       actor: IdentityFixtures.amparoSupportedMembership,
       privacy: privacy,
@@ -118,6 +130,7 @@ final class UserDemoComposition {
   final InMemoryOfflineStore store;
   final SyncTransportPort transport;
   final bool usesSharedLocalDemoTransport;
+  final bool enableLiveOrientation;
   final SessionBoundary sessionBoundary;
   final SpeechRecognizerPort speechRecognizer;
   final SpeechOutputPort speechOutput;
@@ -126,6 +139,7 @@ final class UserDemoComposition {
   late final InMemoryPastimeRepository pastimes;
   late final InMemoryConversationTopicRepository conversationTopics;
   late final InMemoryMemoryRepository memories;
+  late final InMemorySupportedPersonProfileRepository profiles;
   late final InMemoryConflictStore conflicts;
   late final InMemoryAuditStore audit;
   late final InMemoryPrivacyStore privacyStore;
@@ -136,6 +150,8 @@ final class UserDemoComposition {
   late final UserMemoryController memoryController;
   late final UserPastimeController pastimeController;
   late final UserConversationTopicController conversationTopicController;
+  late final UserSupportedPersonProfileController
+  supportedPersonProfileController;
   late final SyncPresentationController syncController;
   late final PrivacyPresentationController privacyController;
   var _conflictSeq = 0;
@@ -177,6 +193,10 @@ final class UserDemoComposition {
       topics: conversationTopics,
       sharedLocalDemo: usesSharedLocalDemoTransport,
     );
+    await LocalDemoSharedBootstrap.seedSupportedPersonProfileFixturesIfIsolated(
+      profiles: profiles,
+      sharedLocalDemo: usesSharedLocalDemoTransport,
+    );
     privacyStore.seedSession(
       SessionDescriptor(
         id: demoSessionId,
@@ -197,6 +217,7 @@ final class UserDemoComposition {
       memoryController: memoryController,
       pastimeController: pastimeController,
       conversationTopicController: conversationTopicController,
+      supportedPersonProfileController: supportedPersonProfileController,
       syncController: syncController,
       privacyController: privacyController,
       speechRecognizer: speechRecognizer,
@@ -208,6 +229,7 @@ final class UserDemoComposition {
           ? DemoDataScope.sharedLocalDemo
           : DemoDataScope.isolatedLocal,
       enableQuietRemotePull: usesSharedLocalDemoTransport,
+      enableLiveOrientation: enableLiveOrientation,
     );
   }
 
@@ -239,6 +261,7 @@ final class UserDemoComposition {
     await memoryController.load();
     await pastimeController.load();
     await conversationTopicController.load();
+    await supportedPersonProfileController.load();
     await syncController.load();
     await privacyController.load();
   }

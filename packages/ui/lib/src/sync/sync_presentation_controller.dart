@@ -39,6 +39,17 @@ final class SyncPresentationController extends ChangeNotifier {
     };
   }
 
+  /// Bottom chrome only for failure / unresolved conflict — not ready/synced.
+  bool get needsActionableSyncNotice {
+    if (unresolved.isNotEmpty) {
+      return true;
+    }
+    if (lastPush != null && lastPush!.failed > 0) {
+      return true;
+    }
+    return false;
+  }
+
   String get syncChromeLabel {
     if (busy) {
       return MemoraCopy.syncBusy;
@@ -50,7 +61,7 @@ final class SyncPresentationController extends ChangeNotifier {
       return MemoraCopy.syncFailed;
     }
     if (lastPush != null && lastPush!.applied + lastPush!.duplicates > 0) {
-      return MemoraCopy.syncSynced;
+      return MemoraCopy.changesSaved;
     }
     if (!sessionBoundary.requiresNetwork) {
       return MemoraCopy.stateOffline;
@@ -68,7 +79,7 @@ final class SyncPresentationController extends ChangeNotifier {
     if (lastPush != null && lastPush!.failed > 0) {
       return MemoraCopy.recoveryRetry;
     }
-    return MemoraCopy.syncPushAction;
+    return null;
   }
 
   Future<void> load() async {

@@ -27,6 +27,9 @@ final class DemoIds {
   ConversationTopicId nextConversationTopicId() =>
       ConversationTopicId(nextUuid());
 
+  SupportedPersonProfileId nextSupportedPersonProfileId() =>
+      SupportedPersonProfileId(nextUuid());
+
   IdempotencyKey nextIdempotencyKey(String purpose) {
     return IdempotencyKey('demo-ui-$purpose-${nextUuid()}');
   }

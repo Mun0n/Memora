@@ -33,6 +33,9 @@ final class InMemoryOfflineStore {
     for (final topic in snapshot.conversationTopics) {
       store._conversationTopics[topic.id.value] = topic;
     }
+    for (final profile in snapshot.supportedPersonProfiles) {
+      store._supportedPersonProfiles[profile.id.value] = profile;
+    }
     for (final observation in snapshot.weightObservations) {
       store._weights[observation.id.value] = observation;
     }
@@ -52,6 +55,8 @@ final class InMemoryOfflineStore {
   final Map<String, Pastime> _pastimes = <String, Pastime>{};
   final Map<String, ConversationTopic> _conversationTopics =
       <String, ConversationTopic>{};
+  final Map<String, SupportedPersonProfile> _supportedPersonProfiles =
+      <String, SupportedPersonProfile>{};
   final Map<String, WeightObservation> _weights = <String, WeightObservation>{};
   final Map<String, BloodPressureObservation> _bloodPressures =
       <String, BloodPressureObservation>{};
@@ -64,6 +69,9 @@ final class InMemoryOfflineStore {
       memories: _memories.values.toList(growable: false),
       pastimes: _pastimes.values.toList(growable: false),
       conversationTopics: _conversationTopics.values.toList(growable: false),
+      supportedPersonProfiles: _supportedPersonProfiles.values.toList(
+        growable: false,
+      ),
       weightObservations: _weights.values.toList(growable: false),
       bloodPressureObservations: _bloodPressures.values.toList(growable: false),
       outboxEntries: outbox.captureEntries(),
@@ -230,6 +238,28 @@ final class InMemoryOfflineStore {
 
   void putConversationTopic(ConversationTopic topic) {
     _conversationTopics[topic.id.value] = topic;
+  }
+
+  // --- Supported-person preferred-name profiles ----------------------------
+
+  SupportedPersonProfile? supportedPersonProfileById(
+    SupportedPersonProfileId id,
+  ) => _supportedPersonProfiles[id.value];
+
+  /// Live (non-tombstoned) profile for [familySpaceId], if any.
+  SupportedPersonProfile? supportedPersonProfileForFamily(
+    FamilySpaceId familySpaceId,
+  ) {
+    for (final profile in _supportedPersonProfiles.values) {
+      if (profile.familySpaceId == familySpaceId && !profile.isDeleted) {
+        return profile;
+      }
+    }
+    return null;
+  }
+
+  void putSupportedPersonProfile(SupportedPersonProfile profile) {
+    _supportedPersonProfiles[profile.id.value] = profile;
   }
 
   // --- Observations --------------------------------------------------------

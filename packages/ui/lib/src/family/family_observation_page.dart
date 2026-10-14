@@ -25,14 +25,6 @@ class FamilyObservationPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              MemoraCopy.observationsTitle,
-              style: textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: MemoraTheme.highContrastInk,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
               MemoraCopy.observationDisclaimer,
               key: const Key('memora-observation-disclaimer'),
               style: textTheme.bodyLarge?.copyWith(

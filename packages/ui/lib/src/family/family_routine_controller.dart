@@ -45,6 +45,11 @@ final class FamilyRoutineController extends ChangeNotifier {
   int quietStartHour = 22;
   int quietEndHour = 7;
 
+  /// Bottom chrome only when delivery/conflict requires caregiver action.
+  bool get needsActionableSyncNotice =>
+      surfaceState == PresentationSurfaceState.failed ||
+      surfaceState == PresentationSurfaceState.conflicted;
+
   String get syncLabel {
     if (surfaceState == PresentationSurfaceState.loading) {
       return MemoraCopy.stateLoading;

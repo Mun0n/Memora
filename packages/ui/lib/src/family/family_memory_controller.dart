@@ -38,6 +38,10 @@ final class FamilyMemoryController extends ChangeNotifier {
   bool get canManage => MemoryCarePolicy.canManageMemories(actor);
   bool get canContribute => MemoryCarePolicy.canContributeMemories(actor);
 
+  bool get needsActionableSyncNotice =>
+      surfaceState == PresentationSurfaceState.failed ||
+      surfaceState == PresentationSurfaceState.conflicted;
+
   String get syncLabel {
     if (surfaceState == PresentationSurfaceState.loading) {
       return MemoraCopy.memoriesLoading;

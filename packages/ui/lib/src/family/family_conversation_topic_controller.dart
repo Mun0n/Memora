@@ -70,6 +70,12 @@ final class FamilyConversationTopicController extends ChangeNotifier {
 
   bool get isSharedDemo => demoDataScope == DemoDataScope.sharedLocalDemo;
 
+  bool get needsActionableSyncNotice =>
+      sharedDeliveryFailed ||
+      sharedPullFailed ||
+      surfaceState == PresentationSurfaceState.failed ||
+      surfaceState == PresentationSurfaceState.conflicted;
+
   String get syncLabel {
     if (isRefreshingShared) {
       return MemoraCopy.sharedLocalDemoPending;

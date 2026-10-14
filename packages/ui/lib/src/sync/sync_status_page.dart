@@ -23,54 +23,30 @@ class SyncStatusPage extends StatelessWidget {
     return ListenableBuilder(
       listenable: controller,
       builder: (context, _) {
+        final body = demoDataScope == DemoDataScope.sharedLocalDemo
+            ? MemoraCopy.syncSectionBodyShared
+            : MemoraCopy.syncSectionBodyIsolated;
+        final lastPush = controller.lastPush;
+        final lastPull = controller.lastPull;
+        String? feedback;
+        if (lastPush != null && lastPush.failed > 0) {
+          feedback = MemoraCopy.syncFailed;
+        } else if (lastPush != null &&
+            (lastPush.applied + lastPush.duplicates > 0 ||
+                lastPush.conflicted > 0)) {
+          feedback = MemoraCopy.changesSaved;
+        } else if (lastPull != null) {
+          feedback = MemoraCopy.changesSaved;
+        }
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              MemoraCopy.syncSectionTitle,
-              key: const Key('memora-sync-title'),
-              style: textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: MemoraTheme.highContrastInk,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              demoDataScope == DemoDataScope.sharedLocalDemo
-                  ? MemoraCopy.syncSectionBodyShared
-                  : MemoraCopy.syncSectionBodyIsolated,
+              body,
+              key: const Key('memora-sync-body'),
               style: textTheme.bodyLarge?.copyWith(fontSize: 17),
             ),
-            const SizedBox(height: 8),
-            Text(
-              demoDataScope == DemoDataScope.sharedLocalDemo
-                  ? MemoraCopy.sharedLocalDemoNotice
-                  : MemoraCopy.isolatedLocalDemoNotice,
-              key: Key(
-                demoDataScope == DemoDataScope.sharedLocalDemo
-                    ? 'memora-shared-local-demo'
-                    : 'memora-isolated-local-demo',
-              ),
-              style: textTheme.bodyMedium?.copyWith(fontSize: 16),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              controller.sessionLabel,
-              key: const Key('memora-session-label'),
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: MemoraTheme.highContrastInk,
-              ),
-            ),
-            if (controller.sessionBoundary.mode ==
-                SessionCompositionMode.namedCredentialsConfigured) ...[
-              const SizedBox(height: 8),
-              Text(
-                MemoraCopy.sessionCredentialNamesHint,
-                key: const Key('memora-session-credential-names'),
-                style: textTheme.bodyMedium?.copyWith(fontSize: 16),
-              ),
-            ],
             const SizedBox(height: 16),
             FilledButton(
               key: const Key('memora-sync-push'),
@@ -83,23 +59,11 @@ class SyncStatusPage extends StatelessWidget {
               onPressed: controller.busy ? null : controller.pull,
               child: Text(MemoraCopy.syncPullAction),
             ),
-            if (controller.lastPush != null) ...[
+            if (feedback != null) ...[
               const SizedBox(height: 12),
               Text(
-                SyncPresentationController.pushSummaryLabel(
-                  controller.lastPush!,
-                ),
-                key: const Key('memora-sync-push-summary'),
-                style: textTheme.bodyLarge?.copyWith(fontSize: 16),
-              ),
-            ],
-            if (controller.lastPull != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                SyncPresentationController.pullSummaryLabel(
-                  controller.lastPull!,
-                ),
-                key: const Key('memora-sync-pull-summary'),
+                feedback,
+                key: const Key('memora-sync-feedback'),
                 style: textTheme.bodyLarge?.copyWith(fontSize: 16),
               ),
             ],

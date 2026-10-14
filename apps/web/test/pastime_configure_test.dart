@@ -166,12 +166,16 @@ void main() {
     expect(find.byKey(const Key('memora-family-save-pastime')), findsNothing);
   });
 
-  testWidgets('default demo identifies isolated local data', (tester) async {
+  testWidgets('default product chrome hides isolated transport notices', (
+    tester,
+  ) async {
     await pumpPastimes(tester);
 
-    expect(find.byKey(const Key('memora-isolated-local-demo')), findsOneWidget);
-    expect(find.text(MemoraCopy.isolatedLocalDemoNotice), findsOneWidget);
+    expect(find.byKey(const Key('memora-isolated-local-demo')), findsNothing);
+    expect(find.text(MemoraCopy.isolatedLocalDemoNotice), findsNothing);
     expect(find.byKey(const Key('memora-shared-local-demo')), findsNothing);
+    expect(find.byKey(const Key('memora-sync-status')), findsNothing);
+    expect(find.text(MemoraCopy.demoBanner), findsNothing);
   });
 
   testWidgets('shared demo auto-pushes pastime activate without Sync chrome', (
@@ -197,7 +201,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('memora-shared-local-demo')), findsOneWidget);
+    expect(find.byKey(const Key('memora-shared-local-demo')), findsNothing);
+    expect(find.text(MemoraCopy.sharedLocalDemoNotice), findsNothing);
     expect(find.textContaining('Radio Demo'), findsWidgets);
     expect(find.textContaining('Puzzle Ejemplo'), findsWidgets);
 

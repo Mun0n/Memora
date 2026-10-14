@@ -1,73 +1,49 @@
 # Current project state
 
-- Phase: **Slice 11 enriched family conversation context accepted by human review
-  on 2026-10-14** after one bounded repair iteration, full validation and an
-  independent `PASS_WITH_NOTES` audit. Enriched family conversation help cards
-  build on the accepted Slice 10 baseline (human-reviewed 2026-10-13). Slice 9
-  voice guidance, Slice 8 pastimes,
-  cross-client fictional demo sync and the physical-Android reverse-bridge
-  launcher remain approved. The launcher supports zero-argument invocation on
-  macOS Bash 3.2, preserves optional Flutter arguments and remains limited to
-  `tcp:17808`.
-- Implemented product functionality includes the Slice 7 four-tile supported-person
-  home, Slice 8 family-configured pastimes, Slice 9 central `Ayúdame`, Slice 10
-  caregiver conversation-topic configure/preview plus supported-person
-  `Quiero hablar` topic selection and deterministic turn-based session, and
-  **Slice 11 domain + UI**: each prompt may carry one optional
-  `ConversationPromptHelp` (cue 1–160 and/or one approved same-family memory);
-  topic cover memory stays independent; activate validates help memory refs on the
-  memory repository boundary; session engine adds `presentingHelp`, exact-match
-  `Dame una idea` / reviewed equivalents, and ephemeral help-reveal fields that
-  never enter persistence/outbox/sync. Caregiver web adds per-invitation
-  `Ayuda familiar` authoring/preview; supported-person session shows persistent
-  `Dame una idea` only when help is usable, reveals cue/memory after explicit
-  tap or exact spoken command, and serializes listen→release→speak help→
-  speech-complete→listen without advancing the prompt. Topics still: title,
-  introduction, 1–5 ordered prompts, closing, lifecycle, ≤6 active;
-  quiet-push/pull unchanged. Session speech remains ephemeral only. Normal
-  Android path: `SpeechOutputPort` / `FakeSpeechOutput` +
-  `AndroidLocalSpeechOutput` (local Spanish voice only, rate `0.90`, utterance
-  completion callbacks); written + manual `Hablar` when no qualifying local voice.
-- Shared packages: `packages/domain` / `packages/data` (Slice 11 help-card +
-  `ConversationTopicCodec` + speech-output port), `packages/ui` (Slice 11
-  `Ayuda familiar` + `Dame una idea` session reveal).
-- App shells: `apps/web` wires `ConfigureConversationTopic` with
-  `MemoryRepository` for help-memory activate checks; `apps/user` session
-  resolves approved memories for help presentation. Shared demo URL unchanged
-  (`MEMORA_LOCAL_DEMO_SYNC_URL`). Garden Demo baseline prompt 0 includes a
-  cue-only help card; prompt 1 remains help-free.
-- Persistence: Android Drift/SQLite documented; proofs use in-memory + snapshot
-  restart + fake remote (pastimes + conversation topics including help). Media
-  metadata-only.
-- Backend: `backend/supabase/migrations` family-identity + product tables +
-  `pastimes` + `conversation_topics` + Slice 11
-  `memora_validate_conversation_prompts` check for enriched prompt JSON and
-  same-family approved memory refs; forced RLS / `memora_has_capability` parity
-  unchanged (`editConversationTopics` / `viewConversationTopics`).
-- Validation: Slice 11 full validation passes (user 70, web 33, data 49,
-  domain 382 and UI 44 tests), including repository secret scan, package
-  boundaries, Android local-demo launcher and RLS contract suites. After the
-  bounded format/layout repair, fresh QA returned `PASS` and the independent
-  audit returned `PASS_WITH_NOTES`. Human product review accepted the
-  `Quiero hablar` help flow, including explicit `Dame una idea`, stable prompt,
-  non-triggering ordinary speech, cue/memory fallback, persistent exits and
-  serialized microphone/voice behavior.
+- Phase: **Slice 12 UI human-review repair done** (MVP closure). Slice 11
+  enriched family conversation context remains the human-accepted baseline
+  (2026-10-14). Slice 9 voice guidance, Slice 8 pastimes, cross-client fictional
+  demo sync and the physical-Android reverse-bridge launcher remain approved.
+- Implemented product functionality includes Slices 7–11 home/pastimes/`Ayúdame`/
+  `Quiero hablar` (topics + help cards) plus **Slice 12**: family-scoped
+  supported-person preferred-name profile (domain/data/SQL), primary-caregiver
+  web editor (`Nombre que verá en Memora`), supported-person greeting
+  `Hola, <nombre>` / safe `Hola`, live device-local orientation clock, centred
+  home tile content, and ≥104 dp non-overlapping `Ayúdame`.
+- Caregiver web product chrome (human-review repair): brand header `Memora`,
+  primary nav including discoverable `Persona apoyada`, first-use CTA
+  `Configurar el nombre`, quiet sync (actionable notices only), no permanent
+  demo/engineering banners on the normal shell. Finding 3 copy polish: single
+  Help limitation notice, Privacy without audit-implementation paragraph or
+  `demo-web` fixture label (`Este navegador`), one shell section heading per
+  page (no duplicated page headlines).
+- Shared packages: `packages/domain` / `packages/data` (preferred-name profile +
+  codec + baseline), `packages/ui` (greeting, live clock, home geometry,
+  caregiver profile + product chrome).
+- App shells: shared demo URL unchanged (`MEMORA_LOCAL_DEMO_SYNC_URL`). Garden
+  Demo baseline prompt 0 cue-only help; preferred-name baseline `Amparo Demo`.
+  Executable user composition uses `enableLiveOrientation: true` (device clock);
+  widget tests inject a fixed fake clock.
+- Persistence: in-memory + snapshot restart + fake remote now cover pastimes,
+  conversation topics (incl. help) and preferred-name profiles. Media metadata-only.
+- Backend: migrations through Slice 12 `supported_person_profiles` + full
+  `memora_has_capability` restatement (`viewSupportedPersonProfile` /
+  `editSupportedPersonProfile` primary-only edit); forced RLS unchanged.
+- Validation (UI local): Finding 3 Help/Privacy/heading chrome tests + prior
+  product-chrome / preferred-name / web suites green (web **46** focused). Full
+  `./scripts/validate.sh` remains QA.
 - Data: fictional development data only (`Amparo Demo`, `Elena Demo`,
-  `Familia Ejemplo`, `Casa Demo B`, reserved Slice-2–11 UUIDs); no auth credentials
-  or production endpoints.
+  `Familia Ejemplo`, `Casa Demo B`, reserved Slice-2–12 UUIDs); no auth credentials
+  or production endpoints. Preferred names never enter diagnostic logs.
 - External services: none connected. Credentials injectable by **names only**.
   Reminder UI convenience prompts only. No LLM.
 - Approved MVP: accessible supported-person Android phone/tablet app; responsive
   caregiver/family web; routines, reminders, memories, weight/blood-pressure
   recording, local persistence and synchronization. No native caregiver app or
   meal tracking.
-- Next work: **Slice 12 is specified and human-approved for focused MVP closure**.
-  It adds a primary-caregiver-managed supported-person preferred name, a personal
-  greeting, live home date/time, centred tile content and a larger `Ayúdame` control
-  with separate hit regions. It adds no destination or content module. Family Stories
-  are deferred beyond MVP; calls and contacts are a rejected product direction. No
-  chatbot, LLM, semantic selection, cloud speech, deployment, real-data connection or
-  automatic Slice 13 is authorized.
+- Next work: **Slice 12 QA** re-validate + fresh auditor after Finding 3
+  human-review UI repair. No automatic Slice 13, Family Stories, calls/contacts,
+  LLM, deployment or real-data connection.
 
 ## Human handoff — run fictional demo mode
 
@@ -107,8 +83,9 @@ server publishes the deterministic fictional pastime set once
 (`Radio Demo` active, `Puzzle Ejemplo` draft, `Fotos Ejemplo` archived).
 When conversation-topic rows are missing, it also publishes
 (`El jardín Demo` active with cue-only help on prompt 0, `Cocina Ejemplo`
-draft, `Música Ejemplo` archived).
-`POST /v1/bootstrap` is the same idempotent ensure for both.
+draft, `Música Ejemplo` archived). When the preferred-name profile is missing,
+it publishes fictional `Amparo Demo` once.
+`POST /v1/bootstrap` is the same idempotent ensure for all three.
 
 **Reset (restores baseline, not a blank server):**
 `curl -X POST http://127.0.0.1:17808/v1/reset`
@@ -190,3 +167,5 @@ masquerade as remote data.
    `Quiero hablar`, on-device-only recognition on the target Android class.
 8. Slice 10 guided conversations: caregiver topic authoring, turn-based
    `Quiero hablar`, mic release between turns, no speech retention.
+9. Slice 12 preferred-name greeting + live clock + centred home / larger `Ayúdame`
+   on phone and tablet (human MVP closure checklist in `specs/SLICE_12.md`).

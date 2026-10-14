@@ -32,12 +32,14 @@ void main() {
         'token': 'abc',
         'kilograms': 62.5,
         'caption': 'Privado Demo',
+        'preferredName': 'Amparo Secreto Demo',
         'aggregateId': OfflineFixtures.morningRoutineId.value,
       });
       expect(out['event'], 'sync.push');
       expect(out['token'], '[REDACTED]');
       expect(out['kilograms'], '[REDACTED_HEALTH]');
       expect(out['caption'], '[REDACTED]');
+      expect(out['preferredName'], '[REDACTED]');
       expect(out['aggregateId'], OfflineFixtures.morningRoutineId.value);
     });
   });

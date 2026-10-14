@@ -4,6 +4,7 @@
 /// drivers, or other project packages (`data`, `ui`, apps).
 library;
 
+export 'src/identity/configure_supported_person_profile.dart';
 export 'src/identity/family_access_policy.dart';
 export 'src/identity/family_capability.dart';
 export 'src/identity/family_membership.dart';
@@ -13,6 +14,8 @@ export 'src/identity/household_timezone.dart';
 export 'src/identity/identifiers.dart';
 export 'src/identity/identity_fixtures.dart';
 export 'src/identity/membership_status.dart';
+export 'src/identity/supported_person_profile.dart';
+export 'src/identity/supported_person_profile_care_policy.dart';
 export 'src/memories/manage_memory.dart';
 export 'src/memories/memory_care_policy.dart';
 export 'src/memories/memory_entry.dart';
@@ -54,6 +57,7 @@ export 'src/repositories/pastime_repository.dart';
 export 'src/repositories/reminder_repository.dart';
 export 'src/repositories/routine_progress_repository.dart';
 export 'src/repositories/routine_repository.dart';
+export 'src/repositories/supported_person_profile_repository.dart';
 export 'src/routines/configure_routine.dart';
 export 'src/routines/record_routine_step_progress.dart';
 export 'src/routines/routine.dart';

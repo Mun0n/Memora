@@ -117,6 +117,10 @@ final class LocalDemoSyncServer {
           'conversationTopicBaseline': authority.hasConversationTopicRowsFor(
             LocalDemoFictionalBaseline.familySpaceId.value,
           ),
+          'supportedPersonProfileBaseline': authority
+              .hasSupportedPersonProfileRowsFor(
+                LocalDemoFictionalBaseline.familySpaceId.value,
+              ),
         });
         return;
       }
@@ -137,6 +141,7 @@ final class LocalDemoSyncServer {
           'initialized': published,
           'pastimeBaseline': true,
           'conversationTopicBaseline': true,
+          'supportedPersonProfileBaseline': true,
         });
         return;
       }

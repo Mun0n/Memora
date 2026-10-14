@@ -1,7 +1,6 @@
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 
-import '../demo/demo_data_scope.dart';
 import '../l10n/memora_copy.dart';
 import '../theme/memora_theme.dart';
 import '../widgets/draft_text_field.dart';
@@ -23,28 +22,8 @@ class FamilyPastimeConfigureContent extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              MemoraCopy.pastimesSectionTitle,
-              style: textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: MemoraTheme.highContrastInk,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
               MemoraCopy.pastimesSectionBody,
               style: textTheme.bodyLarge?.copyWith(fontSize: 17),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              controller.demoDataScope == DemoDataScope.sharedLocalDemo
-                  ? MemoraCopy.sharedLocalDemoNotice
-                  : MemoraCopy.isolatedLocalDemoNotice,
-              key: Key(
-                controller.demoDataScope == DemoDataScope.sharedLocalDemo
-                    ? 'memora-shared-local-demo'
-                    : 'memora-isolated-local-demo',
-              ),
-              style: textTheme.bodyMedium?.copyWith(fontSize: 16),
             ),
             if (controller.isRefreshingShared) ...[
               const SizedBox(height: 8),

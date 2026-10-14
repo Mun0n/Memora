@@ -8,6 +8,7 @@ import '../conversations/conversation_prompt.dart';
 import '../conversations/conversation_prompt_help.dart';
 import '../conversations/conversation_topic.dart';
 import '../conversations/conversation_topic_lifecycle_status.dart';
+import '../identity/supported_person_profile.dart';
 import '../pastimes/pastime.dart';
 import '../pastimes/pastime_lifecycle_status.dart';
 import '../reminders/quiet_hours.dart';
@@ -23,7 +24,7 @@ import '../sync/idempotency_key.dart';
 import '../sync/sync_state.dart';
 import 'offline_identifiers.dart';
 
-/// Stable Demo/Ejemplo offline fixtures for Slice 3–10 contracts.
+/// Stable Demo/Ejemplo offline fixtures for Slice 3–12 contracts.
 ///
 /// Uses reserved Slice 2 family-space IDs. Values are fictional only.
 abstract final class OfflineFixtures {
@@ -91,6 +92,9 @@ abstract final class OfflineFixtures {
     '01932f00-0010-7000-8000-000000001003',
   );
 
+  static final SupportedPersonProfileId amparoPreferredNameProfileId =
+      SupportedPersonProfileId('01932f00-0012-7000-8000-000000001201');
+
   static final IdempotencyKey morningRoutineSaveKey = IdempotencyKey(
     'demo-routine-save-01932f00-0003-7000-8000-000000000301',
   );
@@ -121,6 +125,10 @@ abstract final class OfflineFixtures {
 
   static final IdempotencyKey gardenTalkTopicSaveKey = IdempotencyKey(
     'demo-topic-save-01932f00-0010-7000-8000-000000001001',
+  );
+
+  static final IdempotencyKey amparoPreferredNameSaveKey = IdempotencyKey(
+    'demo-profile-save-01932f00-0012-7000-8000-000000001201',
   );
 
   static final DateTime demoRecordedAt = DateTime.utc(2026, 10, 10, 9, 0);
@@ -364,4 +372,14 @@ abstract final class OfflineFixtures {
     version: AggregateVersion.initial,
     syncState: SyncState.local,
   );
+
+  /// Fictional Familia Ejemplo preferred-name profile (`Amparo Demo` only).
+  static final SupportedPersonProfile amparoPreferredNameProfile =
+      SupportedPersonProfile(
+        id: amparoPreferredNameProfileId,
+        familySpaceId: IdentityFixtures.familiaEjemploSpaceId,
+        preferredName: IdentityFixtures.amparoSupportedDisplayName,
+        version: AggregateVersion.initial,
+        syncState: SyncState.local,
+      );
 }

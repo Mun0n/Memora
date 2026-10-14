@@ -52,7 +52,8 @@ begin
         'blood_pressure_observations',
         'audit_events',
         'pastimes',
-        'conversation_topics'
+        'conversation_topics',
+        'supported_person_profiles'
       )
   loop
     if not (r.rls and r.forced) then
@@ -228,6 +229,15 @@ insert into public.conversation_topics (
   1
 );
 
+insert into public.supported_person_profiles (
+  id, family_space_id, preferred_name, row_version
+) values (
+  '01932f00-0012-7000-8000-000000001201',
+  '01932f00-0002-7000-8000-0000000000a1',
+  'Amparo Demo',
+  1
+);
+
 -- Primary: full product visibility in own family; none in Casa Demo B
 do $$
 declare
@@ -250,6 +260,9 @@ begin
 
   select count(*) into n from public.conversation_topics;
   perform pg_temp.assert_true('primary_sees_all_conversation_topics', n = 3);
+
+  select count(*) into n from public.supported_person_profiles;
+  perform pg_temp.assert_true('primary_sees_supported_person_profile', n = 1);
 
   select count(*) into n from public.media_metadata;
   perform pg_temp.assert_true('primary_sees_media_metadata', n = 1);
@@ -632,6 +645,12 @@ begin
     'space_b_sees_no_ejemplo_conversation_topics',
     n = 0
   );
+
+  select count(*) into n from public.supported_person_profiles;
+  perform pg_temp.assert_true(
+    'space_b_sees_no_ejemplo_supported_person_profile',
+    n = 0
+  );
 end $$;
 
 -- Capability spot-checks for new wires
@@ -802,6 +821,160 @@ begin
       'viewConversationTopics'
     )
   );
+  perform pg_temp.assert_true(
+    'capability_contributor_no_view_supported_person_profile',
+    not public.memora_has_capability(
+      '01932f00-0002-7000-8000-0000000000a1',
+      'viewSupportedPersonProfile'
+    )
+  );
+  perform pg_temp.assert_true(
+    'capability_contributor_no_edit_supported_person_profile',
+    not public.memora_has_capability(
+      '01932f00-0002-7000-8000-0000000000a1',
+      'editSupportedPersonProfile'
+    )
+  );
+end $$;
+
+-- Slice 12: preferred-name profile — primary edit; caregiver/supported view-only
+do $$
+declare
+  n integer;
+  v_name text;
+begin
+  set local role authenticated;
+  perform pg_temp.claim_as('01932f00-0002-7000-8000-000000000101');
+  perform pg_temp.assert_true(
+    'capability_primary_edit_supported_person_profile',
+    public.memora_has_capability(
+      '01932f00-0002-7000-8000-0000000000a1',
+      'editSupportedPersonProfile'
+    )
+  );
+
+  update public.supported_person_profiles
+  set preferred_name = 'Amparo Demo Corregido', row_version = row_version + 1
+  where id = '01932f00-0012-7000-8000-000000001201';
+  select preferred_name into v_name
+  from public.supported_person_profiles
+  where id = '01932f00-0012-7000-8000-000000001201';
+  perform pg_temp.assert_true(
+    'primary_can_update_preferred_name',
+    v_name = 'Amparo Demo Corregido'
+  );
+
+  -- Restore fictional baseline name for later assertions.
+  update public.supported_person_profiles
+  set preferred_name = 'Amparo Demo', row_version = row_version + 1
+  where id = '01932f00-0012-7000-8000-000000001201';
+end $$;
+
+do $$
+begin
+  set local role authenticated;
+  perform pg_temp.claim_as('01932f00-0002-7000-8000-000000000102');
+  perform pg_temp.assert_true(
+    'capability_caregiver_view_supported_person_profile',
+    public.memora_has_capability(
+      '01932f00-0002-7000-8000-0000000000a1',
+      'viewSupportedPersonProfile'
+    )
+  );
+  perform pg_temp.assert_true(
+    'capability_caregiver_no_edit_supported_person_profile',
+    not public.memora_has_capability(
+      '01932f00-0002-7000-8000-0000000000a1',
+      'editSupportedPersonProfile'
+    )
+  );
+
+  begin
+    update public.supported_person_profiles
+    set preferred_name = 'Hack Caregiver', row_version = row_version + 1
+    where id = '01932f00-0012-7000-8000-000000001201';
+    if found then
+      raise exception 'expected caregiver update preferred name to fail';
+    end if;
+    -- Zero-row update under RLS counts as success without raising; assert name.
+    perform pg_temp.assert_true('caregiver_update_preferred_name_noop', true);
+  exception
+    when insufficient_privilege then
+      perform pg_temp.assert_true('caregiver_cannot_update_preferred_name', true);
+    when others then
+      if sqlstate = '42501' then
+        perform pg_temp.assert_true(
+          'caregiver_cannot_update_preferred_name',
+          true
+        );
+      else
+        raise;
+      end if;
+  end;
+end $$;
+
+do $$
+declare
+  v_name text;
+begin
+  reset role;
+  select preferred_name into v_name
+  from public.supported_person_profiles
+  where id = '01932f00-0012-7000-8000-000000001201';
+  perform pg_temp.assert_true(
+    'preferred_name_unchanged_after_caregiver_attempt',
+    v_name = 'Amparo Demo'
+  );
+end $$;
+
+do $$
+begin
+  set local role authenticated;
+  perform pg_temp.claim_as('01932f00-0002-7000-8000-000000000104');
+  perform pg_temp.assert_true(
+    'capability_supported_view_supported_person_profile',
+    public.memora_has_capability(
+      '01932f00-0002-7000-8000-0000000000a1',
+      'viewSupportedPersonProfile'
+    )
+  );
+  perform pg_temp.assert_true(
+    'capability_supported_no_edit_supported_person_profile',
+    not public.memora_has_capability(
+      '01932f00-0002-7000-8000-0000000000a1',
+      'editSupportedPersonProfile'
+    )
+  );
+
+  begin
+    insert into public.supported_person_profiles (
+      id, family_space_id, preferred_name
+    ) values (
+      '01932f00-0012-7000-8000-0000000012d1',
+      '01932f00-0002-7000-8000-0000000000a1',
+      'Hack Supported'
+    );
+    raise exception 'expected supported insert profile to fail';
+  exception
+    when insufficient_privilege then
+      perform pg_temp.assert_true('supported_cannot_insert_profile', true);
+    when others then
+      if sqlstate = '42501' then
+        perform pg_temp.assert_true('supported_cannot_insert_profile', true);
+      else
+        raise;
+      end if;
+  end;
+end $$;
+
+do $$
+declare
+  n integer;
+begin
+  set local role authenticated;
+  perform pg_temp.claim_as('01932f00-0002-7000-8000-000000000103');
+  select count(*) into n from public.supported_person_profiles;
+  perform pg_temp.assert_true('contributor_sees_no_supported_person_profile', n = 0);
 end $$;
 
 \echo PRODUCT_TABLES_RLS_CONTRACTS_PASS

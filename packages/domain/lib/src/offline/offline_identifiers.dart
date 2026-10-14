@@ -160,3 +160,25 @@ final class RoutineProgressId {
   @override
   String toString() => 'RoutineProgressId($value)';
 }
+
+/// Opaque supported-person preferred-name profile identifier (UUID string).
+final class SupportedPersonProfileId {
+  factory SupportedPersonProfileId(String raw) {
+    _assertUuid(raw, 'SupportedPersonProfileId');
+    return SupportedPersonProfileId._(raw.toLowerCase());
+  }
+
+  const SupportedPersonProfileId._(this.value);
+
+  final String value;
+
+  @override
+  bool operator ==(Object other) =>
+      other is SupportedPersonProfileId && other.value == value;
+
+  @override
+  int get hashCode => value.hashCode;
+
+  @override
+  String toString() => 'SupportedPersonProfileId($value)';
+}

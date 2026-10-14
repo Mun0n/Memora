@@ -2,6 +2,7 @@ import 'package:domain/domain.dart';
 
 import 'conversation_topic_codec.dart';
 import 'in_memory_sync_authority.dart';
+import 'supported_person_profile_codec.dart';
 
 /// Actionable failure when a durable local demo snapshot is unusable.
 final class LocalDemoSyncSnapshotException implements Exception {
@@ -15,21 +16,24 @@ final class LocalDemoSyncSnapshotException implements Exception {
 
 /// Single documented initializer for the shared local demo authority.
 ///
-/// Publishes the deterministic Familia Ejemplo pastime and conversation-topic
-/// baselines when those aggregates are missing for that fictional family space.
-/// Independent clients must not each seed competing private fixtures in shared
-/// mode.
+/// Publishes the deterministic Familia Ejemplo pastime, conversation-topic and
+/// preferred-name profile baselines when those aggregates are missing for that
+/// fictional family space. Independent clients must not each seed competing
+/// private fixtures in shared mode.
 abstract final class LocalDemoFictionalBaseline {
   static const int schemaVersion = 1;
 
   static FamilySpaceId get familySpaceId =>
       IdentityFixtures.familiaEjemploSpaceId;
 
-  /// Ensures pastimes and conversation topics. Returns true if either published.
+  /// Ensures pastimes, topics and preferred-name profile.
+  ///
+  /// Returns true if any aggregate published.
   static bool ensureBaseline(InMemorySyncAuthority authority) {
     final pastimes = ensurePastimes(authority);
     final topics = ensureConversationTopics(authority);
-    return pastimes || topics;
+    final profile = ensureSupportedPersonProfile(authority);
+    return pastimes || topics || profile;
   }
 
   /// Returns `true` when this call published the pastime baseline.
@@ -74,6 +78,25 @@ abstract final class LocalDemoFictionalBaseline {
       authority,
       topic: OfflineFixtures.archivedMusicTopic,
       version: AggregateVersion(1),
+    );
+    return true;
+  }
+
+  /// Returns `true` when this call published the preferred-name baseline.
+  static bool ensureSupportedPersonProfile(InMemorySyncAuthority authority) {
+    if (authority.hasSupportedPersonProfileRowsFor(familySpaceId.value)) {
+      return false;
+    }
+    final profile = OfflineFixtures.amparoPreferredNameProfile;
+    authority.seed(
+      aggregateType: OutboxAggregateType.supportedPersonProfile,
+      aggregateId: profile.id.value,
+      familySpaceId: profile.familySpaceId.value,
+      version: AggregateVersion(1),
+      payload: SupportedPersonProfileCodec.encodePayload(
+        profile.copyWith(version: AggregateVersion(1)),
+      ),
+      tombstoned: false,
     );
     return true;
   }

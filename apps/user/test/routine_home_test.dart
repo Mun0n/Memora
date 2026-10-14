@@ -91,7 +91,8 @@ void main() {
       expect(find.text(MemoraCopy.navHelp), findsNothing);
       expect(find.textContaining('conflicto'), findsNothing);
       expect(find.textContaining('MEMORA_SUPABASE'), findsNothing);
-      expect(find.textContaining('Amparo Demo'), findsNothing);
+      // Slice 12: fictional preferred-name greeting from cached profile.
+      expect(find.text('Hola, Amparo Demo'), findsOneWidget);
       expect(find.text(MemoraCopy.demoBanner), findsNothing);
       expect(find.text(MemoraCopy.todaysRoutines), findsNothing);
     } finally {

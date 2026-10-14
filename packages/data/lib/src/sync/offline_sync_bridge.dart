@@ -2,6 +2,7 @@ import 'package:domain/domain.dart';
 
 import '../offline/in_memory_offline_store.dart';
 import 'conversation_topic_codec.dart';
+import 'supported_person_profile_codec.dart';
 
 /// Bridges [InMemoryOfflineStore] aggregates to [SyncEngine] ports.
 final class OfflineSyncBridge implements SyncPayloadLoader, SyncApplyHandler {
@@ -97,6 +98,18 @@ final class OfflineSyncBridge implements SyncPayloadLoader, SyncApplyHandler {
           operation: operation,
           familySpaceId: topic.familySpaceId.value,
           payload: _conversationTopicPayload(topic),
+        );
+      case OutboxAggregateType.supportedPersonProfile:
+        final profile = _store.supportedPersonProfileById(
+          SupportedPersonProfileId(operation.aggregateId),
+        );
+        if (profile == null) {
+          return null;
+        }
+        return SyncEnvelope(
+          operation: operation,
+          familySpaceId: profile.familySpaceId.value,
+          payload: SupportedPersonProfileCodec.encodePayload(profile),
         );
       case OutboxAggregateType.weightObservation:
         final observation = _store.weightById(
@@ -316,6 +329,43 @@ final class OfflineSyncBridge implements SyncPayloadLoader, SyncApplyHandler {
           ),
         );
         return SyncApplyOutcome.applied;
+      case OutboxAggregateType.supportedPersonProfile:
+        final local = _store.supportedPersonProfileById(
+          SupportedPersonProfileId(record.aggregateId),
+        );
+        if (local != null && !local.version.isBefore(record.version)) {
+          return SyncApplyOutcome.skipped;
+        }
+        final decoded = SupportedPersonProfileCodec.tryDecodeProfile(
+          aggregateId: record.aggregateId,
+          familySpaceId: record.familySpaceId,
+          payload: record.payload,
+          version: record.version,
+          tombstoned: record.tombstoned,
+          syncState: SyncState.synced,
+        );
+        if (decoded == null) {
+          return SyncApplyOutcome.skipped;
+        }
+        // One profile per family: replace any other live row for the space.
+        final existingForFamily = _store.supportedPersonProfileForFamily(
+          FamilySpaceId(record.familySpaceId),
+        );
+        if (existingForFamily != null &&
+            existingForFamily.id.value != record.aggregateId) {
+          _store.putSupportedPersonProfile(
+            existingForFamily.copyWith(
+              syncState: SyncState.synced,
+              tombstone: Tombstone(
+                aggregateId: existingForFamily.id.value,
+                version: existingForFamily.version,
+                deletedAt: DateTime.now().toUtc(),
+              ),
+            ),
+          );
+        }
+        _store.putSupportedPersonProfile(decoded);
+        return SyncApplyOutcome.applied;
       case OutboxAggregateType.weightObservation:
         return _applyWeight(record, preserveBoth: preserveBoth);
       case OutboxAggregateType.bloodPressureObservation:
@@ -405,6 +455,10 @@ final class OfflineSyncBridge implements SyncPayloadLoader, SyncApplyHandler {
     }
     if (conflict.aggregateType == OutboxAggregateType.conversationTopic) {
       await _applyConversationTopicConflictResolution(conflict);
+      return;
+    }
+    if (conflict.aggregateType == OutboxAggregateType.supportedPersonProfile) {
+      await _applySupportedPersonProfileConflictResolution(conflict);
       return;
     }
     if (conflict.aggregateType != OutboxAggregateType.routine) {
@@ -526,6 +580,40 @@ final class OfflineSyncBridge implements SyncPayloadLoader, SyncApplyHandler {
     }
   }
 
+  /// One profile per family: never fork a second row on keepBoth.
+  Future<void> _applySupportedPersonProfileConflictResolution(
+    SyncConflict conflict,
+  ) async {
+    final payload = switch (conflict.resolution) {
+      SyncConflictResolution.keepLocal => conflict.localPayload,
+      SyncConflictResolution.keepRemote => conflict.remotePayload,
+      SyncConflictResolution.keepBoth => conflict.localPayload,
+      SyncConflictResolution.unresolved => null,
+    };
+    if (payload == null) {
+      return;
+    }
+    final version = conflict.resolution == SyncConflictResolution.keepRemote
+        ? conflict.remoteVersion
+        : AggregateVersion(
+            conflict.localVersion.value > conflict.remoteVersion.value
+                ? conflict.localVersion.value
+                : conflict.remoteVersion.value,
+          );
+    final decoded = SupportedPersonProfileCodec.tryDecodeProfile(
+      aggregateId: conflict.aggregateId,
+      familySpaceId: conflict.familySpaceId.value,
+      payload: payload,
+      version: version,
+      tombstoned: false,
+      syncState: SyncState.synced,
+    );
+    if (decoded == null) {
+      return;
+    }
+    _store.putSupportedPersonProfile(decoded);
+  }
+
   Future<void> _applyConversationTopicConflictResolution(
     SyncConflict conflict,
   ) async {
@@ -634,6 +722,15 @@ final class OfflineSyncBridge implements SyncPayloadLoader, SyncApplyHandler {
         );
         if (current != null) {
           _store.putConversationTopic(
+            current.copyWith(syncState: state, version: version),
+          );
+        }
+      case OutboxAggregateType.supportedPersonProfile:
+        final current = _store.supportedPersonProfileById(
+          SupportedPersonProfileId(operation.aggregateId),
+        );
+        if (current != null) {
+          _store.putSupportedPersonProfile(
             current.copyWith(syncState: state, version: version),
           );
         }

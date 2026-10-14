@@ -31,7 +31,7 @@ abstract final class LogRedactor {
     caseSensitive: false,
   );
   static final RegExp _caption = RegExp(
-    r'(caption|title|instruction)\s*[:=]\s*.+',
+    r'(caption|title|instruction|preferred[_-]?name|display[_-]?name)\s*[:=]\s*.+',
     caseSensitive: false,
   );
 
@@ -84,7 +84,11 @@ abstract final class LogRedactor {
         key.contains('checksum') ||
         key.contains('caption') ||
         key.contains('title') ||
-        key.contains('instruction');
+        key.contains('instruction') ||
+        key.contains('preferredname') ||
+        key.contains('preferred_name') ||
+        key.contains('displayname') ||
+        key.contains('display_name');
   }
 
   static bool _healthKey(String key) {

@@ -1,7 +1,6 @@
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 
-import '../demo/demo_data_scope.dart';
 import '../l10n/memora_copy.dart';
 import '../theme/memora_theme.dart';
 import '../widgets/draft_text_field.dart';
@@ -26,14 +25,6 @@ class FamilyConversationTopicConfigureContent extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              MemoraCopy.conversationsSectionTitle,
-              style: textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: MemoraTheme.highContrastInk,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
               MemoraCopy.conversationsSectionBody,
               style: textTheme.bodyLarge?.copyWith(fontSize: 17),
             ),
@@ -41,18 +32,6 @@ class FamilyConversationTopicConfigureContent extends StatelessWidget {
             Text(
               MemoraCopy.conversationsGuidance,
               key: const Key('memora-family-conversation-guidance'),
-              style: textTheme.bodyMedium?.copyWith(fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              controller.demoDataScope == DemoDataScope.sharedLocalDemo
-                  ? MemoraCopy.sharedLocalDemoNotice
-                  : MemoraCopy.isolatedLocalDemoNotice,
-              key: Key(
-                controller.demoDataScope == DemoDataScope.sharedLocalDemo
-                    ? 'memora-shared-local-demo'
-                    : 'memora-isolated-local-demo',
-              ),
               style: textTheme.bodyMedium?.copyWith(fontSize: 16),
             ),
             if (controller.isRefreshingShared) ...[

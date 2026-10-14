@@ -5,6 +5,7 @@ enum FeatureSection {
   conversations,
   memories,
   observations,
+  supportedPersonProfile,
   sync,
   privacy,
   help,

@@ -54,6 +54,16 @@ void main() {
         FamilyCapability.editConversationTopics,
         false,
       ),
+      (
+        FamilyRole.supportedPerson,
+        FamilyCapability.viewSupportedPersonProfile,
+        true,
+      ),
+      (
+        FamilyRole.supportedPerson,
+        FamilyCapability.editSupportedPersonProfile,
+        false,
+      ),
       (FamilyRole.primaryCaregiver, FamilyCapability.editRoutines, true),
       (FamilyRole.primaryCaregiver, FamilyCapability.configureReminders, true),
       (FamilyRole.primaryCaregiver, FamilyCapability.manageMemories, true),
@@ -82,6 +92,16 @@ void main() {
         FamilyCapability.editConversationTopics,
         true,
       ),
+      (
+        FamilyRole.primaryCaregiver,
+        FamilyCapability.viewSupportedPersonProfile,
+        true,
+      ),
+      (
+        FamilyRole.primaryCaregiver,
+        FamilyCapability.editSupportedPersonProfile,
+        true,
+      ),
       (FamilyRole.caregiver, FamilyCapability.editRoutines, true),
       (FamilyRole.caregiver, FamilyCapability.manageMemories, true),
       (FamilyRole.caregiver, FamilyCapability.recordObservations, true),
@@ -91,6 +111,12 @@ void main() {
       (FamilyRole.caregiver, FamilyCapability.editPastimes, true),
       (FamilyRole.caregiver, FamilyCapability.viewConversationTopics, true),
       (FamilyRole.caregiver, FamilyCapability.editConversationTopics, true),
+      (FamilyRole.caregiver, FamilyCapability.viewSupportedPersonProfile, true),
+      (
+        FamilyRole.caregiver,
+        FamilyCapability.editSupportedPersonProfile,
+        false,
+      ),
       (FamilyRole.familyContributor, FamilyCapability.viewRoutines, true),
       (FamilyRole.familyContributor, FamilyCapability.contributeMemories, true),
       (
@@ -124,6 +150,16 @@ void main() {
       (
         FamilyRole.familyContributor,
         FamilyCapability.editConversationTopics,
+        false,
+      ),
+      (
+        FamilyRole.familyContributor,
+        FamilyCapability.viewSupportedPersonProfile,
+        false,
+      ),
+      (
+        FamilyRole.familyContributor,
+        FamilyCapability.editSupportedPersonProfile,
         false,
       ),
     ];
@@ -311,5 +347,29 @@ void main() {
         isFalse,
       );
     });
+
+    test(
+      'SupportedPersonProfileCarePolicy mirrors view/edit preferred-name wires',
+      () {
+        expect(
+          SupportedPersonProfileCarePolicy.canEditSupportedPersonProfile(
+            IdentityFixtures.elenaPrimaryMembership,
+          ),
+          isTrue,
+        );
+        expect(
+          SupportedPersonProfileCarePolicy.canEditSupportedPersonProfile(
+            IdentityFixtures.carlosCaregiverMembership,
+          ),
+          isFalse,
+        );
+        expect(
+          SupportedPersonProfileCarePolicy.canViewSupportedPersonProfile(
+            IdentityFixtures.amparoSupportedMembership,
+          ),
+          isTrue,
+        );
+      },
+    );
   });
 }

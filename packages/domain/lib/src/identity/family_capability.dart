@@ -21,7 +21,9 @@ enum FamilyCapability {
   viewPastimes('viewPastimes'),
   editPastimes('editPastimes'),
   viewConversationTopics('viewConversationTopics'),
-  editConversationTopics('editConversationTopics');
+  editConversationTopics('editConversationTopics'),
+  viewSupportedPersonProfile('viewSupportedPersonProfile'),
+  editSupportedPersonProfile('editSupportedPersonProfile');
 
   const FamilyCapability(this.wireName);
 

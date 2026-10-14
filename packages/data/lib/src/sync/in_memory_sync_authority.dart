@@ -42,6 +42,16 @@ final class InMemorySyncAuthority {
     );
   }
 
+  /// Whether any supported-person profile row exists for [familySpaceId].
+  bool hasSupportedPersonProfileRowsFor(String familySpaceId) {
+    final trimmed = familySpaceId.trim();
+    return _rows.values.any(
+      (row) =>
+          row.familySpaceId == trimmed &&
+          row.aggregateType == OutboxAggregateType.supportedPersonProfile,
+    );
+  }
+
   /// Clears all rows and idempotency keys (documented local demo reset).
   void reset() {
     _rows.clear();

@@ -20,6 +20,7 @@ abstract final class FamilyAccessPolicy {
           FamilyCapability.viewApprovedMemories,
           FamilyCapability.viewPastimes,
           FamilyCapability.viewConversationTopics,
+          FamilyCapability.viewSupportedPersonProfile,
         },
         FamilyRole.primaryCaregiver: {
           FamilyCapability.viewFamilySpace,
@@ -40,6 +41,8 @@ abstract final class FamilyAccessPolicy {
           FamilyCapability.editPastimes,
           FamilyCapability.viewConversationTopics,
           FamilyCapability.editConversationTopics,
+          FamilyCapability.viewSupportedPersonProfile,
+          FamilyCapability.editSupportedPersonProfile,
         },
         FamilyRole.caregiver: {
           FamilyCapability.viewFamilySpace,
@@ -58,6 +61,7 @@ abstract final class FamilyAccessPolicy {
           FamilyCapability.editPastimes,
           FamilyCapability.viewConversationTopics,
           FamilyCapability.editConversationTopics,
+          FamilyCapability.viewSupportedPersonProfile,
         },
         FamilyRole.familyContributor: {
           FamilyCapability.viewFamilySpace,

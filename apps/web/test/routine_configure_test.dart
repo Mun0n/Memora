@@ -39,13 +39,14 @@ void main() {
       await pumpWeb(tester, size: narrowSize, seed: false);
 
       expect(
-        find.bySemanticsLabel(
-          'Memora Family Web shell, non-production demonstration',
-        ),
+        find.bySemanticsLabel(MemoraCopy.familyWebSemantics),
         findsOneWidget,
       );
       expect(find.bySemanticsLabel('Compact shell layout'), findsOneWidget);
-      expect(find.textContaining('Familia Ejemplo'), findsOneWidget);
+      expect(find.byKey(const Key('memora-brand-title')), findsOneWidget);
+      expect(find.text(MemoraCopy.brandTitle), findsWidgets);
+      expect(find.textContaining('Family Web'), findsNothing);
+      expect(find.text(MemoraCopy.demoBanner), findsNothing);
       expect(
         find.byKey(const Key('memora-reminder-convenience-notice')),
         findsOneWidget,
@@ -138,13 +139,17 @@ void main() {
     expect(tester.getSize(save).height, greaterThanOrEqualTo(48));
   });
 
-  testWidgets('empty offline recovery offers create routine', (tester) async {
+  testWidgets('empty offline state offers in-content create routine', (
+    tester,
+  ) async {
     await pumpWeb(tester, size: narrowSize, seed: false);
     expect(find.byKey(const Key('memora-family-empty')), findsOneWidget);
-    expect(find.text(MemoraCopy.recoveryCreateRoutine), findsOneWidget);
-    final recovery = find.byKey(const Key('memora-sync-recovery-action'));
-    await tester.ensureVisible(recovery);
-    await tester.tap(recovery);
+    // Ready/empty is not an actionable sync failure — no bottom sync bar.
+    expect(find.byKey(const Key('memora-sync-status')), findsNothing);
+    final create = find.byKey(const Key('memora-family-begin-create'));
+    expect(find.text(MemoraCopy.createRoutine), findsWidgets);
+    await tester.ensureVisible(create);
+    await tester.tap(create);
     await tester.pumpAndSettle();
     expect(
       find.byKey(const Key('memora-family-routine-editor')),

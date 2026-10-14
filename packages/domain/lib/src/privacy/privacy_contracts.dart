@@ -15,6 +15,7 @@ enum FamilyContentType {
   memories('memories'),
   pastimes('pastimes'),
   conversationTopics('conversationTopics'),
+  supportedPersonProfile('supportedPersonProfile'),
   weightObservations('weightObservations'),
   bloodPressureObservations('bloodPressureObservations');
 
@@ -31,6 +32,7 @@ abstract final class FamilyContentScope {
     FamilyContentType.memories,
     FamilyContentType.pastimes,
     FamilyContentType.conversationTopics,
+    FamilyContentType.supportedPersonProfile,
     FamilyContentType.weightObservations,
     FamilyContentType.bloodPressureObservations,
   ];

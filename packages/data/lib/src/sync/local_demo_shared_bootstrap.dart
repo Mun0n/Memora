@@ -2,6 +2,7 @@ import 'package:domain/domain.dart';
 
 import '../offline/in_memory_conversation_topic_repository.dart';
 import '../offline/in_memory_pastime_repository.dart';
+import '../offline/in_memory_supported_person_profile_repository.dart';
 import 'local_demo_fictional_baseline.dart';
 import 'local_demo_sync_transport.dart';
 
@@ -63,6 +64,20 @@ abstract final class LocalDemoSharedBootstrap {
       idempotencyKey: IdempotencyKey(
         'demo-topic-save-01932f00-0010-7000-8000-000000001003',
       ),
+    );
+  }
+
+  /// Seeds the fictional preferred-name profile only for isolated local demos.
+  static Future<void> seedSupportedPersonProfileFixturesIfIsolated({
+    required InMemorySupportedPersonProfileRepository profiles,
+    required bool sharedLocalDemo,
+  }) async {
+    if (sharedLocalDemo) {
+      return;
+    }
+    await profiles.save(
+      profile: OfflineFixtures.amparoPreferredNameProfile,
+      idempotencyKey: OfflineFixtures.amparoPreferredNameSaveKey,
     );
   }
 
