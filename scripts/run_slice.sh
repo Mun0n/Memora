@@ -9,14 +9,16 @@ source "$ROOT/scripts/lib/cursor_cli.sh"
 SLICE="${1:-}"
 DRY_RUN=0
 REVIEW_REPAIR=0
+QA_REPAIR=0
 AUTO_CONTINUE=0
 RESUME_AUDIT=0
-USAGE="Usage: ./scripts/run_slice.sh <slice-number> [--dry-run|--review-repair|--resume-audit|--auto-continue]"
+USAGE="Usage: ./scripts/run_slice.sh <slice-number> [--dry-run|--qa-repair|--review-repair|--resume-audit|--auto-continue]"
 [[ -n "$SLICE" ]] || { echo "$USAGE" >&2; exit 2; }
 shift
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --dry-run) DRY_RUN=1 ;;
+    --qa-repair) QA_REPAIR=1 ;;
     --review-repair) REVIEW_REPAIR=1 ;;
     --resume-audit) RESUME_AUDIT=1 ;;
     --auto-continue) AUTO_CONTINUE=1 ;;
@@ -53,12 +55,24 @@ fi
 CLI="$(cursor_cli_discover || true)"
 [[ -n "$CLI" ]] || { echo "ERROR: Cursor agent CLI not found" >&2; exit 1; }
 
-mode_count=$((DRY_RUN + REVIEW_REPAIR + RESUME_AUDIT + AUTO_CONTINUE))
+mode_count=$((DRY_RUN + QA_REPAIR + REVIEW_REPAIR + RESUME_AUDIT + AUTO_CONTINUE))
 [[ "$mode_count" -le 1 ]] || { echo "ERROR: slice modes are mutually exclusive" >&2; exit 2; }
 
-if [[ "$DRY_RUN" -eq 0 && "$REVIEW_REPAIR" -eq 0 && "$RESUME_AUDIT" -eq 0 ]] && [[ -n "$(git status --porcelain -- apps packages backend specs docs scripts agents .cursor AGENTS.md 2>/dev/null)" ]]; then
+if [[ "$DRY_RUN" -eq 0 && "$QA_REPAIR" -eq 0 && "$REVIEW_REPAIR" -eq 0 && "$RESUME_AUDIT" -eq 0 ]] && [[ -n "$(git status --porcelain -- apps packages backend specs docs scripts agents .cursor AGENTS.md 2>/dev/null)" ]]; then
   echo "ERROR: implementation paths are dirty; commit or separately resolve existing work first" >&2
   exit 1
+fi
+
+if [[ "$QA_REPAIR" -eq 1 ]]; then
+  [[ -f "$REPORT_DIR/qa.md" ]] || { echo "ERROR: QA repair requires $REPORT_REL/qa.md" >&2; exit 1; }
+  [[ ! -f "$REPORT_DIR/audit.md" ]] || { echo "ERROR: audit already exists; use --review-repair for audited findings" >&2; exit 1; }
+  grep -Eq '^\*\*FAIL\*\*$' "$REPORT_DIR/qa.md" || {
+    echo "ERROR: QA repair requires a FAIL verdict in $REPORT_REL/qa.md" >&2; exit 1;
+  }
+  [[ -n "$(git status --porcelain -- apps packages backend docs/current 2>/dev/null)" ]] || {
+    echo "ERROR: QA repair requires an existing uncommitted slice implementation" >&2
+    exit 1
+  }
 fi
 
 if [[ "$REVIEW_REPAIR" -eq 1 ]]; then
@@ -179,6 +193,8 @@ echo "Phases: SUPERVISOR → DOMAIN → UI → QA → REVALIDATE → AUDITOR"
 echo "Repair cap: $MAX_REPAIR"
 if [[ "$REVIEW_REPAIR" -eq 1 ]]; then
   echo "Mode: targeted repair requested at HUMAN_REVIEW"
+elif [[ "$QA_REPAIR" -eq 1 ]]; then
+  echo "Mode: targeted repair requested after failing QA"
 elif [[ "$RESUME_AUDIT" -eq 1 ]]; then
   echo "Mode: resume after passing QA; revalidate then start fresh AUDITOR"
 fi
@@ -201,6 +217,9 @@ if [[ "$RESUME_AUDIT" -eq 1 ]]; then
 elif [[ "$REVIEW_REPAIR" -eq 1 ]]; then
   invoke DOMAIN "HUMAN_REVIEW_REPAIR: Read ${REPORT_REL}/human_review.md and audit.md. Repair only those DOMAIN-owned findings, preserve the accepted slice implementation, run focused checks, and update ${REPORT_REL}/domain.md."
   invoke UI "HUMAN_REVIEW_REPAIR: Read ${REPORT_REL}/human_review.md and audit.md. Repair only those UI/app-owned findings, preserve unrelated accepted behavior, run focused checks, and update ${REPORT_REL}/ui.md."
+elif [[ "$QA_REPAIR" -eq 1 ]]; then
+  invoke DOMAIN "QA_REPAIR: Read ${REPORT_REL}/qa.md and current diff. Repair every DOMAIN/data/backend-owned failing acceptance criterion and validation blocker recorded there, including any formatting or migration defect in DOMAIN-owned paths. Preserve passing behavior, do not broaden scope, run focused checks, and update ${REPORT_REL}/domain.md."
+  invoke UI "QA_REPAIR: Read ${REPORT_REL}/qa.md, updated domain.md and current diff. Repair every UI/app-owned failing acceptance criterion and validation blocker recorded there, including required widget/accessibility/golden evidence and production formatting in UI-owned paths. Preserve passing behavior, do not broaden scope, run focused checks, and update ${REPORT_REL}/ui.md."
 else
   invoke SUPERVISOR "Write ${REPORT_REL}/plan.md. Do not implement."
   invoke DOMAIN "Read plan.md. Implement only authorized domain/data/backend tasks, then write ${REPORT_REL}/domain.md."

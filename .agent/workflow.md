@@ -52,6 +52,11 @@ Soft limits warn at 10 initial files or approximately 20,000 prompt characters. 
   never relies on stale evidence.
 - QA may repair tests and fictional fixtures in the app/package test directories
   enumerated by `.agent/path_guards.json`; production paths remain forbidden.
+- If QA reports `FAIL` and the run stops before an audit (including a QA path-guard
+  stop), `run_slice.sh <n> --qa-repair` resumes only from the existing dirty slice
+  implementation and failing `qa.md`. It runs fresh DOMAIN and UI repair roles scoped
+  to those findings, then repeats validation, QA, revalidation and independent audit.
+  It refuses a passing QA report, a clean implementation tree or an existing audit.
 - If a run stops after a passing QA because an orchestration guard itself was stale,
   `run_slice.sh <n> --resume-audit` may be used only after correcting and checkpointing
   that guard. It requires an existing passing `qa.md`, a dirty slice implementation

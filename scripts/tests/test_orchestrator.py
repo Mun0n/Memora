@@ -100,6 +100,16 @@ class OrchestratorContracts(unittest.TestCase):
         self.assertIn("RESUMED_AFTER_QA_GUARD", runner)
         self.assertIn('skip_qa_once="$RESUME_AUDIT"', runner)
 
+    def test_qa_repair_is_bounded_to_failed_qa_without_audit(self):
+        runner = (ROOT / "scripts/run_slice.sh").read_text()
+        self.assertIn("--qa-repair", runner)
+        self.assertIn("QA repair requires a FAIL verdict", runner)
+        self.assertIn("QA repair requires an existing uncommitted slice implementation", runner)
+        self.assertIn("audit already exists; use --review-repair", runner)
+        self.assertIn('invoke DOMAIN "QA_REPAIR:', runner)
+        self.assertIn('invoke UI "QA_REPAIR:', runner)
+        self.assertIn('elif [[ "$QA_REPAIR" -eq 1 ]]', runner)
+
     def test_terminal_progress_and_completion_sound_are_non_blocking_contracts(self):
         runner = (ROOT / "scripts/run_slice.sh").read_text()
         self.assertIn("show_progress", runner)
