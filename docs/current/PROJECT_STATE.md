@@ -61,9 +61,13 @@
   caregiver/family web; routines, reminders, memories, weight/blood-pressure
   recording, local persistence and synchronization. No native caregiver app or
   meal tracking.
-- Next work: define a later slice only after explicit product direction. No
-  chatbot, LLM, semantic selection, cloud speech, telephone/contact feature,
-  deployment, real-data connection or automatic Slice 12 is authorized.
+- Next work: **Slice 12 is specified and human-approved for focused MVP closure**.
+  It adds a primary-caregiver-managed supported-person preferred name, a personal
+  greeting, live home date/time, centred tile content and a larger `Ayúdame` control
+  with separate hit regions. It adds no destination or content module. Family Stories
+  are deferred beyond MVP; calls and contacts are a rejected product direction. No
+  chatbot, LLM, semantic selection, cloud speech, deployment, real-data connection or
+  automatic Slice 13 is authorized.
 
 ## Human handoff — run fictional demo mode
 

@@ -46,6 +46,11 @@ are implemented, tested, audited and checkpointed automatically by `run_mvp.sh`.
   The supported person reveals it explicitly with `Dame una idea`; Memora never chooses
   context from their answer, generates content or records help use. Calls and contacts
   remain out of scope.
+- **Slice 12 — MVP closure and home correction:** add a primary-caregiver-managed
+  preferred name for the supported person, render a personal home greeting, replace
+  the fixed demo orientation timestamp with a live clock, centre every tile's content
+  and enlarge `Ayúdame` with genuinely separate hit regions. This is stabilization and
+  final regression work; it adds no destination, calls, contacts or Family Stories.
 
 Human review occurs after the integrated Slice 6 candidate and before deployment or
 real-data use. Beta release still requires tested RLS/storage policies, offline
