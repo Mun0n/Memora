@@ -109,6 +109,14 @@ class OrchestratorContracts(unittest.TestCase):
         self.assertIn('invoke DOMAIN "QA_REPAIR:', runner)
         self.assertIn('invoke UI "QA_REPAIR:', runner)
         self.assertIn('elif [[ "$QA_REPAIR" -eq 1 ]]', runner)
+        role_preview = runner.index("for role in SUPERVISOR DOMAIN UI QA AUDITOR")
+        repair_validation_gate = runner.index('if [[ "$QA_REPAIR" -eq 1 ]]', role_preview)
+        repair_roles = runner.index('invoke DOMAIN "QA_REPAIR:', repair_validation_gate)
+        self.assertLess(repair_validation_gate, repair_roles)
+        self.assertIn(
+            "Initial validation deferred until DOMAIN/UI repair",
+            runner[repair_validation_gate:repair_roles],
+        )
 
     def test_terminal_progress_and_completion_sound_are_non_blocking_contracts(self):
         runner = (ROOT / "scripts/run_slice.sh").read_text()
