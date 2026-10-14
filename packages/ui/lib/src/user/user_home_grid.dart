@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 import '../l10n/memora_copy.dart';
+import '../theme/memora_supported_person_typography.dart';
 import '../theme/memora_theme.dart';
 import 'user_home_destination.dart';
 
@@ -10,6 +11,8 @@ import 'user_home_destination.dart';
 /// Tile order and positions never depend on sync, content or network status.
 /// The centre control reserves a circular hit region so tile taps never claim
 /// that area (geometry, not paint-order alone).
+///
+/// Reading order: greeting → invitation → orientation → five actions.
 class UserHomeGrid extends StatelessWidget {
   const UserHomeGrid({
     super.key,
@@ -35,16 +38,37 @@ class UserHomeGrid extends StatelessWidget {
   static const double _ayudameMaxExtent = 140;
 
   /// Exposed for geometry / golden tests.
-  static double resolveAyudameExtent(Size constraintsSize) {
+  ///
+  /// Grows slightly with text scale so the ≥16 sp label still fits inside the
+  /// circle without shrinking below the Slice 13 minimum.
+  static double resolveAyudameExtent(
+    Size constraintsSize, {
+    double textScale = 1.0,
+  }) {
     final candidate = constraintsSize.shortestSide * 0.30;
-    return candidate.clamp(ayudameMinExtent, _ayudameMaxExtent).toDouble();
+    final boostedMin = (ayudameMinExtent * (1 + (textScale - 1.0) * 0.4)).clamp(
+      ayudameMinExtent,
+      _ayudameMaxExtent,
+    );
+    final extent = candidate < boostedMin ? boostedMin : candidate;
+    return extent.clamp(ayudameMinExtent, _ayudameMaxExtent).toDouble();
   }
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final width = MediaQuery.sizeOf(context).width;
-    final isExpanded = width >= MemoraTheme.expandedBreakpoint;
+    final size = MediaQuery.sizeOf(context);
+    final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+    final isExpanded = size.width >= MemoraTheme.expandedBreakpoint;
+    final tightHeight = size.height < 820 || textScale >= 1.3;
+    final veryTight = size.height < 820 && textScale >= 1.4;
+
+    final afterGreetingGap = veryTight ? 1.0 : (tightHeight ? 3.0 : 6.0);
+    final afterInvitationGap = veryTight ? 1.0 : (tightHeight ? 3.0 : 6.0);
+    final beforeGridGap = isExpanded
+        ? (textScale >= 1.4 ? 12.0 : 20.0)
+        : (veryTight ? 4.0 : (tightHeight ? 6.0 : 12.0));
+    final tileGap = textScale >= 1.3 ? 8.0 : (tightHeight ? 10.0 : _gap);
 
     return Column(
       key: const Key('memora-user-home'),
@@ -59,36 +83,49 @@ class UserHomeGrid extends StatelessWidget {
           greeting,
           key: const Key('memora-user-home-greeting'),
           softWrap: true,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
           style: textTheme.headlineSmall?.copyWith(
             color: MemoraTheme.highContrastInk,
             fontWeight: FontWeight.w700,
-            fontSize: isExpanded ? 28 : 24,
-            height: 1.15,
+            fontSize: MemoraSupportedPersonTypography.heading,
+            height: 1.2,
           ),
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: afterGreetingGap),
         Semantics(
-          header: true,
+          label: MemoraCopy.userHomeInvitation,
           child: Text(
-            orientationLabel,
-            key: const Key('memora-user-orientation'),
+            MemoraCopy.userHomeInvitation,
+            key: const Key('memora-user-home-invitation'),
             softWrap: true,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: textTheme.titleMedium?.copyWith(
+            style: textTheme.bodyLarge?.copyWith(
               color: MemoraTheme.highContrastInk,
-              fontSize: isExpanded ? 20 : 18,
+              // Invitation is supporting orientation copy (≥18 sp secondary).
+              fontSize: MemoraSupportedPersonTypography.secondary,
               fontWeight: FontWeight.w600,
+              height: 1.2,
             ),
           ),
         ),
-        SizedBox(height: isExpanded ? 20 : 12),
+        SizedBox(height: afterInvitationGap),
+        Text(
+          orientationLabel,
+          key: const Key('memora-user-orientation'),
+          softWrap: true,
+          style: textTheme.titleMedium?.copyWith(
+            color: MemoraTheme.highContrastInk,
+            fontSize: MemoraSupportedPersonTypography.secondary,
+            fontWeight: FontWeight.w600,
+            height: 1.2,
+          ),
+        ),
+        SizedBox(height: beforeGridGap),
         Expanded(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final ayudameExtent = resolveAyudameExtent(constraints.biggest);
+              final ayudameExtent = resolveAyudameExtent(
+                constraints.biggest,
+                textScale: textScale,
+              );
               return Stack(
                 clipBehavior: Clip.none,
                 children: [
@@ -109,9 +146,10 @@ class UserHomeGrid extends StatelessWidget {
                                     'memora-user-home-tile-mi-dia',
                                   ),
                                   onSelect: onSelect,
+                                  compact: tightHeight,
                                 ),
                               ),
-                              const SizedBox(width: _gap),
+                              SizedBox(width: tileGap),
                               Expanded(
                                 child: _HomeTile(
                                   destination: UserHomeDestination.pasatiempos,
@@ -121,12 +159,13 @@ class UserHomeGrid extends StatelessWidget {
                                     'memora-user-home-tile-pasatiempos',
                                   ),
                                   onSelect: onSelect,
+                                  compact: tightHeight,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(height: _gap),
+                        SizedBox(height: tileGap),
                         Expanded(
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -140,9 +179,10 @@ class UserHomeGrid extends StatelessWidget {
                                     'memora-user-home-tile-quiero-hablar',
                                   ),
                                   onSelect: onSelect,
+                                  compact: tightHeight,
                                 ),
                               ),
-                              const SizedBox(width: _gap),
+                              SizedBox(width: tileGap),
                               Expanded(
                                 child: _HomeTile(
                                   destination: UserHomeDestination.recuerdos,
@@ -152,6 +192,7 @@ class UserHomeGrid extends StatelessWidget {
                                     'memora-user-home-tile-recuerdos',
                                   ),
                                   onSelect: onSelect,
+                                  compact: tightHeight,
                                 ),
                               ),
                             ],
@@ -184,6 +225,7 @@ class _HomeTile extends StatelessWidget {
     required this.icon,
     required this.tileKey,
     required this.onSelect,
+    required this.compact,
   });
 
   final UserHomeDestination destination;
@@ -191,10 +233,13 @@ class _HomeTile extends StatelessWidget {
   final IconData icon;
   final Key tileKey;
   final ValueChanged<UserHomeDestination> onSelect;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+    final pad = textScale >= 1.5 ? 2.0 : (compact ? 4.0 : 12.0);
 
     return Semantics(
       button: true,
@@ -212,25 +257,57 @@ class _HomeTile extends StatelessWidget {
               minHeight: UserHomeGrid._minTileExtent,
             ),
             child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Icon(icon, size: 44, color: MemoraTheme.accentOnBand),
-                  const SizedBox(height: 10),
-                  Text(
-                    label,
-                    textAlign: TextAlign.center,
-                    softWrap: true,
-                    style: textTheme.titleLarge?.copyWith(
-                      color: MemoraTheme.accentOnBand,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 20,
-                      height: 1.15,
-                    ),
-                  ),
-                ],
+              padding: EdgeInsets.all(pad),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final labelStyle = textTheme.titleLarge?.copyWith(
+                    color: MemoraTheme.accentOnBand,
+                    fontWeight: FontWeight.w700,
+                    fontSize: MemoraSupportedPersonTypography.title,
+                    height: 1.15,
+                  );
+                  // Long Spanish labels (e.g. Quiero hablar) need up to three
+                  // lines at 1.5×; drop the icon before shrinking text.
+                  // Font metrics exceed fontSize×height slightly — reserve extra.
+                  final lineHeight =
+                      MemoraSupportedPersonTypography.title * textScale * 1.25;
+                  final reservedLabel = lineHeight * 3;
+                  final showIcon =
+                      textScale < 1.3 &&
+                      constraints.maxHeight >= reservedLabel + 48;
+                  final iconSize = showIcon
+                      ? (constraints.maxHeight - reservedLabel - 8).clamp(
+                          28.0,
+                          44.0,
+                        )
+                      : 0.0;
+                  final iconGap = showIcon ? 8.0 : 0.0;
+
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      if (showIcon) ...[
+                        Icon(
+                          icon,
+                          size: iconSize,
+                          color: MemoraTheme.accentOnBand,
+                        ),
+                        SizedBox(height: iconGap),
+                      ],
+                      Text(
+                        label,
+                        textAlign: TextAlign.center,
+                        softWrap: true,
+                        style: labelStyle?.copyWith(
+                          height: textScale >= 1.5
+                              ? 1.05
+                              : (textScale >= 1.3 ? 1.1 : 1.15),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ),
@@ -249,9 +326,15 @@ class _AyudameControl extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final iconSize = (extent * 0.30).clamp(28.0, 44.0);
-    final fontSize = extent < 112 ? 12.0 : 14.0;
-    final pad = (extent * 0.08).clamp(6.0, 12.0);
+    final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+    final pad = (extent * 0.06).clamp(4.0, 10.0);
+    final labelHeight =
+        MemoraSupportedPersonTypography.ayudame * textScale * 1.05;
+    final inner = extent - pad * 2;
+    final showIcon = textScale < 1.3 && inner > labelHeight + 32;
+    final iconSize = showIcon
+        ? (inner - labelHeight - 4).clamp(20.0, 40.0)
+        : 0.0;
 
     return Semantics(
       button: true,
@@ -277,22 +360,22 @@ class _AyudameControl extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.mic_none,
-                    size: iconSize,
-                    color: MemoraTheme.accentOnBand,
-                  ),
-                  SizedBox(height: pad * 0.35),
+                  if (showIcon) ...[
+                    Icon(
+                      Icons.mic_none,
+                      size: iconSize,
+                      color: MemoraTheme.accentOnBand,
+                    ),
+                    SizedBox(height: (pad * 0.2).clamp(2.0, 6.0)),
+                  ],
                   Text(
                     MemoraCopy.homeAyudameLabel,
                     textAlign: TextAlign.center,
-                    maxLines: 1,
-                    softWrap: false,
-                    overflow: TextOverflow.visible,
-                    style: textTheme.labelLarge?.copyWith(
+                    softWrap: true,
+                    style: textTheme.labelSmall?.copyWith(
                       color: MemoraTheme.accentOnBand,
                       fontWeight: FontWeight.w800,
-                      fontSize: fontSize,
+                      fontSize: MemoraSupportedPersonTypography.ayudame,
                       height: 1.05,
                     ),
                   ),

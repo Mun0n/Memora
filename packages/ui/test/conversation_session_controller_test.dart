@@ -152,8 +152,8 @@ void main() {
       await controller.start(OfflineFixtures.gardenTalkTopic);
       final listensBeforeFinish = recognizer.listenCount;
       await controller.finish();
-      expect(controller.phase, ConversationSessionPhase.closing);
-      expect(controller.displayedText, OfflineFixtures.gardenTalkTopic.closing);
+      expect(controller.phase, ConversationSessionPhase.idle);
+      expect(controller.hasActiveSession, isFalse);
       expect(controller.microphoneOpen, isFalse);
       expect(recognizer.listenCount, listensBeforeFinish);
     });
@@ -246,12 +246,74 @@ void main() {
       expect(recognizer.listenCount, 0);
     });
 
-    test('finish shows authored closing with mic released', () async {
+    test('finish speaks closing once then clears session to idle', () async {
       await controller.start(OfflineFixtures.gardenTalkTopic);
-      await controller.finish();
+      expect(controller.hasActiveSession, isTrue);
+
+      output.autoComplete = false;
+      final finishFuture = controller.finish();
+      await _flush();
+      expect(controller.isFinishing, isTrue);
       expect(controller.phase, ConversationSessionPhase.closing);
       expect(controller.displayedText, OfflineFixtures.gardenTalkTopic.closing);
       expect(controller.microphoneOpen, isFalse);
+      expect(
+        output.retainedUtteranceForTest,
+        OfflineFixtures.gardenTalkTopic.closing,
+      );
+
+      output.completeCurrent();
+      await finishFuture;
+      expect(controller.phase, ConversationSessionPhase.idle);
+      expect(controller.hasActiveSession, isFalse);
+      expect(controller.isFinishing, isFalse);
+      expect(controller.microphoneOpen, isFalse);
+      expect(output.releaseCount, greaterThan(0));
+    });
+
+    test('finish with unavailable TTS still clears to idle', () async {
+      output.availability = SpeechOutputAvailability.unavailable;
+      await controller.start(OfflineFixtures.gardenTalkTopic);
+      await controller.finish();
+      expect(controller.phase, ConversationSessionPhase.idle);
+      expect(controller.hasActiveSession, isFalse);
+      expect(controller.microphoneOpen, isFalse);
+    });
+
+    test('finish cancelled TTS still clears to idle', () async {
+      await controller.start(OfflineFixtures.gardenTalkTopic);
+      output.autoComplete = false;
+      final finishFuture = controller.finish();
+      await _flush();
+      expect(controller.phase, ConversationSessionPhase.closing);
+      output.completeCurrent(const SpeechSpeakCancelled());
+      await finishFuture;
+      expect(controller.phase, ConversationSessionPhase.idle);
+      expect(controller.hasActiveSession, isFalse);
+    });
+
+    test('finish error TTS still clears to idle', () async {
+      await controller.start(OfflineFixtures.gardenTalkTopic);
+      output.autoComplete = false;
+      final finishFuture = controller.finish();
+      await _flush();
+      output.failCurrent('tts');
+      await finishFuture;
+      expect(controller.phase, ConversationSessionPhase.idle);
+      expect(controller.hasActiveSession, isFalse);
+    });
+
+    test('duplicate finish while in flight is ignored', () async {
+      await controller.start(OfflineFixtures.gardenTalkTopic);
+      output.autoComplete = false;
+      final first = controller.finish();
+      await _flush();
+      final speaksBeforeDuplicate = output.speakCount;
+      await controller.finish();
+      expect(output.speakCount, speaksBeforeDuplicate);
+      output.completeCurrent();
+      await first;
+      expect(controller.phase, ConversationSessionPhase.idle);
     });
 
     test('unavailable recognizer keeps written controls usable', () async {

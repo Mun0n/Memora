@@ -135,6 +135,10 @@ abstract final class MemoraCopy {
   /// Safe fallback when no cached preferred name is available.
   static const String userHomeGreeting = 'Hola';
 
+  /// Neutral invitation after the greeting (Slice 13). Not a tutorial or modal.
+  static const String userHomeInvitation =
+      'Toca una opción para elegir qué quieres hacer.';
+
   // Family web — supported-person preferred-name profile (Slice 12)
   static const String supportedPersonProfileSectionTitle = 'Persona apoyada';
   static const String supportedPersonProfileSectionBody =

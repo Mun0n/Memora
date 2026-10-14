@@ -2,6 +2,7 @@ import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 
 import '../l10n/memora_copy.dart';
+import '../theme/memora_supported_person_typography.dart';
 import '../theme/memora_theme.dart';
 import 'user_routine_controller.dart';
 
@@ -50,21 +51,28 @@ class UserMiDiaContent extends StatelessWidget {
             key: const Key('memora-user-mi-dia-orientation'),
             style: textTheme.titleMedium?.copyWith(
               color: MemoraTheme.highContrastInk,
-              fontSize: 20,
+              fontSize: MemoraSupportedPersonTypography.body,
+              height: MemoraSupportedPersonTypography.bodyHeight,
             ),
           ),
         ),
         const SizedBox(height: 24),
         Text(
           MemoraCopy.nextStepLabel,
-          style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          style: textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+            fontSize: MemoraSupportedPersonTypography.secondary,
+          ),
         ),
         const SizedBox(height: 12),
         if (action == null)
           Text(
             MemoraCopy.miDiaEmptyBody,
             key: const Key('memora-user-no-action'),
-            style: textTheme.bodyLarge?.copyWith(fontSize: 20),
+            style: textTheme.bodyLarge?.copyWith(
+              fontSize: MemoraSupportedPersonTypography.body,
+              height: MemoraSupportedPersonTypography.bodyHeight,
+            ),
           )
         else ...[
           Text(
@@ -72,16 +80,17 @@ class UserMiDiaContent extends StatelessWidget {
             key: const Key('memora-user-primary-step'),
             style: textTheme.titleLarge?.copyWith(
               color: MemoraTheme.highContrastInk,
-              fontSize: 24,
+              fontSize: MemoraSupportedPersonTypography.title,
               fontWeight: FontWeight.w600,
-              height: 1.25,
+              height: MemoraSupportedPersonTypography.bodyHeight,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             action.routine.title,
             style: textTheme.bodyLarge?.copyWith(
-              fontSize: 18,
+              fontSize: MemoraSupportedPersonTypography.secondary,
+              height: MemoraSupportedPersonTypography.bodyHeight,
               color: MemoraTheme.highContrastInk,
             ),
           ),
@@ -128,7 +137,7 @@ class UserRoutineHome extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: MemoraTheme.light(),
+      theme: MemoraTheme.supportedPerson(),
       home: Scaffold(
         backgroundColor: MemoraTheme.highContrastSurface,
         body: SafeArea(

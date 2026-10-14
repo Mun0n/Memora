@@ -1,3 +1,4 @@
+import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ui/ui.dart';
@@ -14,6 +15,8 @@ void main() {
     double textScale = 1.0,
     DateTime? clock,
     bool seed = true,
+    FakeSpeechOutput? speechOutput,
+    FakeSpeechRecognizer? speechRecognizer,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
@@ -22,7 +25,11 @@ void main() {
     tester.platformDispatcher.textScaleFactorTestValue = textScale;
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
 
-    final composition = UserDemoComposition(clock: clock ?? fixedClock);
+    final composition = UserDemoComposition(
+      clock: clock ?? fixedClock,
+      speechOutput: speechOutput,
+      speechRecognizer: speechRecognizer,
+    );
     if (seed) {
       await composition.seedDemoFixtures();
     }
@@ -38,12 +45,18 @@ void main() {
     await pumpHome(tester, size: phoneSize);
     expect(find.text('Hola, Amparo Demo'), findsOneWidget);
     expect(find.byKey(const Key('memora-user-home-greeting')), findsOneWidget);
+    expect(find.text(MemoraCopy.userHomeInvitation), findsOneWidget);
+    expect(
+      find.byKey(const Key('memora-user-home-invitation')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('missing profile falls back to exactly Hola', (tester) async {
     await pumpHome(tester, size: phoneSize, seed: false);
     expect(find.text('Hola'), findsOneWidget);
     expect(find.textContaining('Hola,'), findsNothing);
+    expect(find.text(MemoraCopy.userHomeInvitation), findsOneWidget);
     expect(
       find.byKey(const Key('memora-user-home-tile-mi-dia')),
       findsOneWidget,
@@ -77,12 +90,28 @@ void main() {
           const Key('memora-user-home-tile-recuerdos'),
         ]) {
           final tile = tester.getRect(find.byKey(key));
-          final icon = tester.getRect(
-            find.descendant(of: find.byKey(key), matching: find.byType(Icon)),
+          final iconFinder = find.descendant(
+            of: find.byKey(key),
+            matching: find.byType(Icon),
           );
           final label = tester.getRect(
             find.descendant(of: find.byKey(key), matching: find.byType(Text)),
           );
+          // At large text scales icons may hide so labels keep ≥22 sp.
+          if (iconFinder.evaluate().isEmpty) {
+            expect(
+              (label.center.dx - tile.center.dx).abs(),
+              lessThan(12),
+              reason: '$key @$size@$scale label not horizontally centred',
+            );
+            expect(
+              (label.center.dy - tile.center.dy).abs(),
+              lessThanOrEqualTo(32),
+              reason: '$key @$size@$scale label not vertically centred',
+            );
+            continue;
+          }
+          final icon = tester.getRect(iconFinder);
           final contentCentreX = (icon.center.dx + label.center.dx) / 2;
           expect(
             (contentCentreX - tile.center.dx).abs(),
@@ -171,6 +200,107 @@ void main() {
         .getRect(find.byKey(const Key('memora-user-home-tile-mi-dia')))
         .center;
     await tester.tapAt(miDiaCentre);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('memora-user-mi-dia')), findsOneWidget);
+  });
+
+  testWidgets(
+    'launch speaks greeting then invitation once without opening mic',
+    (tester) async {
+      final output = FakeSpeechOutput(autoComplete: false);
+      final recognizer = FakeSpeechRecognizer(
+        currentPermission: SpeechPermissionStatus.granted,
+      );
+      tester.view.physicalSize = phoneSize;
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final composition = UserDemoComposition(
+        clock: fixedClock,
+        speechOutput: output,
+        speechRecognizer: recognizer,
+      );
+      await composition.seedDemoFixtures();
+      await composition.load();
+      await tester.pumpWidget(composition.buildApp());
+      await tester.pump(); // post-frame scheduling
+      await tester.pump(); // greeting speak starts
+
+      expect(find.text('Hola, Amparo Demo'), findsOneWidget);
+      expect(output.retainedUtteranceForTest, 'Hola, Amparo Demo');
+      expect(recognizer.listenCount, 0);
+      expect(recognizer.requestPermissionCount, 0);
+
+      output.completeCurrent();
+      await tester.pump();
+      expect(output.retainedUtteranceForTest, MemoraCopy.userHomeInvitation);
+      expect(recognizer.listenCount, 0);
+
+      output.completeCurrent();
+      await tester.pump();
+      expect(output.speakCount, 2);
+      expect(recognizer.listenCount, 0);
+
+      // Actions remain hittable while/after spoken greeting.
+      expect(find.byKey(const Key('memora-user-home-ayudame')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('memora-user-home-tile-mi-dia')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('memora-user-mi-dia')), findsOneWidget);
+
+      // Return home must not re-speak.
+      final speaksBeforeReturn = output.speakCount;
+      await tester.tap(find.byKey(const Key('memora-user-return-home')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('memora-user-home')), findsOneWidget);
+      expect(output.speakCount, speaksBeforeReturn);
+    },
+  );
+
+  testWidgets('missing profile speaks exactly Hola then invitation', (
+    tester,
+  ) async {
+    final output = FakeSpeechOutput(autoComplete: false);
+    final recognizer = FakeSpeechRecognizer(
+      currentPermission: SpeechPermissionStatus.granted,
+    );
+    tester.view.physicalSize = phoneSize;
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final composition = UserDemoComposition(
+      clock: fixedClock,
+      speechOutput: output,
+      speechRecognizer: recognizer,
+    );
+    await composition.load();
+    await tester.pumpWidget(composition.buildApp());
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Hola'), findsOneWidget);
+    expect(output.retainedUtteranceForTest, 'Hola');
+    output.completeCurrent();
+    await tester.pump();
+    expect(output.retainedUtteranceForTest, MemoraCopy.userHomeInvitation);
+    output.completeCurrent();
+    await tester.pump();
+    expect(recognizer.listenCount, 0);
+  });
+
+  testWidgets('unavailable TTS leaves visual home usable without trap', (
+    tester,
+  ) async {
+    final output = FakeSpeechOutput(
+      availability: SpeechOutputAvailability.unavailable,
+    );
+    await pumpHome(tester, size: phoneSize, speechOutput: output);
+    expect(find.text('Hola, Amparo Demo'), findsOneWidget);
+    expect(find.text(MemoraCopy.userHomeInvitation), findsOneWidget);
+    expect(output.speakCount, 0);
+    expect(find.byKey(const Key('memora-user-home-ayudame')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('memora-user-home-tile-mi-dia')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('memora-user-mi-dia')), findsOneWidget);
   });

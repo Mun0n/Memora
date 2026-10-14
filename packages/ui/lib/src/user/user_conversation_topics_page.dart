@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../demo/demo_data_scope.dart';
 import '../l10n/memora_copy.dart';
+import '../theme/memora_supported_person_typography.dart';
 import '../theme/memora_theme.dart';
 import 'user_conversation_session_controller.dart';
 import 'user_conversation_topic_controller.dart';
@@ -80,8 +81,8 @@ class _TopicList extends StatelessWidget {
           ),
           style: textTheme.bodyLarge?.copyWith(
             color: MemoraTheme.highContrastInk,
-            fontSize: 20,
-            height: 1.35,
+            fontSize: MemoraSupportedPersonTypography.body,
+            height: MemoraSupportedPersonTypography.bodyHeight,
           ),
         ),
         if (controller.demoDataScope == DemoDataScope.isolatedLocal) ...[
@@ -91,7 +92,8 @@ class _TopicList extends StatelessWidget {
             key: const Key('memora-isolated-local-demo'),
             style: textTheme.bodyMedium?.copyWith(
               color: MemoraTheme.highContrastInk,
-              fontSize: 16,
+              fontSize: MemoraSupportedPersonTypography.secondary,
+              height: MemoraSupportedPersonTypography.bodyHeight,
             ),
           ),
         ],
@@ -100,7 +102,10 @@ class _TopicList extends StatelessWidget {
           Text(
             MemoraCopy.quieroHablarSharedPending,
             key: const Key('memora-user-quiero-hablar-shared-pending'),
-            style: textTheme.bodyMedium?.copyWith(fontSize: 16),
+            style: textTheme.bodyMedium?.copyWith(
+              fontSize: MemoraSupportedPersonTypography.secondary,
+              height: MemoraSupportedPersonTypography.bodyHeight,
+            ),
           ),
         ],
         if (controller.sharedPullFailed) ...[
@@ -108,7 +113,10 @@ class _TopicList extends StatelessWidget {
           Text(
             MemoraCopy.quieroHablarSharedPullFailed,
             key: const Key('memora-user-quiero-hablar-shared-pull-failed'),
-            style: textTheme.bodyMedium?.copyWith(fontSize: 16),
+            style: textTheme.bodyMedium?.copyWith(
+              fontSize: MemoraSupportedPersonTypography.secondary,
+              height: MemoraSupportedPersonTypography.bodyHeight,
+            ),
           ),
           const SizedBox(height: 8),
           OutlinedButton(
@@ -180,7 +188,7 @@ class _TopicCard extends StatelessWidget {
                       topic.title,
                       style: textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w700,
-                        fontSize: 22,
+                        fontSize: MemoraSupportedPersonTypography.title,
                         color: MemoraTheme.highContrastInk,
                       ),
                     ),
@@ -189,7 +197,8 @@ class _TopicCard extends StatelessWidget {
                       Text(
                         memory.caption,
                         style: textTheme.bodyMedium?.copyWith(
-                          fontSize: 16,
+                          fontSize: MemoraSupportedPersonTypography.secondary,
+                          height: MemoraSupportedPersonTypography.bodyHeight,
                           color: MemoraTheme.highContrastInk,
                         ),
                       ),
@@ -198,8 +207,9 @@ class _TopicCard extends StatelessWidget {
                     Text(
                       MemoraCopy.quieroHablarOpenHint,
                       style: textTheme.bodyLarge?.copyWith(
-                        fontSize: 18,
+                        fontSize: MemoraSupportedPersonTypography.secondary,
                         fontWeight: FontWeight.w600,
+                        height: MemoraSupportedPersonTypography.bodyHeight,
                         color: MemoraTheme.accentBand,
                       ),
                     ),
@@ -256,13 +266,19 @@ class _TopicReady extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             memory.caption,
-            style: textTheme.bodyLarge?.copyWith(fontSize: 18),
+            style: textTheme.bodyLarge?.copyWith(
+              fontSize: MemoraSupportedPersonTypography.secondary,
+              height: MemoraSupportedPersonTypography.bodyHeight,
+            ),
           ),
         ],
         const SizedBox(height: 16),
         Text(
           topic.introduction,
-          style: textTheme.bodyLarge?.copyWith(fontSize: 20, height: 1.35),
+          style: textTheme.bodyLarge?.copyWith(
+            fontSize: MemoraSupportedPersonTypography.body,
+            height: MemoraSupportedPersonTypography.bodyHeight,
+          ),
         ),
         const SizedBox(height: 24),
         FilledButton(
@@ -321,8 +337,8 @@ class _ConversationSessionView extends StatelessWidget {
             key: const Key('memora-user-conversation-displayed'),
             softWrap: true,
             style: textTheme.bodyLarge?.copyWith(
-              fontSize: 22,
-              height: 1.35,
+              fontSize: MemoraSupportedPersonTypography.title,
+              height: MemoraSupportedPersonTypography.bodyHeight,
               color: MemoraTheme.highContrastInk,
             ),
           ),
@@ -341,7 +357,8 @@ class _ConversationSessionView extends StatelessWidget {
             MemoraCopy.quieroHablarSpeechOutputUnavailable,
             key: const Key('memora-user-conversation-tts-unavailable'),
             style: textTheme.bodyMedium?.copyWith(
-              fontSize: 16,
+              fontSize: MemoraSupportedPersonTypography.secondary,
+              height: MemoraSupportedPersonTypography.bodyHeight,
               color: MemoraTheme.highContrastInk,
             ),
           ),
@@ -448,7 +465,15 @@ class _ConversationSessionView extends StatelessWidget {
             const SizedBox(height: 12),
             OutlinedButton(
               key: const Key('memora-user-conversation-finish'),
-              onPressed: sessionController.finish,
+              onPressed: sessionController.isFinishing
+                  ? null
+                  : () async {
+                      await sessionController.finish();
+                      // One-tap Terminar returns to the topic list automatically.
+                      if (!sessionController.hasActiveSession) {
+                        topicController.clearSelection();
+                      }
+                    },
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size.fromHeight(
                   MemoraTheme.preferredTouchExtent,
@@ -458,8 +483,11 @@ class _ConversationSessionView extends StatelessWidget {
             ),
           ],
         ),
-        if (phase == ConversationSessionPhase.closing ||
-            phase == ConversationSessionPhase.safetyStopped) ...[
+        // Natural end / safety stop still offer an explicit list return.
+        // Terminar itself auto-clears and never requires this second button.
+        if (!sessionController.isFinishing &&
+            (phase == ConversationSessionPhase.closing ||
+                phase == ConversationSessionPhase.safetyStopped)) ...[
           const SizedBox(height: 20),
           OutlinedButton(
             key: const Key('memora-user-conversation-back-topics'),
@@ -528,8 +556,8 @@ class _HelpRevealCard extends StatelessWidget {
                   key: const Key('memora-user-conversation-help-cue'),
                   softWrap: true,
                   style: textTheme.bodyLarge?.copyWith(
-                    fontSize: 18,
-                    height: 1.35,
+                    fontSize: MemoraSupportedPersonTypography.secondary,
+                    height: MemoraSupportedPersonTypography.bodyHeight,
                     color: MemoraTheme.highContrastInk,
                   ),
                 ),
@@ -543,8 +571,9 @@ class _HelpRevealCard extends StatelessWidget {
                   ),
                   softWrap: true,
                   style: textTheme.bodyLarge?.copyWith(
-                    fontSize: 18,
+                    fontSize: MemoraSupportedPersonTypography.secondary,
                     fontWeight: FontWeight.w600,
+                    height: MemoraSupportedPersonTypography.bodyHeight,
                     color: MemoraTheme.highContrastInk,
                   ),
                 ),
@@ -553,7 +582,8 @@ class _HelpRevealCard extends StatelessWidget {
                   memory!.dateContext,
                   softWrap: true,
                   style: textTheme.bodyMedium?.copyWith(
-                    fontSize: 16,
+                    fontSize: MemoraSupportedPersonTypography.secondary,
+                    height: MemoraSupportedPersonTypography.bodyHeight,
                     color: MemoraTheme.highContrastInk,
                   ),
                 ),
@@ -567,6 +597,7 @@ class _HelpRevealCard extends StatelessWidget {
                       '${memory!.id.value}',
                     ),
                     softWrap: true,
+                    // Tertiary metadata: family-scoped path only.
                     style: textTheme.bodyMedium?.copyWith(fontSize: 15),
                   ),
                 ] else if (memory!.hasFailedMedia || memory!.media == null) ...[
@@ -580,7 +611,10 @@ class _HelpRevealCard extends StatelessWidget {
                       '${memory!.id.value}',
                     ),
                     softWrap: true,
-                    style: textTheme.bodyMedium?.copyWith(fontSize: 15),
+                    style: textTheme.bodyMedium?.copyWith(
+                      fontSize: MemoraSupportedPersonTypography.secondary,
+                      height: MemoraSupportedPersonTypography.bodyHeight,
+                    ),
                   ),
                 ],
               ],
@@ -670,8 +704,9 @@ class _TurnStateBanner extends StatelessWidget {
                 child: Text(
                   label,
                   style: textTheme.bodyLarge?.copyWith(
-                    fontSize: 18,
+                    fontSize: MemoraSupportedPersonTypography.secondary,
                     fontWeight: FontWeight.w700,
+                    height: MemoraSupportedPersonTypography.bodyHeight,
                     color: activeBand
                         ? MemoraTheme.accentOnBand
                         : MemoraTheme.highContrastInk,

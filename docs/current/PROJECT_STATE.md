@@ -1,9 +1,20 @@
 # Current project state
 
-- Phase: **Slice 12 UI human-review repair done** (MVP closure). Slice 11
-  enriched family conversation context remains the human-accepted baseline
-  (2026-10-14). Slice 9 voice guidance, Slice 8 pastimes, cross-client fictional
-  demo sync and the physical-Android reverse-bridge launcher remain approved.
+- Phase: **Slice 13 accepted after physical-device review** (2026-10-14,
+  post-MVP supported-person readability). Slice 12 preferred-name greeting,
+  live orientation, centred home / ≥104 dp `Ayúdame`, and caregiver-web
+  Finding 3 chrome remain the accepted baseline. Slice 11 enriched family
+  conversation context remains human-accepted (2026-10-14).
+- Slice 13 (supported-person app only): Flutter `DEBUG` ribbon off; centralized
+  `MemoraSupportedPersonTypography` / `MemoraTheme.supportedPerson()` (caregiver
+  `MemoraTheme.light()` unchanged); home hierarchy greeting → invitation
+  (`Toca una opción para elegir qué quieres hacer.`) → orientation → five
+  actions; destination essential copy raised to the typography minima with
+  local scrolling where needed. Human-review repair: once-only on-device spoken
+  launch greeting+invitation; one-tap `Terminar` auto-returns to topic list;
+  Android shared-demo launcher uses cold `--no-hot` flutter run + authority
+  health gate; web-configured preferred name `Amparo` converges via shared
+  authority (isolated `flutter run` is not a sync test).
 - Implemented product functionality includes Slices 7–11 home/pastimes/`Ayúdame`/
   `Quiero hablar` (topics + help cards) plus **Slice 12**: family-scoped
   supported-person preferred-name profile (domain/data/SQL), primary-caregiver
@@ -18,20 +29,27 @@
   `demo-web` fixture label (`Este navegador`), one shell section heading per
   page (no duplicated page headlines).
 - Shared packages: `packages/domain` / `packages/data` (preferred-name profile +
-  codec + baseline), `packages/ui` (greeting, live clock, home geometry,
-  caregiver profile + product chrome).
+  codec + baseline), `packages/ui` (greeting, invitation, live clock, home
+  geometry, supported-person typography tokens, caregiver profile + product
+  chrome).
 - App shells: shared demo URL unchanged (`MEMORA_LOCAL_DEMO_SYNC_URL`). Garden
   Demo baseline prompt 0 cue-only help; preferred-name baseline `Amparo Demo`.
   Executable user composition uses `enableLiveOrientation: true` (device clock);
-  widget tests inject a fixed fake clock.
+  widget tests inject a fixed fake clock. User `MaterialApp` uses
+  `debugShowCheckedModeBanner: false` and `MemoraTheme.supportedPerson()`.
 - Persistence: in-memory + snapshot restart + fake remote now cover pastimes,
   conversation topics (incl. help) and preferred-name profiles. Media metadata-only.
 - Backend: migrations through Slice 12 `supported_person_profiles` + full
   `memora_has_capability` restatement (`viewSupportedPersonProfile` /
-  `editSupportedPersonProfile` primary-only edit); forced RLS unchanged.
-- Validation (UI local): Finding 3 Help/Privacy/heading chrome tests + prior
-  product-chrome / preferred-name / web suites green (web **46** focused). Full
-  `./scripts/validate.sh` remains QA.
+  `editSupportedPersonProfile` primary-only edit); forced RLS unchanged. Slice 13
+  requires no migration or domain change.
+- Validation: Slice 13 readability/home/destination/spoken-greeting/
+  one-tap-Terminar tests + prior suites green: user **92**, web **46**, data
+  **58**, domain **418**, ui **55**. Full `./scripts/validate.sh`, secret scan,
+  package boundaries, Android local-demo launcher and RLS contracts pass;
+  independent audit `PASS_WITH_NOTES`. Physical Android review accepted the
+  fresh shared-demo build, synchronized fictional name, spoken greeting and
+  one-tap conversation finish.
 - Data: fictional development data only (`Amparo Demo`, `Elena Demo`,
   `Familia Ejemplo`, `Casa Demo B`, reserved Slice-2–12 UUIDs); no auth credentials
   or production endpoints. Preferred names never enter diagnostic logs.
@@ -41,9 +59,9 @@
   caregiver/family web; routines, reminders, memories, weight/blood-pressure
   recording, local persistence and synchronization. No native caregiver app or
   meal tracking.
-- Next work: **Slice 12 QA** re-validate + fresh auditor after Finding 3
-  human-review UI repair. No automatic Slice 13, Family Stories, calls/contacts,
-  LLM, deployment or real-data connection.
+- Next work: none authorized. Do not begin Slice 14 automatically. Family
+  Stories, calls/contacts, LLM, deployment and real-data connection remain out
+  of scope.
 
 ## Human handoff — run fictional demo mode
 
@@ -59,10 +77,13 @@ cd apps/web && flutter run -d chrome
 
 Both start in offline demo mode (`SessionBoundary.demo`). No `MEMORA_SUPABASE_*`
 env vars required. Default sync uses a **private in-process** `FakeSupabaseRemote`
-per process — web and app do **not** share pastime/topic state unless the shared
-local demo transport below is configured. Android speech opens only after the
-person taps `Ayúdame`, accepts the in-context explanation and grants the system
-permission.
+per process — web and app do **not** share pastime/topic / preferred-name state
+unless the shared local demo transport below is configured. The isolated user
+app keeps the private fictional baseline greeting `Amparo Demo`. A plain
+isolated `flutter run` is **not** a cross-client sync test and must not be used
+to judge caregiver-web preferred-name convergence. Android speech opens only
+after the person taps `Ayúdame`, accepts the in-context explanation and grants
+the system permission.
 
 ### Shared local demo sync (cross-client, fictional only)
 
@@ -90,9 +111,21 @@ it publishes fictional `Amparo Demo` once.
 **Reset (restores baseline, not a blank server):**
 `curl -X POST http://127.0.0.1:17808/v1/reset`
 
-**Restart rule:** after any Slice 8+ repair build, stop and freshly restart all
-long-running processes (authority, web, user). An open terminal/window is not
-proof that server, web and device share the same generation.
+**Restart rule (mandatory after every Slice repair, including Slice 13):**
+1. Stop **every** previous Flutter user, caregiver-web, and
+   `run_local_demo_sync` / authority process (Ctrl-C). Do not leave an old
+   hot-reload session or already-running APK as the review target.
+2. Start Terminal 1 authority, Terminal 2 web (shared URL), Terminal 3 Android
+   launcher — all against the same `MEMORA_LOCAL_DEMO_SYNC_URL`.
+3. Confirm the Android launcher prints a fresh cold `flutter run` (it uses
+   `--no-hot` and checks `GET /v1/health`). An open terminal/window alone is
+   not proof that server, web and device share the same generation.
+
+**Preferred-name sync review:** edit the fictional name in caregiver web
+(`Amparo` is the physical-review scenario), wait for quiet refresh / restart the
+user app via the Android launcher, then confirm the greeting converges. If the
+authority is unreachable, the user app keeps any cached safe name and does not
+invent convergence.
 
 #### Caregiver web on Mac (browser)
 
@@ -135,6 +168,7 @@ be loaded, and offers **Reintentar** — it does not pretend the family list is 
 
 ```bash
 # Terminal 3 — physical Android (Pixel etc.) via adb reverse bridge
+# Requires Terminal 1 authority already healthy; fails if /v1/health is down.
 ./tool/run_user_android_local_demo.sh
 # optional: ./tool/run_user_android_local_demo.sh --device <serial>
 # bridge only: ./tool/run_user_android_local_demo.sh --check-only
@@ -144,8 +178,8 @@ be loaded, and offers **Reintentar** — it does not pretend the family list is 
 Composition roots select `LocalDemoSyncTransport` only when that define/URL is
 supplied. Without it, chrome identifies an isolated local demo (changes do not
 reach another client). In shared mode, clients must reconcile from the authority
-(`LocalDemoSharedBootstrap`) and must not seed private pastime/topic fixtures that
-masquerade as remote data.
+(`LocalDemoSharedBootstrap`) and must not seed private pastime/topic /
+preferred-name fixtures that masquerade as remote data.
 
 ### What remains unconnected
 
@@ -169,3 +203,6 @@ masquerade as remote data.
    `Quiero hablar`, mic release between turns, no speech retention.
 9. Slice 12 preferred-name greeting + live clock + centred home / larger `Ayúdame`
    on phone and tablet (human MVP closure checklist in `specs/SLICE_12.md`).
+10. Slice 13 readability + human-repair: no DEBUG ribbon; greeting → invitation →
+    orientation; once-only spoken greeting; one-tap Terminar; shared-demo name
+    sync via launcher (`specs/SLICE_13.md` + `.agent/reports/slice_13/human_review.md`).

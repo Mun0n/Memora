@@ -2,6 +2,7 @@ import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 
 import '../l10n/memora_copy.dart';
+import '../theme/memora_supported_person_typography.dart';
 import '../theme/memora_theme.dart';
 import 'user_memory_controller.dart';
 
@@ -35,7 +36,10 @@ class UserApprovedMemoriesPage extends StatelessWidget {
               Text(
                 MemoraCopy.memoriesEmpty,
                 key: const Key('memora-user-memories-empty'),
-                style: textTheme.bodyLarge?.copyWith(fontSize: 18),
+                style: textTheme.bodyLarge?.copyWith(
+                  fontSize: MemoraSupportedPersonTypography.body,
+                  height: MemoraSupportedPersonTypography.bodyHeight,
+                ),
               )
             else
               ...controller.memories.map(
@@ -52,7 +56,10 @@ class UserApprovedMemoriesPage extends StatelessWidget {
               Text(
                 MemoraCopy.mediaFailedPlaceholder,
                 key: const Key('memora-user-media-failed-banner'),
-                style: textTheme.bodyLarge?.copyWith(fontSize: 17),
+                style: textTheme.bodyLarge?.copyWith(
+                  fontSize: MemoraSupportedPersonTypography.body,
+                  height: MemoraSupportedPersonTypography.bodyHeight,
+                ),
               ),
               const SizedBox(height: 8),
               FilledButton(
@@ -68,7 +75,8 @@ class UserApprovedMemoriesPage extends StatelessWidget {
                 key: const Key('memora-user-memory-error'),
                 style: textTheme.bodyLarge?.copyWith(
                   color: Theme.of(context).colorScheme.error,
-                  fontSize: 16,
+                  fontSize: MemoraSupportedPersonTypography.secondary,
+                  height: MemoraSupportedPersonTypography.bodyHeight,
                 ),
               ),
             ],
@@ -104,13 +112,16 @@ class _ApprovedMemoryCard extends StatelessWidget {
               memory.caption,
               style: textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w700,
-                fontSize: 22,
+                fontSize: MemoraSupportedPersonTypography.title,
               ),
             ),
             const SizedBox(height: 6),
             Text(
               memory.dateContext,
-              style: textTheme.bodyLarge?.copyWith(fontSize: 18),
+              style: textTheme.bodyLarge?.copyWith(
+                fontSize: MemoraSupportedPersonTypography.secondary,
+                height: MemoraSupportedPersonTypography.bodyHeight,
+              ),
             ),
             const SizedBox(height: 12),
             if (failed)
@@ -120,7 +131,10 @@ class _ApprovedMemoryCard extends StatelessWidget {
                   Text(
                     MemoraCopy.mediaFailedPlaceholder,
                     key: Key('memora-user-media-failed-${memory.id.value}'),
-                    style: textTheme.bodyLarge?.copyWith(fontSize: 16),
+                    style: textTheme.bodyLarge?.copyWith(
+                      fontSize: MemoraSupportedPersonTypography.secondary,
+                      height: MemoraSupportedPersonTypography.bodyHeight,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   OutlinedButton(
@@ -136,12 +150,16 @@ class _ApprovedMemoryCard extends StatelessWidget {
                 '${MemoraCopy.memoryMediaPathLabel}: '
                 '${memory.media!.familyScopedPath}',
                 key: Key('memora-user-media-ok-${memory.id.value}'),
+                // Tertiary metadata: family-scoped path; caption remains essential.
                 style: textTheme.bodyMedium?.copyWith(fontSize: 15),
               )
             else
               Text(
                 'Sin medio adjunto.',
-                style: textTheme.bodyMedium?.copyWith(fontSize: 15),
+                style: textTheme.bodyMedium?.copyWith(
+                  fontSize: MemoraSupportedPersonTypography.secondary,
+                  height: MemoraSupportedPersonTypography.bodyHeight,
+                ),
               ),
           ],
         ),

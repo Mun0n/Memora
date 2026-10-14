@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/memora_copy.dart';
+import '../theme/memora_supported_person_typography.dart';
 import '../theme/memora_theme.dart';
 
 /// Honest placeholder destination — never simulates activity or call success.
@@ -53,8 +54,8 @@ class UserPlaceholderPage extends StatelessWidget {
           body,
           style: textTheme.bodyLarge?.copyWith(
             color: MemoraTheme.highContrastInk,
-            fontSize: 20,
-            height: 1.35,
+            fontSize: MemoraSupportedPersonTypography.body,
+            height: MemoraSupportedPersonTypography.bodyHeight,
           ),
         ),
       ],

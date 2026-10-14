@@ -2,6 +2,7 @@ import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 
 import '../l10n/memora_copy.dart';
+import '../theme/memora_supported_person_typography.dart';
 import '../theme/memora_theme.dart';
 import 'user_voice_guidance_controller.dart';
 
@@ -75,6 +76,8 @@ class _VoicePanelBody extends StatelessWidget {
                 key: const Key('memora-user-voice-processing'),
                 style: textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
+                  fontSize: MemoraSupportedPersonTypography.secondary,
+                  height: MemoraSupportedPersonTypography.bodyHeight,
                 ),
               ),
             ),
@@ -89,6 +92,8 @@ class _VoicePanelBody extends StatelessWidget {
                         style: textTheme.titleMedium?.copyWith(
                           color: MemoraTheme.highContrastInk,
                           fontWeight: FontWeight.w600,
+                          fontSize: MemoraSupportedPersonTypography.secondary,
+                          height: MemoraSupportedPersonTypography.bodyHeight,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -108,6 +113,8 @@ class _VoicePanelBody extends StatelessWidget {
                           style: textTheme.titleLarge?.copyWith(
                             color: MemoraTheme.highContrastInk,
                             fontWeight: FontWeight.w700,
+                            fontSize: MemoraSupportedPersonTypography.title,
+                            height: MemoraSupportedPersonTypography.bodyHeight,
                           ),
                         ),
                       ),
@@ -120,7 +127,8 @@ class _VoicePanelBody extends StatelessWidget {
                       style: textTheme.headlineSmall?.copyWith(
                         color: MemoraTheme.highContrastInk,
                         fontWeight: FontWeight.w700,
-                        height: 1.25,
+                        fontSize: MemoraSupportedPersonTypography.heading,
+                        height: MemoraSupportedPersonTypography.bodyHeight,
                       ),
                     ),
                   ],

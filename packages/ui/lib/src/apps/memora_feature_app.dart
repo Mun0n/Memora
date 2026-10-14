@@ -33,6 +33,7 @@ import '../user/user_conversation_topics_page.dart';
 import '../user/user_destination_scaffold.dart';
 import '../user/user_home_destination.dart';
 import '../user/user_home_grid.dart';
+import '../user/user_launch_greeting_speech.dart';
 import '../user/user_memory_controller.dart';
 import '../user/user_pastime_controller.dart';
 import '../user/user_pastimes_page.dart';
@@ -107,6 +108,7 @@ class _MemoraUserAppState extends State<MemoraUserApp>
   late final SpeechOutputPort _speechOutput;
   late final UserVoiceGuidanceController _voiceGuidance;
   late final UserConversationSessionController _conversationSession;
+  late final UserLaunchGreetingSpeech _launchGreetingSpeech;
   Timer? _orientationTimer;
 
   /// Monotonic token so overlapping quiet pulls never apply stale refreshes.
@@ -129,11 +131,14 @@ class _MemoraUserAppState extends State<MemoraUserApp>
       approvedMemoryLookup: () =>
           widget.memoryController?.memories ?? const <MemoryEntry>[],
     );
+    _launchGreetingSpeech = UserLaunchGreetingSpeech(
+      speechOutput: _speechOutput,
+    );
     if (widget.enableLiveOrientation && widget.controller.usesLiveClock) {
       _scheduleOrientationTick();
     }
-    if (widget.autoload) {
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (widget.autoload) {
         await widget.controller.load();
         await widget.memoryController?.load();
         await widget.pastimeController?.load();
@@ -142,14 +147,14 @@ class _MemoraUserAppState extends State<MemoraUserApp>
         // Background sync/privacy contracts — not shown on home.
         await widget.syncController?.load();
         await widget.privacyController?.load();
-        await _quietPullFamilyContent();
-      });
-    } else if (widget.enableQuietRemotePull) {
-      // Real executable: main() already called composition.load(); still pull.
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _quietPullFamilyContent();
-      });
-    }
+      }
+      // Shared demo: pull preferred-name before the once-only spoken greeting.
+      await _quietPullFamilyContent();
+      if (!mounted) {
+        return;
+      }
+      await _maybeSpeakLaunchGreeting();
+    });
   }
 
   void _scheduleOrientationTick() {
@@ -195,6 +200,7 @@ class _MemoraUserAppState extends State<MemoraUserApp>
     _orientationTimer?.cancel();
     _orientationTimer = null;
     WidgetsBinding.instance.removeObserver(this);
+    _launchGreetingSpeech.cancel();
     _voiceGuidance.dispose();
     _conversationSession.releaseForLifecycle();
     super.dispose();
@@ -208,14 +214,32 @@ class _MemoraUserAppState extends State<MemoraUserApp>
         _scheduleOrientationTick();
       }
       _quietPullFamilyContent();
+      // Resume must not re-speak the launch greeting.
     } else if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.hidden ||
         state == AppLifecycleState.detached) {
       // Spec: release microphone on lifecycle pause / navigation away.
+      _launchGreetingSpeech.cancel();
       _voiceGuidance.releaseForLifecycle();
       _conversationSession.releaseForLifecycle();
     }
+  }
+
+  Future<void> _maybeSpeakLaunchGreeting() async {
+    if (!mounted || _destination != UserHomeDestination.home) {
+      return;
+    }
+    if (_voiceGuidance.isActive || _conversationSession.hasActiveSession) {
+      return;
+    }
+    final greeting =
+        widget.supportedPersonProfileController?.homeGreeting ??
+        MemoraCopy.userHomeGreeting;
+    await _launchGreetingSpeech.speakOnceIfNeeded(
+      greeting: greeting,
+      isOnHome: _destination == UserHomeDestination.home,
+    );
   }
 
   Future<void> _quietPullFamilyContent() async {
@@ -244,12 +268,18 @@ class _MemoraUserAppState extends State<MemoraUserApp>
   }
 
   void _goHome() {
+    _launchGreetingSpeech.cancel();
     _voiceGuidance.releaseForLifecycle();
     _conversationSession.releaseForLifecycle();
     setState(() => _destination = UserHomeDestination.home);
+    // Returning home never re-speaks; attempt only if launch never presented home.
+    _maybeSpeakLaunchGreeting();
   }
 
   void _open(UserHomeDestination destination) {
+    if (destination != UserHomeDestination.home) {
+      _launchGreetingSpeech.cancel();
+    }
     _voiceGuidance.releaseForLifecycle();
     if (destination != UserHomeDestination.quieroHablar) {
       _conversationSession.releaseForLifecycle();
@@ -260,6 +290,9 @@ class _MemoraUserAppState extends State<MemoraUserApp>
       // Cached cards already painted; quiet pull refreshes without trapping nav.
       _quietPullFamilyContent();
     }
+    if (destination == UserHomeDestination.home) {
+      _maybeSpeakLaunchGreeting();
+    }
   }
 
   Future<void> _confirmVoiceNavigate() async {
@@ -269,12 +302,17 @@ class _MemoraUserAppState extends State<MemoraUserApp>
     }
   }
 
+  Future<void> _onAyudame() async {
+    await _launchGreetingSpeech.cancel();
+    _voiceGuidance.startFromExplicitTap();
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Memora ${ExperienceTarget.user.englishLabel} (demo)',
-      debugShowCheckedModeBanner: true,
-      theme: MemoraTheme.light(),
+      debugShowCheckedModeBanner: false,
+      theme: MemoraTheme.supportedPerson(),
       home: _UserShell(
         routineController: widget.controller,
         memoryController: widget.memoryController,
@@ -287,7 +325,7 @@ class _MemoraUserAppState extends State<MemoraUserApp>
         destination: _destination,
         onOpen: _open,
         onReturnHome: _goHome,
-        onAyudame: _voiceGuidance.startFromExplicitTap,
+        onAyudame: _onAyudame,
         onConfirmVoiceNavigate: _confirmVoiceNavigate,
       ),
     );
@@ -350,6 +388,12 @@ class _UserShell extends StatelessWidget {
           final greeting =
               supportedPersonProfileController?.homeGreeting ??
               MemoraCopy.userHomeGreeting;
+          final media = MediaQuery.of(context);
+          final isExpanded = media.size.width >= MemoraTheme.expandedBreakpoint;
+          final textScale = media.textScaler.scale(1.0);
+          final tightHome =
+              !isExpanded && (media.size.height < 820 || textScale >= 1.3);
+          final veryTightHome = tightHome && textScale >= 1.5;
           return Scaffold(
             backgroundColor: MemoraTheme.highContrastSurface,
             body: Stack(
@@ -357,16 +401,12 @@ class _UserShell extends StatelessWidget {
                 SafeArea(
                   child: Padding(
                     padding: EdgeInsets.symmetric(
-                      horizontal:
-                          MediaQuery.sizeOf(context).width >=
-                              MemoraTheme.expandedBreakpoint
+                      horizontal: isExpanded
                           ? 40
-                          : 24,
-                      vertical:
-                          MediaQuery.sizeOf(context).width >=
-                              MemoraTheme.expandedBreakpoint
-                          ? 28
-                          : 20,
+                          : (veryTightHome ? 12 : (tightHome ? 16 : 24)),
+                      vertical: isExpanded
+                          ? (textScale >= 1.4 ? 20 : 28)
+                          : (veryTightHome ? 8 : (tightHome ? 12 : 20)),
                     ),
                     child: UserHomeGrid(
                       greeting: greeting,
@@ -388,7 +428,9 @@ class _UserShell extends StatelessWidget {
           );
         }
 
+        // Destinations may scroll when large type exceeds the viewport (Slice 13).
         final scrollable =
+            destination == UserHomeDestination.miDia ||
             destination == UserHomeDestination.recuerdos ||
             destination == UserHomeDestination.pasatiempos ||
             destination == UserHomeDestination.quieroHablar;

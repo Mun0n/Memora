@@ -466,4 +466,98 @@ void main() {
     await expectNoHorizontalOverflow(tester, viewport: phoneSize);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+    'El jardín Demo: one-tap Terminar returns to topic list with mic released',
+    (tester) async {
+      final output = FakeSpeechOutput();
+      final speech = FakeSpeechRecognizer(
+        currentPermission: SpeechPermissionStatus.granted,
+      );
+      await pumpUser(
+        tester,
+        size: phoneSize,
+        speech: speech,
+        speechOutput: output,
+        initialDestination: UserHomeDestination.quieroHablar,
+      );
+
+      await tester.tap(
+        find.byKey(
+          Key(
+            'memora-user-conversation-topic-'
+            '${OfflineFixtures.gardenTalkTopicId.value}',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('memora-user-conversation-start')));
+      await tester.pump();
+      for (var i = 0; i < 30; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+
+      expect(
+        find.byKey(const Key('memora-user-conversation-session')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('memora-user-conversation-finish')),
+        findsOneWidget,
+      );
+
+      final releaseBefore = output.releaseCount;
+      await tester.ensureVisible(
+        find.byKey(const Key('memora-user-conversation-finish')),
+      );
+      await tester.tap(
+        find.byKey(const Key('memora-user-conversation-finish')),
+      );
+      await tester.pumpAndSettle();
+
+      // Automatic return — no second Volver a los temas required.
+      expect(
+        find.byKey(const Key('memora-user-conversation-session')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const Key('memora-user-conversation-back-topics')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const Key('memora-user-quiero-hablar')),
+        findsOneWidget,
+      );
+      expect(find.text(OfflineFixtures.gardenTalkTopic.title), findsWidgets);
+      expect(output.releaseCount, greaterThan(releaseBefore));
+      expect(speech.listenCount, greaterThanOrEqualTo(0));
+    },
+  );
+
+  testWidgets('Terminar with unavailable TTS still returns to topic list', (
+    tester,
+  ) async {
+    final output = FakeSpeechOutput(
+      availability: SpeechOutputAvailability.unavailable,
+    );
+    await pumpUser(
+      tester,
+      size: phoneSize,
+      speechOutput: output,
+      initialDestination: UserHomeDestination.quieroHablar,
+    );
+
+    await openGardenPromptReady(tester);
+    await tester.ensureVisible(
+      find.byKey(const Key('memora-user-conversation-finish')),
+    );
+    await tester.tap(find.byKey(const Key('memora-user-conversation-finish')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('memora-user-conversation-session')),
+      findsNothing,
+    );
+    expect(find.byKey(const Key('memora-user-quiero-hablar')), findsOneWidget);
+  });
 }

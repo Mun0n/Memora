@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../demo/demo_data_scope.dart';
 import '../l10n/memora_copy.dart';
+import '../theme/memora_supported_person_typography.dart';
 import '../theme/memora_theme.dart';
 import 'user_pastime_controller.dart';
 
@@ -55,7 +56,8 @@ class _PastimeList extends StatelessWidget {
             key: const Key('memora-isolated-local-demo'),
             style: textTheme.bodyMedium?.copyWith(
               color: MemoraTheme.highContrastInk,
-              fontSize: 16,
+              fontSize: MemoraSupportedPersonTypography.secondary,
+              height: MemoraSupportedPersonTypography.bodyHeight,
             ),
           ),
         ],
@@ -66,7 +68,8 @@ class _PastimeList extends StatelessWidget {
             key: const Key('memora-user-pasatiempos-shared-pending'),
             style: textTheme.bodyMedium?.copyWith(
               color: MemoraTheme.highContrastInk,
-              fontSize: 16,
+              fontSize: MemoraSupportedPersonTypography.secondary,
+              height: MemoraSupportedPersonTypography.bodyHeight,
             ),
           ),
         ],
@@ -77,7 +80,8 @@ class _PastimeList extends StatelessWidget {
             key: const Key('memora-user-pasatiempos-shared-pull-failed'),
             style: textTheme.bodyMedium?.copyWith(
               color: MemoraTheme.highContrastInk,
-              fontSize: 16,
+              fontSize: MemoraSupportedPersonTypography.secondary,
+              height: MemoraSupportedPersonTypography.bodyHeight,
             ),
           ),
           const SizedBox(height: 8),
@@ -97,8 +101,8 @@ class _PastimeList extends StatelessWidget {
             key: const Key('memora-user-pasatiempos-empty'),
             style: textTheme.bodyLarge?.copyWith(
               color: MemoraTheme.highContrastInk,
-              fontSize: 20,
-              height: 1.35,
+              fontSize: MemoraSupportedPersonTypography.body,
+              height: MemoraSupportedPersonTypography.bodyHeight,
             ),
           )
         else if (controller.pastimes.isNotEmpty)
@@ -147,7 +151,7 @@ class _PastimeCard extends StatelessWidget {
                       pastime.title,
                       style: textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w700,
-                        fontSize: 22,
+                        fontSize: MemoraSupportedPersonTypography.title,
                         color: MemoraTheme.highContrastInk,
                       ),
                     ),
@@ -155,8 +159,9 @@ class _PastimeCard extends StatelessWidget {
                     Text(
                       MemoraCopy.pasatiemposOpenHint,
                       style: textTheme.bodyLarge?.copyWith(
-                        fontSize: 18,
+                        fontSize: MemoraSupportedPersonTypography.secondary,
                         fontWeight: FontWeight.w600,
+                        height: MemoraSupportedPersonTypography.bodyHeight,
                         color: MemoraTheme.accentBand,
                       ),
                     ),
@@ -208,8 +213,8 @@ class _PastimeDetail extends StatelessWidget {
           pastime.instruction,
           style: textTheme.bodyLarge?.copyWith(
             color: MemoraTheme.highContrastInk,
-            fontSize: 20,
-            height: 1.35,
+            fontSize: MemoraSupportedPersonTypography.body,
+            height: MemoraSupportedPersonTypography.bodyHeight,
           ),
         ),
       ],

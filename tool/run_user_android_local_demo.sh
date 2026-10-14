@@ -165,24 +165,56 @@ Fix: ensure the device is connected, then re-run this launcher. Do not point the
   echo "OK: adb reverse bridge verified: ${expected} (device ${DEVICE_SERIAL})"
 }
 
+print_fresh_launch_checklist() {
+  cat <<EOF
+SLICE 13 physical-review launch checklist:
+  1. Stop EVERY previous Flutter/user, caregiver-web, and local-demo-sync process
+     (Ctrl-C in those terminals). Do not reuse a hot-reload session or an already-
+     running APK as proof of a repair build.
+  2. Start the shared authority: ./tool/run_local_demo_sync.sh
+  3. Start caregiver web with MEMORA_LOCAL_DEMO_SYNC_URL=${DEMO_URL}
+  4. Relaunch THIS script so Android gets a fresh flutter run (not hot reload).
+Plain isolated \`cd apps/user && flutter run\` is NOT a cross-client sync test —
+it keeps the private Amparo Demo fixture and will not see web preferred-name edits.
+EOF
+}
+
+require_shared_authority() {
+  if [[ "${MEMORA_SKIP_AUTHORITY_CHECK:-0}" == "1" ]]; then
+    echo "OK: shared authority check skipped (MEMORA_SKIP_AUTHORITY_CHECK=1)."
+    return 0
+  fi
+  command -v curl >/dev/null 2>&1 || die \
+    "curl not found on PATH (needed to verify ${DEMO_URL}/v1/health before launch)."
+  if ! curl -sf "${DEMO_URL}/v1/health" >/dev/null; then
+    die "shared local demo authority not reachable at ${DEMO_URL}/v1/health. Start ./tool/run_local_demo_sync.sh first, then relaunch this script. A plain isolated flutter run is not a cross-client preferred-name sync test."
+  fi
+  echo "OK: shared demo authority reachable at ${DEMO_URL}/v1/health"
+}
+
 run_flutter() {
   command -v flutter >/dev/null 2>&1 || die "flutter not found on PATH."
   [[ -d "$USER_APP" ]] || die "missing supported-person app at $USER_APP"
   cd "$USER_APP"
   local device_args=()
   [[ -n "$DEVICE_SERIAL" ]] && device_args=(-d "$DEVICE_SERIAL")
+  print_fresh_launch_checklist
   echo "Starting supported-person Android shared demo against ${DEMO_URL}"
-  echo "NOTE: Restart server, web, and this launcher after every repair build so all three share one generation."
+  echo "NOTE: This launcher uses a cold flutter run (--no-hot) so review sees a fresh build, not a prior hot-reload generation."
   # Bash 3.2 with `set -u` treats an empty-array expansion as an unbound
   # variable. Keep the documented zero-argument invocation on a separate path
   # rather than supplying a dummy Flutter option.
+  # --no-hot: physical-review must not treat hot-reload of an old process as a
+  # fresh Slice repair install. Callers may still append extra flutter args.
   if [[ ${#FLUTTER_ARGS[@]} -gt 0 ]]; then
     exec flutter run \
+      --no-hot \
       "${device_args[@]}" \
       --dart-define=MEMORA_LOCAL_DEMO_SYNC_URL="${DEMO_URL}" \
       "${FLUTTER_ARGS[@]}"
   else
     exec flutter run \
+      --no-hot \
       "${device_args[@]}" \
       --dart-define=MEMORA_LOCAL_DEMO_SYNC_URL="${DEMO_URL}"
   fi
@@ -209,6 +241,7 @@ main() {
     echo "OK: bridge ready; MEMORA_SKIP_FLUTTER=1 skips flutter run."
     exit 0
   fi
+  require_shared_authority
   run_flutter
 }
 

@@ -32,6 +32,9 @@ final class UserConversationSessionController extends ChangeNotifier {
   bool speechUnavailable = false;
   bool speechOutputUnavailable = false;
 
+  /// True while [finish] is speaking the closing and returning to the topic list.
+  bool isFinishing = false;
+
   /// Guards every async speak/listen completion. Bumped on cancel, navigation,
   /// lifecycle, topic change, finish and repeat so stale callbacks never reopen
   /// the microphone.
@@ -205,16 +208,51 @@ final class UserConversationSessionController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// One-tap Terminar: speak closing at most once, then clear the session.
+  ///
+  /// Returns to idle so the topic list can show without a second exit button.
+  /// TTS unavailable/cancelled/error still clears promptly. Duplicate taps while
+  /// [isFinishing] are ignored. Stale speech/recognition callbacks cannot
+  /// reopen the microphone after this generation bump.
   Future<void> finish() async {
+    if (isFinishing) {
+      return;
+    }
+    isFinishing = true;
     final generation = ++_turnGeneration;
-    await _stopListeningQuietly(bumpGeneration: false);
-    await _speechOutput.stop();
-    isMemoraSpeaking = false;
-    snapshot = _engine.applyControl(ConversationControlAction.finish);
     notifyListeners();
-    if (!speechOutputUnavailable &&
-        snapshot.phase == ConversationSessionPhase.closing) {
-      await _speakCurrentText(generation);
+    try {
+      await _stopListeningQuietly(bumpGeneration: false);
+      await _speechOutput.stop();
+      isMemoraSpeaking = false;
+      snapshot = _engine.applyControl(ConversationControlAction.finish);
+      notifyListeners();
+
+      if (generation == _turnGeneration &&
+          !speechOutputUnavailable &&
+          snapshot.phase == ConversationSessionPhase.closing) {
+        // Best-effort closing speech; always clear afterward.
+        await _speakCurrentText(generation);
+      }
+
+      if (generation != _turnGeneration) {
+        return;
+      }
+
+      await _recognizer.release();
+      await _speechOutput.stop();
+      await _speechOutput.release();
+      snapshot = _engine.clear();
+      isListenInFlight = false;
+      isMemoraSpeaking = false;
+      speechUnavailable = false;
+      speechOutputUnavailable = false;
+      notifyListeners();
+    } finally {
+      if (generation == _turnGeneration) {
+        isFinishing = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -222,12 +260,14 @@ final class UserConversationSessionController extends ChangeNotifier {
   Future<void> releaseForLifecycle() async {
     await _stopAllQuietly();
     if (snapshot.hasActiveSession ||
-        snapshot.phase == ConversationSessionPhase.cancelled) {
+        snapshot.phase == ConversationSessionPhase.cancelled ||
+        isFinishing) {
       snapshot = _engine.cancel();
       snapshot = _engine.clear();
     }
     isListenInFlight = false;
     isMemoraSpeaking = false;
+    isFinishing = false;
     notifyListeners();
   }
 
@@ -236,6 +276,7 @@ final class UserConversationSessionController extends ChangeNotifier {
     snapshot = _engine.clear();
     isListenInFlight = false;
     isMemoraSpeaking = false;
+    isFinishing = false;
     speechUnavailable = false;
     speechOutputUnavailable = false;
     notifyListeners();

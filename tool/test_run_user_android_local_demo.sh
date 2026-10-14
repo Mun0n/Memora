@@ -96,6 +96,7 @@ EOF
 
 run_launcher_through_flutter() {
   MEMORA_ADB="$TMP/fake_adb" \
+    MEMORA_SKIP_AUTHORITY_CHECK=1 \
     PATH="$TMP/bin:$PATH" \
     "$LAUNCHER" "$@"
 }
@@ -196,12 +197,19 @@ rm -rf "$TMP/state"
 if out="$(run_launcher_through_flutter 2>&1)"; then
   if [[ -f "$TMP/state/flutter.args" ]] \
     && grep -Fxq 'run' "$TMP/state/flutter.args" \
+    && grep -Fxq -- '--no-hot' "$TMP/state/flutter.args" \
     && grep -Fxq -- '-d' "$TMP/state/flutter.args" \
     && grep -Fxq 'Pixel8a_demo' "$TMP/state/flutter.args" \
     && grep -Fxq -- '--dart-define=MEMORA_LOCAL_DEMO_SYNC_URL=http://127.0.0.1:17808' "$TMP/state/flutter.args"; then
-    pass "zero-argument launcher reaches flutter with device and shared URL"
+    pass "zero-argument launcher reaches cold flutter run with device and shared URL"
   else
     fail "zero-argument flutter invocation missing required arguments: $(cat "$TMP/state/flutter.args" 2>/dev/null || true)"
+  fi
+  if grep -q 'SLICE 13 physical-review launch checklist' <<<"$out" \
+    && grep -qi 'plain isolated' <<<"$out"; then
+    pass "launcher prints fresh-stop checklist and isolated-run warning"
+  else
+    fail "fresh-launch checklist missing from launcher output: $out"
   fi
 else
   fail "zero-argument launcher exited before flutter: $out"
@@ -228,6 +236,15 @@ if grep -q -- '--dart-define=MEMORA_LOCAL_DEMO_SYNC_URL=' "$LAUNCHER" \
   pass "launcher forwards MEMORA_LOCAL_DEMO_SYNC_URL loopback define"
 else
   fail "launcher missing shared URL dart-define"
+fi
+
+# Static: cold run + authority health gate for shared-demo physical review.
+if grep -q -- '--no-hot' "$LAUNCHER" \
+  && grep -q '/v1/health' "$LAUNCHER" \
+  && grep -q 'MEMORA_SKIP_AUTHORITY_CHECK' "$LAUNCHER"; then
+  pass "launcher requires cold flutter run and shared authority health check"
+else
+  fail "launcher missing --no-hot or /v1/health gate"
 fi
 
 if [[ "$FAILS" -ne 0 ]]; then
