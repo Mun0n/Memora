@@ -308,5 +308,125 @@ void main() {
         ),
       );
     });
+
+    test(
+      'Dame una idea speaks help then returns to same prompt before listen',
+      () async {
+        output.availability = SpeechOutputAvailability.unavailable;
+        await controller.start(OfflineFixtures.gardenTalkTopic);
+        await controller.confirmIntroduction();
+        expect(controller.phase, ConversationSessionPhase.promptReady);
+        expect(controller.canRequestHelp, isTrue);
+        expect(controller.snapshot.promptIndex, 0);
+
+        // Written path: reveal help without TTS, stay on same prompt.
+        await controller.requestHelp();
+        expect(controller.helpRevealed, isTrue);
+        expect(
+          controller.revealedHelpCue,
+          OfflineFixtures.gardenTalkTopic.prompts[0].help!.cue,
+        );
+        expect(controller.snapshot.promptIndex, 0);
+        expect(controller.phase, ConversationSessionPhase.promptReady);
+        expect(controller.microphoneOpen, isFalse);
+        expect(controller.canRequestHelp, isTrue);
+      },
+    );
+
+    test(
+      'help speak → complete → listen serialization keeps same prompt',
+      () async {
+        output.autoComplete = false;
+        final startFuture = controller.start(OfflineFixtures.gardenTalkTopic);
+        await _flush();
+        output.completeCurrent(); // intro
+        await _flush();
+        output.completeCurrent(); // prompt 0 → listen → timeout → ack speech
+        await _flush();
+        expect(controller.snapshot.promptIndex, 0);
+        final listensBefore = recognizer.listenCount;
+
+        // Stops any in-flight ack speech, then presents authored help.
+        final helpFuture = controller.requestHelp();
+        await _flush();
+        expect(controller.phase, ConversationSessionPhase.presentingHelp);
+        expect(controller.memoraSpeaking, isTrue);
+        expect(controller.microphoneOpen, isFalse);
+        expect(controller.snapshot.promptIndex, 0);
+
+        // Help speak must finish before any further recognition.
+        expect(recognizer.listenCount, listensBefore);
+        output.completeCurrent(); // help utterance completes
+        await _flush();
+        expect(controller.helpRevealed, isTrue);
+        expect(controller.snapshot.promptIndex, 0);
+        expect(controller.microphoneOpen, isFalse);
+        // Listen may already have opened (and timed out) after help speech.
+        expect(recognizer.listenCount, greaterThan(listensBefore));
+
+        output.autoComplete = true;
+        output.completeCurrent();
+        await helpFuture;
+        await startFuture;
+      },
+    );
+
+    test('exact spoken help command reveals cue without advancing', () async {
+      output.autoComplete = false;
+      recognizer.enqueue(const SpeechRecognized('Dame una idea'));
+      final startFuture = controller.start(OfflineFixtures.gardenTalkTopic);
+      await _flush();
+      output.completeCurrent(); // intro
+      await _flush();
+      output.completeCurrent(); // prompt → listen → Dame una idea → help speak
+      await _flush();
+      expect(controller.phase, ConversationSessionPhase.presentingHelp);
+      expect(controller.helpRevealed, isTrue);
+      expect(controller.snapshot.promptIndex, 0);
+      expect(controller.microphoneOpen, isFalse);
+      expect(
+        controller.revealedHelpCue,
+        OfflineFixtures.gardenTalkTopic.prompts[0].help!.cue,
+      );
+      output.autoComplete = true;
+      output.completeCurrent();
+      await startFuture;
+    });
+
+    test('ordinary answer with idea words does not reveal help', () async {
+      recognizer.enqueue(
+        const SpeechRecognized('Me gusta la idea de plantar tomates Demo'),
+      );
+      await controller.start(OfflineFixtures.gardenTalkTopic);
+      expect(controller.helpRevealed, isFalse);
+      expect(controller.snapshot.lastCommand, isNot(ConversationCommand.help));
+    });
+
+    test('prompt without help hides Dame una idea affordance', () async {
+      final topic = ConversationTopic(
+        id: OfflineFixtures.gardenTalkTopicId,
+        familySpaceId: IdentityFixtures.familiaEjemploSpaceId,
+        title: 'Sin ayuda Demo',
+        introduction: 'Introducción Demo para conversar con calma.',
+        prompts: <ConversationPrompt>[
+          ConversationPrompt(
+            order: 0,
+            text: 'Cuéntame algo del jardín Ejemplo cuando quieras.',
+          ),
+        ],
+        closing: 'Gracias por compartir un rato.',
+        displayOrder: 0,
+        lifecycleStatus: ConversationTopicLifecycleStatus.active,
+        version: AggregateVersion.initial,
+        syncState: SyncState.local,
+      );
+      output.availability = SpeechOutputAvailability.unavailable;
+      await controller.start(topic);
+      await controller.confirmIntroduction();
+      expect(controller.canRequestHelp, isFalse);
+      await controller.requestHelp();
+      expect(controller.helpRevealed, isFalse);
+      expect(controller.displayedText, ConversationCopy.helpUnavailable);
+    });
   });
 }

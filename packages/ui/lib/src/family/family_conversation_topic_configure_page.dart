@@ -122,18 +122,164 @@ class FamilyConversationTopicConfigureContent extends StatelessWidget {
             ],
             if (controller.errorMessage != null) ...[
               const SizedBox(height: 12),
-              Text(
-                controller.errorMessage!,
-                key: const Key('memora-family-conversation-error'),
-                style: textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.error,
-                  fontSize: 16,
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  controller.helpErrorPromptOrder == null
+                      ? controller.errorMessage!
+                      : '${controller.errorMessage!} '
+                            '(${MemoraCopy.conversationPromptLabel} '
+                            '${controller.helpErrorPromptOrder! + 1})',
+                  key: const Key('memora-family-conversation-error'),
+                  style: textTheme.bodyLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.error,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ],
           ],
         );
       },
+    );
+  }
+}
+
+class _PromptHelpEditor extends StatelessWidget {
+  const _PromptHelpEditor({required this.controller, required this.index});
+
+  final FamilyConversationTopicController controller;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final revision = controller.editorRevision;
+    final hasError = controller.helpErrorPromptOrder == index;
+    final cue = index < controller.draftHelpCues.length
+        ? controller.draftHelpCues[index]
+        : '';
+    final helpMemoryId = index < controller.draftHelpMemoryIds.length
+        ? controller.draftHelpMemoryIds[index]
+        : null;
+    return Semantics(
+      container: true,
+      label:
+          '${MemoraCopy.conversationHelpSectionLabel}, '
+          '${MemoraCopy.conversationPromptLabel} ${index + 1}',
+      child: DecoratedBox(
+        key: Key('memora-family-conversation-help-$index'),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: hasError
+                ? Theme.of(context).colorScheme.error
+                : MemoraTheme.borderInk,
+            width: 2,
+          ),
+          color: MemoraTheme.highContrastSurface,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                MemoraCopy.conversationHelpSectionLabel,
+                style: textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                MemoraCopy.conversationHelpGuidance,
+                key: Key('memora-family-conversation-help-guidance-$index'),
+                style: textTheme.bodyMedium?.copyWith(fontSize: 15),
+              ),
+              const SizedBox(height: 8),
+              DraftTextField(
+                key: Key('memora-family-conversation-help-cue-$index'),
+                revision: revision,
+                initialText: cue,
+                labelText: MemoraCopy.conversationHelpCueLabel,
+                maxLines: 3,
+                onChanged: (value) => controller.setDraftHelpCue(index, value),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                MemoraCopy.conversationHelpMemoryLabel,
+                style: textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                key: Key('memora-family-conversation-help-memory-$index'),
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton(
+                    key: Key(
+                      'memora-family-conversation-help-memory-none-$index',
+                    ),
+                    onPressed: () =>
+                        controller.setDraftHelpMemoryId(index, null),
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: helpMemoryId == null
+                          ? MemoraTheme.accentBand
+                          : Colors.white,
+                      foregroundColor: helpMemoryId == null
+                          ? MemoraTheme.accentOnBand
+                          : MemoraTheme.highContrastInk,
+                      minimumSize: const Size(
+                        48,
+                        MemoraTheme.preferredTouchExtent,
+                      ),
+                    ),
+                    child: const Text(MemoraCopy.conversationHelpMemoryNone),
+                  ),
+                  ...controller.approvedMemories.map(
+                    (memory) => OutlinedButton(
+                      key: Key(
+                        'memora-family-conversation-help-memory-'
+                        '${memory.id.value}-$index',
+                      ),
+                      onPressed: () =>
+                          controller.setDraftHelpMemoryId(index, memory.id),
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: helpMemoryId == memory.id
+                            ? MemoraTheme.accentBand
+                            : Colors.white,
+                        foregroundColor: helpMemoryId == memory.id
+                            ? MemoraTheme.accentOnBand
+                            : MemoraTheme.highContrastInk,
+                        minimumSize: const Size(
+                          48,
+                          MemoraTheme.preferredTouchExtent,
+                        ),
+                      ),
+                      child: Text(memory.caption),
+                    ),
+                  ),
+                ],
+              ),
+              if (controller.draftHelpPresent(index)) ...[
+                const SizedBox(height: 8),
+                OutlinedButton(
+                  key: Key('memora-family-conversation-help-clear-$index'),
+                  onPressed: () => controller.clearDraftHelp(index),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(
+                      48,
+                      MemoraTheme.preferredTouchExtent,
+                    ),
+                  ),
+                  child: const Text(MemoraCopy.conversationHelpClear),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -312,13 +458,53 @@ class _TopicEditor extends StatelessWidget {
                     const SizedBox(width: 8),
                     OutlinedButton(
                       key: Key('memora-family-conversation-remove-prompt-$i'),
-                      onPressed: () => controller.removePromptField(i),
+                      onPressed: () => controller.requestRemovePromptField(i),
                       child: const Text(MemoraCopy.conversationRemovePrompt),
                     ),
                   ],
                 ],
               ),
+              if (controller.pendingRemovePromptIndex == i) ...[
+                const SizedBox(height: 8),
+                Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    MemoraCopy.conversationRemovePromptConfirm,
+                    key: Key(
+                      'memora-family-conversation-remove-prompt-confirm-$i',
+                    ),
+                    style: textTheme.bodyMedium?.copyWith(fontSize: 16),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    FilledButton(
+                      key: Key(
+                        'memora-family-conversation-remove-prompt-yes-$i',
+                      ),
+                      onPressed: controller.confirmPendingRemovePrompt,
+                      child: const Text(
+                        MemoraCopy.conversationRemovePromptConfirmAction,
+                      ),
+                    ),
+                    OutlinedButton(
+                      key: Key(
+                        'memora-family-conversation-remove-prompt-no-$i',
+                      ),
+                      onPressed: controller.cancelPendingRemovePrompt,
+                      child: const Text(
+                        MemoraCopy.conversationRemovePromptCancel,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 8),
+              _PromptHelpEditor(controller: controller, index: i),
+              const SizedBox(height: 12),
             ],
             if (controller.draftPrompts.length < ConversationTopic.maxPrompts)
               OutlinedButton(
@@ -416,10 +602,6 @@ class _SupportedPersonPreview extends StatelessWidget {
     final intro = controller.draftIntroduction.trim().isEmpty
         ? '…'
         : controller.draftIntroduction.trim();
-    final prompts = controller.draftPrompts
-        .map((p) => p.trim())
-        .where((p) => p.isNotEmpty)
-        .toList(growable: false);
     final closing = controller.draftClosing.trim().isEmpty
         ? '…'
         : controller.draftClosing.trim();
@@ -450,12 +632,48 @@ class _SupportedPersonPreview extends StatelessWidget {
             const SizedBox(height: 8),
             Text(intro, style: textTheme.bodyLarge?.copyWith(fontSize: 17)),
             const SizedBox(height: 8),
-            for (final prompt in prompts) ...[
-              Text(
-                '• $prompt',
-                style: textTheme.bodyLarge?.copyWith(fontSize: 16),
-              ),
-              const SizedBox(height: 4),
+            for (var i = 0; i < controller.draftPrompts.length; i++) ...[
+              if (controller.draftPrompts[i].trim().isNotEmpty) ...[
+                Text(
+                  '• ${controller.draftPrompts[i].trim()}',
+                  style: textTheme.bodyLarge?.copyWith(fontSize: 16),
+                ),
+                if (controller.draftHelpPresent(i)) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    MemoraCopy.conversationPreviewHelpAffordance,
+                    key: Key(
+                      'memora-family-conversation-preview-help-action-$i',
+                    ),
+                    style: textTheme.bodyMedium?.copyWith(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  if (controller.draftHelpCues[i].trim().isNotEmpty)
+                    Text(
+                      controller.draftHelpCues[i].trim(),
+                      key: Key(
+                        'memora-family-conversation-preview-help-cue-$i',
+                      ),
+                      style: textTheme.bodyMedium?.copyWith(fontSize: 15),
+                    ),
+                  if (controller.draftHelpMemoryIds[i] != null)
+                    Text(
+                      controller
+                              .approvedMemoryById(
+                                controller.draftHelpMemoryIds[i],
+                              )
+                              ?.caption ??
+                          MemoraCopy.conversationHelpMemoryLabel,
+                      key: Key(
+                        'memora-family-conversation-preview-help-memory-$i',
+                      ),
+                      style: textTheme.bodyMedium?.copyWith(fontSize: 15),
+                    ),
+                ],
+                const SizedBox(height: 4),
+              ],
             ],
             const SizedBox(height: 4),
             Text(closing, style: textTheme.bodyLarge?.copyWith(fontSize: 16)),

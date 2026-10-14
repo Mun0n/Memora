@@ -1,6 +1,7 @@
 import 'package:domain/domain.dart';
 
 import '../offline/in_memory_offline_store.dart';
+import 'conversation_topic_codec.dart';
 
 /// Bridges [InMemoryOfflineStore] aggregates to [SyncEngine] ports.
 final class OfflineSyncBridge implements SyncPayloadLoader, SyncApplyHandler {
@@ -570,21 +571,7 @@ final class OfflineSyncBridge implements SyncPayloadLoader, SyncApplyHandler {
 
   static Map<String, Object?> _conversationTopicPayload(
     ConversationTopic topic,
-  ) {
-    return <String, Object?>{
-      'title': topic.title,
-      'introduction': topic.introduction,
-      'prompts': topic.prompts
-          .map((p) => <String, Object?>{'order': p.order, 'text': p.text})
-          .toList(growable: false),
-      'closing': topic.closing,
-      'displayOrder': topic.displayOrder,
-      'lifecycle': topic.lifecycleStatus.wireName,
-      'memoryId': topic.memoryId?.value,
-      'tombstoned': topic.isDeleted,
-      'version': topic.version.value,
-    };
-  }
+  ) => ConversationTopicCodec.encodePayload(topic);
 
   static ConversationTopic _topicFromPayload({
     required String aggregateId,
@@ -593,39 +580,14 @@ final class OfflineSyncBridge implements SyncPayloadLoader, SyncApplyHandler {
     required AggregateVersion version,
     required bool tombstoned,
     required SyncState syncState,
-  }) {
-    final rawPrompts = payload['prompts'] as List<dynamic>? ?? const [];
-    final prompts = rawPrompts.map((raw) {
-      final map = Map<String, Object?>.from(raw as Map);
-      return ConversationPrompt(
-        order: map['order']! as int,
-        text: map['text']! as String,
-      );
-    }).toList();
-    final memoryRaw = payload['memoryId'] as String?;
-    return ConversationTopic(
-      id: ConversationTopicId(aggregateId),
-      familySpaceId: FamilySpaceId(familySpaceId),
-      title: payload['title']! as String,
-      introduction: payload['introduction']! as String,
-      prompts: prompts,
-      closing: payload['closing']! as String,
-      displayOrder: payload['displayOrder'] as int? ?? 0,
-      lifecycleStatus: ConversationTopicLifecycleStatus.parse(
-        payload['lifecycle'] as String? ?? 'draft',
-      ),
-      version: version,
-      syncState: syncState,
-      memoryId: memoryRaw == null ? null : MemoryId(memoryRaw),
-      tombstone: tombstoned
-          ? Tombstone(
-              aggregateId: aggregateId,
-              version: version,
-              deletedAt: DateTime.now().toUtc(),
-            )
-          : null,
-    );
-  }
+  }) => ConversationTopicCodec.decodeTopic(
+    aggregateId: aggregateId,
+    familySpaceId: familySpaceId,
+    payload: payload,
+    version: version,
+    tombstoned: tombstoned,
+    syncState: syncState,
+  );
 
   /// Deterministic valid UUID for a keep-both remote fork.
   static String _forkUuid(String aggregateId) {

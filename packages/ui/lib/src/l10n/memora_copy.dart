@@ -305,6 +305,21 @@ abstract final class MemoraCopy {
   static const String conversationMemoryLinkNone = 'Sin recuerdo vinculado';
   static const String conversationAddPrompt = 'Añadir invitación';
   static const String conversationRemovePrompt = 'Quitar invitación';
+  static const String conversationRemovePromptConfirm =
+      'Quitar esta invitación también quita su ayuda familiar. ¿Continuar?';
+  static const String conversationRemovePromptConfirmAction = 'Sí, quitar';
+  static const String conversationRemovePromptCancel = 'Conservar';
+  static const String conversationHelpSectionLabel = 'Ayuda familiar';
+  static const String conversationHelpGuidance =
+      'Escribe una pista breve que dé contexto, no una pregunta de examen. '
+      'Evita «¿Te acuerdas de…?», respuestas correctas, correcciones, '
+      'sorpresas delicadas, afirmaciones médicas o situaciones de emergencia.';
+  static const String conversationHelpCueLabel = 'Pista breve (opcional)';
+  static const String conversationHelpMemoryLabel =
+      'Recuerdo de ayuda (opcional)';
+  static const String conversationHelpMemoryNone = 'Sin recuerdo de ayuda';
+  static const String conversationHelpClear = 'Quitar ayuda familiar';
+  static const String conversationPreviewHelpAffordance = 'Dame una idea';
   static const String conversationPreviewTitle = 'Vista de la persona apoyada';
   static const String conversationLifecycleDraft = 'Borrador';
   static const String conversationLifecycleActive = 'Activo';
@@ -314,10 +329,23 @@ abstract final class MemoraCopy {
   static const String conversationsValidationError =
       'Título (1–60), introducción (1–240), entre 1 y 5 invitaciones '
       '(1–240 cada una) y cierre (1–160) son obligatorios.';
+  static const String conversationsHelpValidationError =
+      'La ayuda familiar de una invitación no es válida. '
+      'Revisa la pista (1–160) o el recuerdo aprobado.';
+  static const String conversationsHelpMemoryError =
+      'Hay un recuerdo de ayuda que no está aprobado o no pertenece a esta '
+      'familia. Corrige la invitación marcada antes de activar.';
   static const String conversationsUnauthorized =
       'Tu rol no puede configurar conversaciones.';
   static const String conversationsActiveLimitError =
       'Ya hay seis temas activos. Archiva uno antes de activar otro.';
+
+  // Supported-person — prompt help (Slice 11)
+  static const String quieroHablarRequestHelp = 'Dame una idea';
+  static const String quieroHablarHelpUnavailable =
+      'Ahora no tengo una idea preparada para esto. Puedes seguir, repetir, '
+      'cambiar de tema o terminar.';
+  static const String quieroHablarHelpRevealedLabel = 'Idea familiar';
 
   // Family web configure
   static const String familyHomeTitle = 'Rutinas y recordatorios';

@@ -4,23 +4,27 @@ import 'package:flutter/foundation.dart';
 /// Turn-based guided conversation session for the supported person.
 ///
 /// Holds speech and session state only in memory. Never persists transcripts,
-/// topic choice metrics or answers. Speech output and recognition are
-/// serialized: the microphone opens only after Memora finishes speaking.
+/// topic choice metrics, help-use events or answers. Speech output and
+/// recognition are serialized: the microphone opens only after Memora finishes
+/// speaking (including family help).
 final class UserConversationSessionController extends ChangeNotifier {
   UserConversationSessionController({
     required SpeechRecognizerPort recognizer,
     SpeechOutputPort? speechOutput,
     ConversationEnginePort? engine,
     Duration postSpeakPause = const Duration(milliseconds: 400),
+    List<MemoryEntry> Function()? approvedMemoryLookup,
   }) : _recognizer = recognizer,
        _speechOutput = speechOutput ?? FakeSpeechOutput(),
        _engine = engine ?? DeterministicConversationEngine(),
-       _postSpeakPause = postSpeakPause;
+       _postSpeakPause = postSpeakPause,
+       _approvedMemoryLookup = approvedMemoryLookup;
 
   final SpeechRecognizerPort _recognizer;
   final SpeechOutputPort _speechOutput;
   final ConversationEnginePort _engine;
   final Duration _postSpeakPause;
+  final List<MemoryEntry> Function()? _approvedMemoryLookup;
 
   ConversationSessionSnapshot snapshot = ConversationSessionSnapshot.empty;
   bool isListenInFlight = false;
@@ -43,6 +47,10 @@ final class UserConversationSessionController extends ChangeNotifier {
 
   String get displayedText => snapshot.displayedText;
 
+  bool get helpRevealed => snapshot.helpRevealed;
+
+  String? get revealedHelpCue => snapshot.revealedHelpCue;
+
   /// True while Memora is uttering family-authored or fixed copy.
   bool get memoraSpeaking => isMemoraSpeaking;
 
@@ -52,6 +60,30 @@ final class UserConversationSessionController extends ChangeNotifier {
       phase == ConversationSessionPhase.promptReady &&
       !microphoneOpen &&
       !isListenInFlight;
+
+  /// Persistent `Dame una idea` only when the current prompt has usable help.
+  bool get canRequestHelp {
+    if (!hasActiveSession || isMemoraSpeaking) {
+      return false;
+    }
+    final currentPhase = phase;
+    if (currentPhase != ConversationSessionPhase.promptReady &&
+        currentPhase != ConversationSessionPhase.listening &&
+        currentPhase != ConversationSessionPhase.acknowledgement &&
+        currentPhase != ConversationSessionPhase.presentingHelp) {
+      return false;
+    }
+    return _currentPromptHasUsableHelp();
+  }
+
+  /// Approved memory linked to the revealed help card (ephemeral presentation).
+  MemoryEntry? get revealedHelpMemory {
+    final id = snapshot.revealedHelpMemoryId;
+    if (id == null) {
+      return null;
+    }
+    return _resolveApprovedMemory(id);
+  }
 
   /// Explicit start after the person chooses a topic.
   Future<void> start(ConversationTopic topic) async {
@@ -140,6 +172,17 @@ final class UserConversationSessionController extends ChangeNotifier {
     }
   }
 
+  /// Explicit help reveal for the current prompt (touch). Does not advance it.
+  Future<void> requestHelp() async {
+    final generation = ++_turnGeneration;
+    await _stopListeningQuietly(bumpGeneration: false);
+    await _speechOutput.stop();
+    isMemoraSpeaking = false;
+    snapshot = _requestHelpWithResolvedMemory();
+    notifyListeners();
+    await _afterHelpRequest(generation);
+  }
+
   Future<void> repeat() async {
     final generation = ++_turnGeneration;
     await _stopListeningQuietly(bumpGeneration: false);
@@ -225,6 +268,40 @@ final class UserConversationSessionController extends ChangeNotifier {
     await _pauseThenListen(generation);
   }
 
+  Future<void> _afterHelpRequest(int generation) async {
+    if (generation != _turnGeneration) {
+      return;
+    }
+    if (snapshot.phase == ConversationSessionPhase.presentingHelp) {
+      await _presentHelp(generation);
+      return;
+    }
+    if (snapshot.phase == ConversationSessionPhase.acknowledgement) {
+      // Honest no-help copy — speak then leave person in control of advance.
+      await _afterPersonTurn(generation);
+    }
+  }
+
+  Future<void> _presentHelp(int generation) async {
+    if (generation != _turnGeneration) {
+      return;
+    }
+    if (speechOutputUnavailable) {
+      snapshot = _completeHelpPresentation();
+      notifyListeners();
+      return;
+    }
+    if (!await _speakCurrentText(generation)) {
+      return;
+    }
+    if (generation != _turnGeneration) {
+      return;
+    }
+    snapshot = _completeHelpPresentation();
+    notifyListeners();
+    await _pauseThenListen(generation);
+  }
+
   Future<void> _afterPersonTurn(int generation) async {
     if (generation != _turnGeneration) {
       return;
@@ -233,6 +310,10 @@ final class UserConversationSessionController extends ChangeNotifier {
         snapshot.phase == ConversationSessionPhase.unavailable ||
         snapshot.phase == ConversationSessionPhase.cancelled ||
         snapshot.phase == ConversationSessionPhase.closing) {
+      return;
+    }
+    if (snapshot.phase == ConversationSessionPhase.presentingHelp) {
+      await _presentHelp(generation);
       return;
     }
     if (snapshot.phase != ConversationSessionPhase.acknowledgement) {
@@ -404,10 +485,7 @@ final class UserConversationSessionController extends ChangeNotifier {
 
   ConversationSessionSnapshot _mapListenOutcome(SpeechListenOutcome outcome) {
     return switch (outcome) {
-      SpeechRecognized(:final textInMemory) => _engine.onSpeechResult(
-        textInMemory: textInMemory,
-        outcome: ConversationSpeechOutcome.recognized,
-      ),
+      SpeechRecognized(:final textInMemory) => _mapRecognized(textInMemory),
       SpeechSilence() || SpeechTimeout() => _engine.onSpeechResult(
         textInMemory: null,
         outcome: ConversationSpeechOutcome.silence,
@@ -428,6 +506,88 @@ final class UserConversationSessionController extends ChangeNotifier {
         outcome: ConversationSpeechOutcome.unavailable,
       ),
     };
+  }
+
+  /// Routes exact help commands through memory-resolved [requestHelp].
+  ConversationSessionSnapshot _mapRecognized(String textInMemory) {
+    if (ConversationCommandMatcher.classify(textInMemory) ==
+        ConversationCommand.help) {
+      return _requestHelpWithResolvedMemory();
+    }
+    return _engine.onSpeechResult(
+      textInMemory: textInMemory,
+      outcome: ConversationSpeechOutcome.recognized,
+    );
+  }
+
+  ConversationSessionSnapshot _requestHelpWithResolvedMemory() {
+    final memory = _resolvedHelpMemoryForCurrentPrompt();
+    final engine = _engine;
+    if (engine is DeterministicConversationEngine) {
+      return engine.requestHelp(resolvedHelpMemory: memory);
+    }
+    if (engine is FakeConversationEngine) {
+      return engine.requestHelp(resolvedHelpMemory: memory);
+    }
+    return engine.applyControl(ConversationControlAction.requestHelp);
+  }
+
+  ConversationSessionSnapshot _completeHelpPresentation() {
+    final engine = _engine;
+    if (engine is DeterministicConversationEngine) {
+      return engine.completeHelpPresentation();
+    }
+    if (engine is FakeConversationEngine) {
+      return engine.completeHelpPresentation();
+    }
+    return engine.applyControl(
+      ConversationControlAction.completeHelpPresentation,
+    );
+  }
+
+  bool _currentPromptHasUsableHelp() {
+    final currentTopic = snapshot.topic;
+    if (currentTopic == null) {
+      return false;
+    }
+    final index = snapshot.promptIndex;
+    if (index < 0 || index >= currentTopic.prompts.length) {
+      return false;
+    }
+    final prompt = currentTopic.prompts[index];
+    return prompt.hasUsableHelp(
+      familySpaceId: currentTopic.familySpaceId,
+      resolvedMemory: _resolvedHelpMemoryForCurrentPrompt(),
+    );
+  }
+
+  MemoryEntry? _resolvedHelpMemoryForCurrentPrompt() {
+    final currentTopic = snapshot.topic;
+    if (currentTopic == null) {
+      return null;
+    }
+    final index = snapshot.promptIndex;
+    if (index < 0 || index >= currentTopic.prompts.length) {
+      return null;
+    }
+    final memoryId = currentTopic.prompts[index].help?.memoryId;
+    return _resolveApprovedMemory(memoryId);
+  }
+
+  MemoryEntry? _resolveApprovedMemory(MemoryId? id) {
+    if (id == null) {
+      return null;
+    }
+    final lookup = _approvedMemoryLookup;
+    if (lookup == null) {
+      return null;
+    }
+    for (final memory in lookup()) {
+      if (memory.id == id && memory.isApprovedForViewing) {
+        return memory;
+      }
+    }
+    return null;
   }
 
   Future<void> _stopListeningQuietly({bool bumpGeneration = true}) async {

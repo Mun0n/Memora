@@ -2,10 +2,10 @@
 
 ## Status
 
-APPROVED POST-MVP PRODUCT SLICE, gated on the accepted Slice 10 baseline. This
-specification authorizes implementation only after a human starts the focused local
-orchestrator. Slice 10 topic selection, deterministic spoken turns and privacy
-guarantees must not regress.
+HUMAN ACCEPTED on 2026-10-14 after full validation, one bounded repair iteration,
+an independent `PASS_WITH_NOTES` audit and human product review of the `Quiero hablar`
+help flow. Slice 10 topic selection, deterministic spoken turns and privacy guarantees
+remain the accepted baseline.
 
 ## Product decision
 

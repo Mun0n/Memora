@@ -111,6 +111,8 @@ class _MemoraUserAppState extends State<MemoraUserApp>
     _conversationSession = UserConversationSessionController(
       recognizer: _speechRecognizer,
       speechOutput: _speechOutput,
+      approvedMemoryLookup: () =>
+          widget.memoryController?.memories ?? const <MemoryEntry>[],
     );
     if (widget.autoload) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {

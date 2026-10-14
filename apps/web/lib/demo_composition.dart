@@ -75,6 +75,11 @@ final class FamilyWebDemoComposition {
       topics: conversationTopics,
       networkAvailable: resolvedNetwork,
       demoDataScope: scope,
+      // Memory boundary required so activate rejects invalid help-memory refs.
+      configureTopic: ConfigureConversationTopic(
+        conversationTopics,
+        memories: memories,
+      ),
     );
     memoryController = FamilyMemoryController(
       actor: membership,

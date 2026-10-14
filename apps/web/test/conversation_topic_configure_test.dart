@@ -167,4 +167,77 @@ void main() {
       findsNothing,
     );
   });
+
+  testWidgets(
+    'caregiver authors Ayuda familiar and sees Dame una idea preview',
+    (tester) async {
+      await pumpConversations(tester, seed: false);
+
+      expect(
+        find.byKey(const Key('memora-family-conversation-help-0')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('memora-family-conversation-help-guidance-0')),
+        findsOneWidget,
+      );
+
+      final title = find.byKey(const Key('memora-family-conversation-title'));
+      final intro = find.byKey(
+        const Key('memora-family-conversation-introduction'),
+      );
+      final prompt = find.byKey(
+        const Key('memora-family-conversation-prompt-0'),
+      );
+      final cue = find.byKey(
+        const Key('memora-family-conversation-help-cue-0'),
+      );
+      final closing = find.byKey(
+        const Key('memora-family-conversation-closing'),
+      );
+      final save = find.byKey(const Key('memora-family-save-conversation'));
+
+      await tester.ensureVisible(title);
+      await tester.enterText(title, 'Paseo con ayuda Demo');
+      await tester.ensureVisible(intro);
+      await tester.enterText(
+        intro,
+        'Tu familia me ha contado que te gustaba pasear por el parque Ejemplo.',
+      );
+      await tester.ensureVisible(prompt);
+      await tester.enterText(
+        prompt,
+        'Si te apetece, cuéntame qué veías por el camino.',
+      );
+      await tester.ensureVisible(cue);
+      await tester.enterText(
+        cue,
+        'Por las mañanas pasabais junto a los bancos del parque Ejemplo.',
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(
+          const Key('memora-family-conversation-preview-help-action-0'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('memora-family-conversation-preview-help-cue-0')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(MemoraCopy.conversationPreviewHelpAffordance),
+        findsWidgets,
+      );
+
+      await tester.ensureVisible(closing);
+      await tester.enterText(closing, 'Gracias por compartir un rato.');
+      await tester.ensureVisible(save);
+      await tester.tap(save);
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Paseo con ayuda Demo'), findsWidgets);
+    },
+  );
 }

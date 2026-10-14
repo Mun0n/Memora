@@ -29,6 +29,7 @@ export 'src/conversations/conversation_command.dart';
 export 'src/conversations/conversation_copy.dart';
 export 'src/conversations/conversation_engine_port.dart';
 export 'src/conversations/conversation_prompt.dart';
+export 'src/conversations/conversation_prompt_help.dart';
 export 'src/conversations/conversation_session_phase.dart';
 export 'src/conversations/conversation_topic.dart';
 export 'src/conversations/conversation_topic_care_policy.dart';

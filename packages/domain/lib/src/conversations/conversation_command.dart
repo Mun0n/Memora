@@ -1,7 +1,7 @@
 /// Minimal fixed command vocabulary for conversation control.
 ///
 /// Ordinary answers are not commands and do not branch content.
-enum ConversationCommand { repeat, changeTopic, finish, noMeAcuerdo }
+enum ConversationCommand { repeat, changeTopic, finish, noMeAcuerdo, help }
 
 /// Pure Spanish-first matcher for the fixed control vocabulary.
 abstract final class ConversationCommandMatcher {
@@ -9,6 +9,11 @@ abstract final class ConversationCommandMatcher {
     final normalized = _normalize(textInMemory);
     if (normalized.isEmpty) {
       return null;
+    }
+    // Help uses exact whole-utterance match only so substrings inside ordinary
+    // answers never accidentally trigger family help.
+    if (_matchesExact(normalized, _help)) {
+      return ConversationCommand.help;
     }
     if (_matches(normalized, _repeat)) {
       return ConversationCommand.repeat;
@@ -24,6 +29,16 @@ abstract final class ConversationCommandMatcher {
     }
     return null;
   }
+
+  /// Reviewed direct equivalents for `Dame una idea` (exact utterance only).
+  static const List<String> reviewedHelpPhrases = <String>[
+    'dame una idea',
+    'una idea',
+    'dame idea',
+    'necesito una idea',
+  ];
+
+  static const List<String> _help = reviewedHelpPhrases;
 
   static const List<String> _repeat = <String>[
     'repetir',
@@ -51,6 +66,15 @@ abstract final class ConversationCommandMatcher {
     'no recuerdo',
     'no me acuerdo de nada',
   ];
+
+  static bool _matchesExact(String normalized, List<String> phrases) {
+    for (final phrase in phrases) {
+      if (normalized == _normalize(phrase)) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   static bool _matches(String normalized, List<String> phrases) {
     for (final phrase in phrases) {

@@ -1,5 +1,6 @@
 import 'package:domain/domain.dart';
 
+import 'conversation_topic_codec.dart';
 import 'in_memory_sync_authority.dart';
 
 /// Actionable failure when a durable local demo snapshot is unusable.
@@ -109,19 +110,9 @@ abstract final class LocalDemoFictionalBaseline {
       aggregateId: topic.id.value,
       familySpaceId: topic.familySpaceId.value,
       version: version,
-      payload: <String, Object?>{
-        'title': topic.title,
-        'introduction': topic.introduction,
-        'prompts': topic.prompts
-            .map((p) => <String, Object?>{'order': p.order, 'text': p.text})
-            .toList(growable: false),
-        'closing': topic.closing,
-        'displayOrder': topic.displayOrder,
-        'lifecycle': topic.lifecycleStatus.wireName,
-        'memoryId': topic.memoryId?.value,
-        'tombstoned': topic.isDeleted,
-        'version': version.value,
-      },
+      payload: ConversationTopicCodec.encodePayload(
+        topic.copyWith(version: version),
+      ),
       tombstoned: topic.isDeleted,
     );
   }

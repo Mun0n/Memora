@@ -266,4 +266,204 @@ void main() {
     );
     expect(card.height, greaterThan(48));
   });
+
+  Future<void> openGardenPromptReady(WidgetTester tester) async {
+    await tester.ensureVisible(
+      find.byKey(
+        Key(
+          'memora-user-conversation-topic-'
+          '${OfflineFixtures.gardenTalkTopicId.value}',
+        ),
+      ),
+    );
+    await tester.tap(
+      find.byKey(
+        Key(
+          'memora-user-conversation-topic-'
+          '${OfflineFixtures.gardenTalkTopicId.value}',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(
+      find.byKey(const Key('memora-user-conversation-start')),
+    );
+    await tester.tap(find.byKey(const Key('memora-user-conversation-start')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(
+      find.byKey(const Key('memora-user-conversation-continue')),
+    );
+    await tester.tap(
+      find.byKey(const Key('memora-user-conversation-continue')),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> expectNoHorizontalOverflow(
+    WidgetTester tester, {
+    required Size viewport,
+  }) async {
+    expect(tester.takeException(), isNull);
+    final session = find.byKey(const Key('memora-user-conversation-session'));
+    expect(session, findsOneWidget);
+    expect(tester.getSize(session).width, lessThanOrEqualTo(viewport.width));
+    final actions = find.byKey(const Key('memora-user-conversation-actions'));
+    expect(actions, findsOneWidget);
+    expect(tester.getSize(actions).width, lessThanOrEqualTo(viewport.width));
+  }
+
+  Future<void> expectHelpExitsHittable(WidgetTester tester) async {
+    for (final key in const [
+      Key('memora-user-conversation-request-help'),
+      Key('memora-user-conversation-repeat'),
+      Key('memora-user-conversation-change-topic'),
+      Key('memora-user-conversation-finish'),
+      Key('memora-user-return-home'),
+    ]) {
+      final finder = find.byKey(key);
+      expect(finder, findsOneWidget);
+      await tester.ensureVisible(finder);
+      expect(tester.getSize(finder).height, greaterThan(48));
+    }
+  }
+
+  for (final entry in <(String, Size, double)>[
+    ('phone 1.0', phoneSize, 1.0),
+    ('phone 1.5', phoneSize, 1.5),
+    ('tablet 1.0', tabletSize, 1.0),
+    ('tablet 1.5', tabletSize, 1.5),
+  ]) {
+    testWidgets(
+      '${entry.$1}: Dame una idea reveal + exits usable, no overflow',
+      (tester) async {
+        final cue = OfflineFixtures.gardenTalkTopic.prompts[0].help!.cue!;
+        final output = FakeSpeechOutput(
+          availability: SpeechOutputAvailability.unavailable,
+        );
+        await pumpUser(
+          tester,
+          size: entry.$2,
+          textScale: entry.$3,
+          speechOutput: output,
+          initialDestination: UserHomeDestination.quieroHablar,
+        );
+
+        await openGardenPromptReady(tester);
+        await expectHelpExitsHittable(tester);
+        await expectNoHorizontalOverflow(tester, viewport: entry.$2);
+
+        final help = find.byKey(
+          const Key('memora-user-conversation-request-help'),
+        );
+        await tester.ensureVisible(help);
+        await tester.tap(help);
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const Key('memora-user-conversation-help-reveal')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('memora-user-conversation-help-cue')),
+          findsOneWidget,
+        );
+        expect(find.text(cue), findsWidgets);
+        await tester.ensureVisible(
+          find.byKey(const Key('memora-user-conversation-help-cue')),
+        );
+        await expectHelpExitsHittable(tester);
+        await expectNoHorizontalOverflow(tester, viewport: entry.$2);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  testWidgets('phone @1.5: linked memory help shows media text fallback', (
+    tester,
+  ) async {
+    final output = FakeSpeechOutput(
+      availability: SpeechOutputAvailability.unavailable,
+    );
+    tester.view.physicalSize = phoneSize;
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    tester.platformDispatcher.textScaleFactorTestValue = 1.5;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+    final composition = UserDemoComposition(
+      networkAvailable: false,
+      speechRecognizer: FakeSpeechRecognizer(
+        currentPermission: SpeechPermissionStatus.granted,
+      ),
+      speechOutput: output,
+    );
+    await composition.seedDemoFixtures();
+    final base = OfflineFixtures.gardenTalkTopic;
+    final prompt0 = base.prompts[0];
+    await composition.memories.save(
+      memory: OfflineFixtures.gardenMemory.copyWith(
+        media: OfflineFixtures.gardenMediaFailed,
+      ),
+      idempotencyKey: OfflineFixtures.gardenMemorySaveKey,
+    );
+    await composition.conversationTopics.save(
+      topic: base.copyWith(
+        prompts: <ConversationPrompt>[
+          prompt0.copyWith(
+            help: ConversationPromptHelp(
+              cue: prompt0.help!.cue,
+              memoryId: OfflineFixtures.gardenMemoryId,
+            ),
+          ),
+          base.prompts[1],
+        ],
+      ),
+      idempotencyKey: OfflineFixtures.gardenTalkTopicSaveKey,
+    );
+    await composition.load();
+    await tester.pumpWidget(
+      composition.buildApp(
+        initialDestination: UserHomeDestination.quieroHablar,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await openGardenPromptReady(tester);
+    final help = find.byKey(const Key('memora-user-conversation-request-help'));
+    await tester.ensureVisible(help);
+    await tester.tap(help);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('memora-user-conversation-help-reveal')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('memora-user-conversation-help-cue')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(
+        Key(
+          'memora-user-conversation-help-memory-'
+          '${OfflineFixtures.gardenMemoryId.value}',
+        ),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(
+        Key(
+          'memora-user-conversation-help-media-fallback-'
+          '${OfflineFixtures.gardenMemoryId.value}',
+        ),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text(MemoraCopy.mediaFailedPlaceholder), findsOneWidget);
+    await expectHelpExitsHittable(tester);
+    await expectNoHorizontalOverflow(tester, viewport: phoneSize);
+    expect(tester.takeException(), isNull);
+  });
 }

@@ -58,6 +58,8 @@ void main() {
       expect(garden.lifecycleStatus, ConversationTopicLifecycleStatus.active);
       expect(garden.syncState, SyncState.pending);
       expect(garden.prompts, hasLength(2));
+      expect(garden.prompts[0].help?.cue, isNotNull);
+      expect(garden.prompts[1].help, isNull);
 
       final active = await restoredConfigure.listActiveForViewing(
         actor: IdentityFixtures.amparoSupportedMembership,

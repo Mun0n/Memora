@@ -1,6 +1,48 @@
 import 'package:domain/domain.dart';
 import 'package:test/test.dart';
 
+final class _StubMemories implements MemoryRepository {
+  final Map<String, MemoryEntry> _items = <String, MemoryEntry>{};
+
+  void put(MemoryEntry memory) => _items[memory.id.value] = memory;
+
+  @override
+  Future<MemoryEntry> save({
+    required MemoryEntry memory,
+    required IdempotencyKey idempotencyKey,
+  }) async {
+    _items[memory.id.value] = memory;
+    return memory;
+  }
+
+  @override
+  Future<MemoryEntry?> findById(MemoryId id) async => _items[id.value];
+
+  @override
+  Future<List<MemoryEntry>> listForFamily(FamilySpaceId familySpaceId) async =>
+      _items.values
+          .where((m) => m.familySpaceId == familySpaceId)
+          .toList(growable: false);
+
+  @override
+  Future<List<MemoryEntry>> listApprovedForFamily(
+    FamilySpaceId familySpaceId,
+  ) async => _items.values
+      .where((m) => m.familySpaceId == familySpaceId && m.isApprovedForViewing)
+      .toList(growable: false);
+
+  @override
+  Future<MemoryEntry> softDelete({
+    required MemoryId id,
+    required AggregateVersion baseVersion,
+    required DateTime deletedAt,
+    required IdempotencyKey idempotencyKey,
+    UserId? deletedBy,
+  }) {
+    throw UnimplementedError();
+  }
+}
+
 final class _StubTopics implements ConversationTopicRepository {
   final Map<String, ConversationTopic> _items = <String, ConversationTopic>{};
 
@@ -351,6 +393,71 @@ void main() {
         throwsA(isA<UnauthorizedCareActionException>()),
       );
     });
+
+    test('activate blocks invalid prompt-help memory references', () async {
+      final memories = _StubMemories()
+        ..put(OfflineFixtures.gardenMemory)
+        ..put(
+          OfflineFixtures.proposedPatioMemory.copyWith(
+            lifecycleStatus: MemoryLifecycleStatus.proposed,
+          ),
+        );
+      final gated = ConfigureConversationTopic(store, memories: memories);
+      final elena = IdentityFixtures.elenaPrimaryMembership;
+
+      await gated.create(
+        actor: elena,
+        id: OfflineFixtures.gardenTalkTopicId,
+        familySpaceId: IdentityFixtures.familiaEjemploSpaceId,
+        title: 'Tema con ayuda Demo',
+        introduction: 'Introducción Demo con ayuda familiar.',
+        prompts: <ConversationPrompt>[
+          ConversationPrompt(
+            order: 0,
+            text: 'Invitación Demo con memoria aprobada.',
+            help: ConversationPromptHelp(
+              cue: 'Pista válida Demo',
+              memoryId: OfflineFixtures.gardenMemoryId,
+            ),
+          ),
+        ],
+        closing: 'Cierre Demo.',
+        idempotencyKey: OfflineFixtures.gardenTalkTopicSaveKey,
+      );
+      final ok = await gated.activate(
+        actor: elena,
+        id: OfflineFixtures.gardenTalkTopicId,
+        idempotencyKey: IdempotencyKey('demo-topic-activate-help-ok'),
+      );
+      expect(ok.lifecycleStatus, ConversationTopicLifecycleStatus.active);
+
+      await gated.create(
+        actor: elena,
+        id: OfflineFixtures.draftKitchenTopicId,
+        familySpaceId: IdentityFixtures.familiaEjemploSpaceId,
+        title: 'Tema inválido Demo',
+        introduction: 'Introducción Demo con referencia inválida.',
+        prompts: <ConversationPrompt>[
+          ConversationPrompt(
+            order: 0,
+            text: 'Invitación Demo con memoria propuesta.',
+            help: ConversationPromptHelp(
+              memoryId: OfflineFixtures.proposedPatioMemory.id,
+            ),
+          ),
+        ],
+        closing: 'Cierre Demo.',
+        idempotencyKey: IdempotencyKey('demo-topic-create-invalid-help'),
+      );
+      await expectLater(
+        gated.activate(
+          actor: elena,
+          id: OfflineFixtures.draftKitchenTopicId,
+          idempotencyKey: IdempotencyKey('demo-topic-activate-help-bad'),
+        ),
+        throwsA(isA<InvalidConversationHelpMemoryException>()),
+      );
+    });
   });
 
   group('FamilyContentScope', () {
@@ -367,6 +474,8 @@ void main() {
           'transcript',
           'answerContent',
           'conversationHistory',
+          'helpUseEvent',
+          'displayedMemoryHistory',
         ]),
       );
     });

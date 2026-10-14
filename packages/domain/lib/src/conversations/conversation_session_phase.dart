@@ -20,6 +20,9 @@ enum ConversationSessionPhase {
   /// Advancing toward the next authored prompt (brief transitional).
   nextPrompt,
 
+  /// Family help revealed for the current prompt; mic released while speaking.
+  presentingHelp,
+
   /// Final authored closing shown.
   closing,
 

@@ -1,3 +1,4 @@
+import '../memories/memory_entry.dart';
 import '../voice/voice_intent.dart';
 import '../voice/voice_intent_matcher.dart';
 import 'conversation_command.dart';
@@ -8,7 +9,9 @@ import 'conversation_topic.dart';
 
 /// Deterministic turn-based conversation engine (family-authored + fixed copy).
 ///
-/// Never scores, corrects, claims understanding or persists speech.
+/// Never scores, corrects, claims understanding or persists speech. Help always
+/// comes from the current prompt's authored card — never from answers, silence
+/// or semantic selection.
 final class DeterministicConversationEngine implements ConversationEnginePort {
   ConversationSessionSnapshot _snapshot = ConversationSessionSnapshot.empty;
 
@@ -74,6 +77,7 @@ final class DeterministicConversationEngine implements ConversationEnginePort {
       _snapshot = _snapshot.copyWith(
         phase: ConversationSessionPhase.unavailable,
         displayedText: ConversationCopy.unavailable,
+        clearHelpReveal: true,
       );
       return _snapshot;
     }
@@ -105,6 +109,7 @@ final class DeterministicConversationEngine implements ConversationEnginePort {
         displayedText: ConversationCopy.safetyLimitation,
         safetyStopped: true,
         microphoneOpen: false,
+        clearHelpReveal: true,
       );
       return _snapshot;
     }
@@ -137,7 +142,80 @@ final class DeterministicConversationEngine implements ConversationEnginePort {
         return _applyCommand(ConversationCommand.changeTopic, topic);
       case ConversationControlAction.finish:
         return _applyCommand(ConversationCommand.finish, topic);
+      case ConversationControlAction.requestHelp:
+        return requestHelp();
+      case ConversationControlAction.completeHelpPresentation:
+        return completeHelpPresentation();
     }
+  }
+
+  /// Explicit help request for the current prompt (touch or exact command).
+  ///
+  /// [resolvedHelpMemory] supplies approved-memory metadata when the card
+  /// references one. Never selects a different memory or topic.
+  ConversationSessionSnapshot requestHelp({MemoryEntry? resolvedHelpMemory}) {
+    final topic = _requireTopic();
+    _snapshot = _snapshot.copyWith(microphoneOpen: false);
+
+    if (_snapshot.phase != ConversationSessionPhase.listening &&
+        _snapshot.phase != ConversationSessionPhase.promptReady &&
+        _snapshot.phase != ConversationSessionPhase.acknowledgement &&
+        _snapshot.phase != ConversationSessionPhase.presentingHelp) {
+      return _snapshot;
+    }
+
+    final prompt = topic.prompts[_snapshot.promptIndex];
+    final help = prompt.help;
+    if (help == null ||
+        !help.isUsable(
+          familySpaceId: topic.familySpaceId,
+          resolvedMemory: resolvedHelpMemory,
+        )) {
+      _snapshot = _snapshot.copyWith(
+        phase: ConversationSessionPhase.acknowledgement,
+        displayedText: ConversationCopy.helpUnavailable,
+        lastCommand: ConversationCommand.help,
+        clearHelpReveal: true,
+      );
+      return _snapshot;
+    }
+
+    final memory = resolvedHelpMemory;
+    final showMemory =
+        help.memoryId != null &&
+        memory != null &&
+        memory.id == help.memoryId &&
+        memory.familySpaceId == topic.familySpaceId &&
+        memory.isApprovedForViewing;
+    final spoken = help.spokenText(
+      memoryCaption: showMemory ? memory.caption : null,
+    );
+    _snapshot = ConversationSessionSnapshot(
+      phase: ConversationSessionPhase.presentingHelp,
+      promptIndex: _snapshot.promptIndex,
+      microphoneOpen: false,
+      displayedText: spoken ?? ConversationCopy.helpUnavailable,
+      topic: topic,
+      lastCommand: ConversationCommand.help,
+      helpRevealed: true,
+      revealedHelpCue: spoken,
+      revealedHelpMemoryId: showMemory ? help.memoryId : null,
+    );
+    return _snapshot;
+  }
+
+  /// After help speech completes — return to the same prompt (mic still closed).
+  ConversationSessionSnapshot completeHelpPresentation() {
+    final topic = _requireTopic();
+    if (_snapshot.phase != ConversationSessionPhase.presentingHelp) {
+      return _snapshot;
+    }
+    return _showPromptReady(
+      topic,
+      index: _snapshot.promptIndex,
+      lastCommand: ConversationCommand.help,
+      keepHelpReveal: true,
+    );
   }
 
   @override
@@ -174,6 +252,7 @@ final class DeterministicConversationEngine implements ConversationEnginePort {
           topic,
           index: _snapshot.promptIndex,
           lastCommand: command,
+          keepHelpReveal: false,
         );
       case ConversationCommand.changeTopic:
         _snapshot = ConversationSessionSnapshot(
@@ -203,6 +282,8 @@ final class DeterministicConversationEngine implements ConversationEnginePort {
           microphoneOpen: false,
         );
         return _snapshot;
+      case ConversationCommand.help:
+        return requestHelp();
     }
   }
 
@@ -215,6 +296,9 @@ final class DeterministicConversationEngine implements ConversationEnginePort {
       microphoneOpen: false,
       displayedText: ConversationCopy.neutralAcknowledgement,
       topic: topic,
+      helpRevealed: _snapshot.helpRevealed,
+      revealedHelpCue: _snapshot.revealedHelpCue,
+      revealedHelpMemoryId: _snapshot.revealedHelpMemoryId,
     );
     return _snapshot;
   }
@@ -245,7 +329,9 @@ final class DeterministicConversationEngine implements ConversationEnginePort {
     ConversationTopic topic, {
     required int index,
     ConversationCommand? lastCommand,
+    bool keepHelpReveal = false,
   }) {
+    final samePrompt = index == _snapshot.promptIndex && keepHelpReveal;
     _snapshot = ConversationSessionSnapshot(
       phase: ConversationSessionPhase.promptReady,
       promptIndex: index,
@@ -253,6 +339,9 @@ final class DeterministicConversationEngine implements ConversationEnginePort {
       displayedText: topic.prompts[index].text,
       topic: topic,
       lastCommand: lastCommand,
+      helpRevealed: samePrompt ? _snapshot.helpRevealed : false,
+      revealedHelpCue: samePrompt ? _snapshot.revealedHelpCue : null,
+      revealedHelpMemoryId: samePrompt ? _snapshot.revealedHelpMemoryId : null,
     );
     return _snapshot;
   }

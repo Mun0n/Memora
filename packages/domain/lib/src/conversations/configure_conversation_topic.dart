@@ -1,7 +1,9 @@
 import '../identity/family_membership.dart';
 import '../identity/identifiers.dart';
+import '../memories/memory_entry.dart';
 import '../offline/offline_identifiers.dart';
 import '../repositories/conversation_topic_repository.dart';
+import '../repositories/memory_repository.dart';
 import '../routines/unauthorized_care_action_exception.dart';
 import '../sync/aggregate_version.dart';
 import '../sync/idempotency_key.dart';
@@ -11,13 +13,28 @@ import 'conversation_topic.dart';
 import 'conversation_topic_care_policy.dart';
 import 'conversation_topic_lifecycle_status.dart';
 
+/// Thrown when a prompt help memory reference is not approved / same-family.
+final class InvalidConversationHelpMemoryException implements Exception {
+  InvalidConversationHelpMemoryException(this.message, {this.promptOrder});
+
+  final String message;
+  final int? promptOrder;
+
+  @override
+  String toString() => 'InvalidConversationHelpMemoryException: $message';
+}
+
 /// Caregiver configure use cases for conversation topics.
 ///
 /// Invalid field values throw before save so UI-held draft fields are preserved.
+/// Activating (or saving as active) validates prompt-help memory references on
+/// the authoritative memory boundary when a [MemoryRepository] is provided.
 final class ConfigureConversationTopic {
-  ConfigureConversationTopic(this._topics);
+  ConfigureConversationTopic(this._topics, {MemoryRepository? memories})
+    : _memories = memories;
 
   final ConversationTopicRepository _topics;
+  final MemoryRepository? _memories;
 
   Future<ConversationTopic> create({
     required FamilyMembership actor,
@@ -51,6 +68,9 @@ final class ConfigureConversationTopic {
       syncState: SyncState.local,
       memoryId: memoryId,
     );
+    if (lifecycleStatus == ConversationTopicLifecycleStatus.active) {
+      await assertPromptHelpMemoriesValid(topic);
+    }
     return _topics.save(topic: topic, idempotencyKey: idempotencyKey);
   }
 
@@ -80,6 +100,9 @@ final class ConfigureConversationTopic {
       version: current.version.next(),
       syncState: SyncState.pending,
     );
+    if (updated.lifecycleStatus == ConversationTopicLifecycleStatus.active) {
+      await assertPromptHelpMemoriesValid(updated);
+    }
     return _topics.save(topic: updated, idempotencyKey: idempotencyKey);
   }
 
@@ -134,6 +157,7 @@ final class ConfigureConversationTopic {
         'cannot activate deleted conversation topic: ${id.value}',
       );
     }
+    await assertPromptHelpMemoriesValid(current);
     if (current.lifecycleStatus != ConversationTopicLifecycleStatus.active) {
       await _assertActiveLimit(current.familySpaceId, excluding: current.id);
     }
@@ -177,6 +201,47 @@ final class ConfigureConversationTopic {
       );
     }
     return _topics.listActiveForFamily(familySpaceId);
+  }
+
+  /// Authoritative check: every prompt-help memory ref must exist, belong to
+  /// the same family space, be approved, non-deleted and supported-visible.
+  Future<void> assertPromptHelpMemoriesValid(ConversationTopic topic) async {
+    for (final prompt in topic.prompts) {
+      final help = prompt.help;
+      if (help?.memoryId == null) {
+        continue;
+      }
+      final memoryId = help!.memoryId!;
+      final memories = _memories;
+      if (memories == null) {
+        throw InvalidConversationHelpMemoryException(
+          'memory repository required to validate prompt help memory '
+          '${memoryId.value}',
+          promptOrder: prompt.order,
+        );
+      }
+      final memory = await memories.findById(memoryId);
+      if (!_isValidHelpMemory(memory, topic.familySpaceId, memoryId)) {
+        throw InvalidConversationHelpMemoryException(
+          'prompt help memory ${memoryId.value} must be approved, '
+          'non-deleted and in family ${topic.familySpaceId.value}',
+          promptOrder: prompt.order,
+        );
+      }
+    }
+  }
+
+  static bool _isValidHelpMemory(
+    MemoryEntry? memory,
+    FamilySpaceId familySpaceId,
+    MemoryId expectedId,
+  ) {
+    if (memory == null) {
+      return false;
+    }
+    return memory.id == expectedId &&
+        memory.familySpaceId == familySpaceId &&
+        memory.isApprovedForViewing;
   }
 
   void _assertCanEdit(FamilyMembership actor, FamilySpaceId spaceId) {

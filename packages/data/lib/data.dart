@@ -19,6 +19,7 @@ export 'src/offline/in_memory_reminder_repository.dart';
 export 'src/offline/in_memory_routine_progress_repository.dart';
 export 'src/offline/in_memory_routine_repository.dart';
 export 'src/offline/offline_store_snapshot.dart';
+export 'src/sync/conversation_topic_codec.dart';
 export 'src/sync/demo_sync_transport_factory.dart';
 export 'src/sync/fake_supabase_remote.dart';
 export 'src/sync/in_memory_audit_store.dart';

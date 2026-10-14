@@ -5,6 +5,7 @@ import '../memories/memory_media_metadata.dart';
 import '../observations/blood_pressure_observation.dart';
 import '../observations/weight_observation.dart';
 import '../conversations/conversation_prompt.dart';
+import '../conversations/conversation_prompt_help.dart';
 import '../conversations/conversation_topic.dart';
 import '../conversations/conversation_topic_lifecycle_status.dart';
 import '../pastimes/pastime.dart';
@@ -291,6 +292,9 @@ abstract final class OfflineFixtures {
   );
 
   /// Active Demo conversation topic for supported-person Quiero hablar.
+  ///
+  /// Prompt 0 includes a cue-only help card (Slice 11). Prompt 1 stays without
+  /// help so Slice 10 no-help behavior remains covered by the same fixture.
   static final ConversationTopic gardenTalkTopic = ConversationTopic(
     id: gardenTalkTopicId,
     familySpaceId: IdentityFixtures.familiaEjemploSpaceId,
@@ -302,6 +306,11 @@ abstract final class OfflineFixtures {
         order: 0,
         text:
             'Si te apetece, puedes contarme qué era lo que más te gustaba plantar.',
+        help: ConversationPromptHelp(
+          cue:
+              'A Amparo Demo le gustaban los tomates del huerto Ejemplo '
+              'por las mañanas.',
+        ),
       ),
       ConversationPrompt(
         order: 1,

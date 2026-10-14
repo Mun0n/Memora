@@ -49,9 +49,22 @@ final class FamilyConversationTopicController extends ChangeNotifier {
   String draftTitle = '';
   String draftIntroduction = '';
   List<String> draftPrompts = <String>[''];
+
+  /// Parallel to [draftPrompts]: optional cue text (empty = none).
+  List<String> draftHelpCues = <String>[''];
+
+  /// Parallel to [draftPrompts]: optional approved help-memory reference.
+  List<MemoryId?> draftHelpMemoryIds = <MemoryId?>[null];
+
   String draftClosing = '';
   MemoryId? draftMemoryId;
   int editorRevision = 0;
+
+  /// Prompt index awaiting explicit remove confirmation (help stays attached).
+  int? pendingRemovePromptIndex;
+
+  /// Zero-based prompt order of the last help validation failure, if any.
+  int? helpErrorPromptOrder;
 
   bool get canEdit => ConversationTopicCarePolicy.canEditTopics(actor);
 
@@ -220,8 +233,12 @@ final class FamilyConversationTopicController extends ChangeNotifier {
     draftTitle = '';
     draftIntroduction = '';
     draftPrompts = <String>[''];
+    draftHelpCues = <String>[''];
+    draftHelpMemoryIds = <MemoryId?>[null];
     draftClosing = '';
     draftMemoryId = null;
+    pendingRemovePromptIndex = null;
+    helpErrorPromptOrder = null;
     editorRevision += 1;
     errorMessage = null;
     notifyListeners();
@@ -237,8 +254,16 @@ final class FamilyConversationTopicController extends ChangeNotifier {
     draftTitle = topic.title;
     draftIntroduction = topic.introduction;
     draftPrompts = topic.prompts.map((p) => p.text).toList(growable: true);
+    draftHelpCues = topic.prompts
+        .map((p) => p.help?.cue ?? '')
+        .toList(growable: true);
+    draftHelpMemoryIds = topic.prompts
+        .map((p) => p.help?.memoryId)
+        .toList(growable: true);
     draftClosing = topic.closing;
     draftMemoryId = topic.memoryId;
+    pendingRemovePromptIndex = null;
+    helpErrorPromptOrder = null;
     editorRevision += 1;
     errorMessage = null;
     notifyListeners();
@@ -257,6 +282,61 @@ final class FamilyConversationTopicController extends ChangeNotifier {
     draftPrompts[index] = value;
   }
 
+  void setDraftHelpCue(int index, String value) {
+    if (index < 0 || index >= draftHelpCues.length) {
+      return;
+    }
+    draftHelpCues[index] = value;
+    if (helpErrorPromptOrder == index) {
+      helpErrorPromptOrder = null;
+    }
+    notifyListeners();
+  }
+
+  void setDraftHelpMemoryId(int index, MemoryId? id) {
+    if (index < 0 || index >= draftHelpMemoryIds.length) {
+      return;
+    }
+    draftHelpMemoryIds[index] = id;
+    if (helpErrorPromptOrder == index) {
+      helpErrorPromptOrder = null;
+    }
+    notifyListeners();
+  }
+
+  void clearDraftHelp(int index) {
+    if (index < 0 || index >= draftHelpCues.length) {
+      return;
+    }
+    draftHelpCues[index] = '';
+    draftHelpMemoryIds[index] = null;
+    if (helpErrorPromptOrder == index) {
+      helpErrorPromptOrder = null;
+    }
+    editorRevision += 1;
+    notifyListeners();
+  }
+
+  bool draftHelpPresent(int index) {
+    if (index < 0 || index >= draftHelpCues.length) {
+      return false;
+    }
+    return draftHelpCues[index].trim().isNotEmpty ||
+        draftHelpMemoryIds[index] != null;
+  }
+
+  MemoryEntry? approvedMemoryById(MemoryId? id) {
+    if (id == null) {
+      return null;
+    }
+    for (final memory in approvedMemories) {
+      if (memory.id == id) {
+        return memory;
+      }
+    }
+    return null;
+  }
+
   void setDraftMemoryId(MemoryId? id) {
     draftMemoryId = id;
     notifyListeners();
@@ -267,8 +347,41 @@ final class FamilyConversationTopicController extends ChangeNotifier {
       return;
     }
     draftPrompts = [...draftPrompts, ''];
+    draftHelpCues = [...draftHelpCues, ''];
+    draftHelpMemoryIds = [...draftHelpMemoryIds, null];
+    pendingRemovePromptIndex = null;
     editorRevision += 1;
     notifyListeners();
+  }
+
+  /// Starts remove; if the invitation has help, waits for explicit confirmation.
+  void requestRemovePromptField(int index) {
+    if (draftPrompts.length <= ConversationTopic.minPrompts) {
+      return;
+    }
+    if (index < 0 || index >= draftPrompts.length) {
+      return;
+    }
+    if (draftHelpPresent(index)) {
+      pendingRemovePromptIndex = index;
+      notifyListeners();
+      return;
+    }
+    removePromptField(index);
+  }
+
+  void cancelPendingRemovePrompt() {
+    pendingRemovePromptIndex = null;
+    notifyListeners();
+  }
+
+  void confirmPendingRemovePrompt() {
+    final index = pendingRemovePromptIndex;
+    pendingRemovePromptIndex = null;
+    if (index == null) {
+      return;
+    }
+    removePromptField(index);
   }
 
   void removePromptField(int index) {
@@ -278,8 +391,20 @@ final class FamilyConversationTopicController extends ChangeNotifier {
     if (index < 0 || index >= draftPrompts.length) {
       return;
     }
-    final next = [...draftPrompts]..removeAt(index);
-    draftPrompts = next;
+    final nextPrompts = [...draftPrompts]..removeAt(index);
+    final nextCues = [...draftHelpCues]..removeAt(index);
+    final nextMemories = [...draftHelpMemoryIds]..removeAt(index);
+    draftPrompts = nextPrompts;
+    draftHelpCues = nextCues;
+    draftHelpMemoryIds = nextMemories;
+    pendingRemovePromptIndex = null;
+    if (helpErrorPromptOrder != null) {
+      if (helpErrorPromptOrder == index) {
+        helpErrorPromptOrder = null;
+      } else if (helpErrorPromptOrder! > index) {
+        helpErrorPromptOrder = helpErrorPromptOrder! - 1;
+      }
+    }
     editorRevision += 1;
     notifyListeners();
   }
@@ -303,13 +428,17 @@ final class FamilyConversationTopicController extends ChangeNotifier {
       promptTexts: promptTexts,
     )) {
       errorMessage = MemoraCopy.conversationsValidationError;
+      helpErrorPromptOrder = null;
       notifyListeners();
       return;
     }
-    final prompts = <ConversationPrompt>[
-      for (var i = 0; i < promptTexts.length; i++)
-        ConversationPrompt(order: i, text: promptTexts[i]),
-    ];
+    final built = _buildPrompts(promptTexts);
+    if (built == null) {
+      errorMessage = MemoraCopy.conversationsHelpValidationError;
+      notifyListeners();
+      return;
+    }
+    final prompts = built;
     try {
       if (editingTopicId == null) {
         await _configure.create(
@@ -340,12 +469,20 @@ final class FamilyConversationTopicController extends ChangeNotifier {
       draftTitle = '';
       draftIntroduction = '';
       draftPrompts = <String>[''];
+      draftHelpCues = <String>[''];
+      draftHelpMemoryIds = <MemoryId?>[null];
       draftClosing = '';
       draftMemoryId = null;
+      pendingRemovePromptIndex = null;
+      helpErrorPromptOrder = null;
       editorRevision += 1;
       errorMessage = null;
       await load();
       await _runAfterLocalWrite();
+    } on InvalidConversationHelpMemoryException catch (error) {
+      helpErrorPromptOrder = error.promptOrder;
+      errorMessage = MemoraCopy.conversationsHelpMemoryError;
+      notifyListeners();
     } on ArgumentError {
       errorMessage = MemoraCopy.conversationsValidationError;
       notifyListeners();
@@ -367,9 +504,14 @@ final class FamilyConversationTopicController extends ChangeNotifier {
         id: id,
         idempotencyKey: _ids.nextIdempotencyKey('topic-activate'),
       );
+      helpErrorPromptOrder = null;
       errorMessage = null;
       await load();
       await _runAfterLocalWrite();
+    } on InvalidConversationHelpMemoryException catch (error) {
+      helpErrorPromptOrder = error.promptOrder;
+      errorMessage = MemoraCopy.conversationsHelpMemoryError;
+      notifyListeners();
     } on StateError catch (error) {
       final message = error.toString();
       errorMessage = message.contains('active conversation topics')
@@ -486,6 +628,39 @@ final class FamilyConversationTopicController extends ChangeNotifier {
       }
     }
     return true;
+  }
+
+  /// Builds prompts with attached help. Returns null when a help card is invalid
+  /// (draft fields are left unchanged; [helpErrorPromptOrder] identifies it).
+  List<ConversationPrompt>? _buildPrompts(List<String> promptTexts) {
+    helpErrorPromptOrder = null;
+    final prompts = <ConversationPrompt>[];
+    for (var i = 0; i < promptTexts.length; i++) {
+      final cueRaw = i < draftHelpCues.length ? draftHelpCues[i].trim() : '';
+      final memoryId = i < draftHelpMemoryIds.length
+          ? draftHelpMemoryIds[i]
+          : null;
+      ConversationPromptHelp? help;
+      if (cueRaw.isNotEmpty || memoryId != null) {
+        if (cueRaw.length > ConversationPromptHelp.maxCueLength) {
+          helpErrorPromptOrder = i;
+          return null;
+        }
+        try {
+          help = ConversationPromptHelp(
+            cue: cueRaw.isEmpty ? null : cueRaw,
+            memoryId: memoryId,
+          );
+        } on ArgumentError {
+          helpErrorPromptOrder = i;
+          return null;
+        }
+      }
+      prompts.add(
+        ConversationPrompt(order: i, text: promptTexts[i], help: help),
+      );
+    }
+    return prompts;
   }
 
   PresentationSurfaceState _deriveSurface(List<ConversationTopic> listed) {

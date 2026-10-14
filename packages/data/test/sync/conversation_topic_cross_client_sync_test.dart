@@ -81,6 +81,13 @@ void main() {
         active.any((t) => t.id == OfflineFixtures.archivedMusicTopicId),
         isFalse,
       );
+      final garden = active.firstWhere(
+        (t) => t.id == OfflineFixtures.gardenTalkTopicId,
+      );
+      expect(
+        garden.prompts[0].help?.cue,
+        OfflineFixtures.gardenTalkTopic.prompts[0].help?.cue,
+      );
     },
   );
 

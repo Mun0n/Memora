@@ -319,6 +319,7 @@ class _ConversationSessionView extends StatelessWidget {
           child: Text(
             announce,
             key: const Key('memora-user-conversation-displayed'),
+            softWrap: true,
             style: textTheme.bodyLarge?.copyWith(
               fontSize: 22,
               height: 1.35,
@@ -326,6 +327,14 @@ class _ConversationSessionView extends StatelessWidget {
             ),
           ),
         ),
+        if (sessionController.helpRevealed) ...[
+          const SizedBox(height: 12),
+          _HelpRevealCard(
+            cue: sessionController.revealedHelpCue,
+            memory: sessionController.revealedHelpMemory,
+            announceLive: phase == ConversationSessionPhase.presentingHelp,
+          ),
+        ],
         if (sessionController.speechOutputUnavailable) ...[
           const SizedBox(height: 12),
           Text(
@@ -344,50 +353,68 @@ class _ConversationSessionView extends StatelessWidget {
           reduceMotion: reduceMotion,
         ),
         const SizedBox(height: 20),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
+        // Full-width stack keeps ≥48 dp targets hittable at phone/tablet ×1.5
+        // without Wrap children exceeding the viewport width.
+        Column(
+          key: const Key('memora-user-conversation-actions'),
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (phase == ConversationSessionPhase.topicIntroduction)
+            if (phase == ConversationSessionPhase.topicIntroduction) ...[
               FilledButton(
                 key: const Key('memora-user-conversation-continue'),
                 onPressed: sessionController.confirmIntroduction,
                 style: FilledButton.styleFrom(
-                  minimumSize: const Size(
-                    140,
+                  minimumSize: const Size.fromHeight(
                     MemoraTheme.preferredTouchExtent,
                   ),
                 ),
                 child: const Text(MemoraCopy.quieroHablarContinue),
               ),
-            if (sessionController.needsManualListen)
+              const SizedBox(height: 12),
+            ],
+            if (sessionController.needsManualListen) ...[
               FilledButton(
                 key: const Key('memora-user-conversation-manual-speak'),
                 onPressed: sessionController.beginManualListen,
                 style: FilledButton.styleFrom(
-                  minimumSize: const Size(
-                    140,
+                  minimumSize: const Size.fromHeight(
                     MemoraTheme.preferredTouchExtent,
                   ),
                 ),
                 child: const Text(MemoraCopy.quieroHablarManualSpeak),
               ),
+              const SizedBox(height: 12),
+            ],
             if (phase == ConversationSessionPhase.listening ||
                 phase == ConversationSessionPhase.acknowledgement ||
                 (phase == ConversationSessionPhase.promptReady &&
                     !sessionController.needsManualListen) ||
-                phase == ConversationSessionPhase.unavailable)
+                phase == ConversationSessionPhase.unavailable) ...[
               FilledButton(
                 key: const Key('memora-user-conversation-finished'),
                 onPressed: sessionController.finishedSpeaking,
                 style: FilledButton.styleFrom(
-                  minimumSize: const Size(
-                    140,
+                  minimumSize: const Size.fromHeight(
                     MemoraTheme.preferredTouchExtent,
                   ),
                 ),
                 child: const Text(MemoraCopy.quieroHablarFinishedSpeaking),
               ),
+              const SizedBox(height: 12),
+            ],
+            if (sessionController.canRequestHelp) ...[
+              FilledButton(
+                key: const Key('memora-user-conversation-request-help'),
+                onPressed: sessionController.requestHelp,
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(
+                    MemoraTheme.preferredTouchExtent,
+                  ),
+                ),
+                child: const Text(MemoraCopy.quieroHablarRequestHelp),
+              ),
+              const SizedBox(height: 12),
+            ],
             OutlinedButton(
               key: const Key('memora-user-conversation-repeat'),
               onPressed:
@@ -397,10 +424,13 @@ class _ConversationSessionView extends StatelessWidget {
                   ? null
                   : sessionController.repeat,
               style: OutlinedButton.styleFrom(
-                minimumSize: const Size(120, MemoraTheme.preferredTouchExtent),
+                minimumSize: const Size.fromHeight(
+                  MemoraTheme.preferredTouchExtent,
+                ),
               ),
               child: const Text(MemoraCopy.quieroHablarRepeat),
             ),
+            const SizedBox(height: 12),
             OutlinedButton(
               key: const Key('memora-user-conversation-change-topic'),
               onPressed: () async {
@@ -409,15 +439,20 @@ class _ConversationSessionView extends StatelessWidget {
                 topicController.clearSelection();
               },
               style: OutlinedButton.styleFrom(
-                minimumSize: const Size(120, MemoraTheme.preferredTouchExtent),
+                minimumSize: const Size.fromHeight(
+                  MemoraTheme.preferredTouchExtent,
+                ),
               ),
               child: const Text(MemoraCopy.quieroHablarChangeTopic),
             ),
+            const SizedBox(height: 12),
             OutlinedButton(
               key: const Key('memora-user-conversation-finish'),
               onPressed: sessionController.finish,
               style: OutlinedButton.styleFrom(
-                minimumSize: const Size(120, MemoraTheme.preferredTouchExtent),
+                minimumSize: const Size.fromHeight(
+                  MemoraTheme.preferredTouchExtent,
+                ),
               ),
               child: const Text(MemoraCopy.quieroHablarFinish),
             ),
@@ -441,6 +476,118 @@ class _ConversationSessionView extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+class _HelpRevealCard extends StatelessWidget {
+  const _HelpRevealCard({
+    required this.cue,
+    required this.memory,
+    required this.announceLive,
+  });
+
+  final String? cue;
+  final MemoryEntry? memory;
+  final bool announceLive;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final cueText = cue?.trim();
+    final parts = <String>[
+      MemoraCopy.quieroHablarHelpRevealedLabel,
+      if (cueText != null && cueText.isNotEmpty) cueText,
+      if (memory != null) memory!.caption,
+    ];
+    return Semantics(
+      liveRegion: announceLive,
+      label: parts.join('. '),
+      child: DecoratedBox(
+        key: const Key('memora-user-conversation-help-reveal'),
+        decoration: BoxDecoration(
+          border: Border.all(color: MemoraTheme.accentBand, width: 2),
+          color: Colors.white,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                MemoraCopy.quieroHablarHelpRevealedLabel,
+                style: textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: MemoraTheme.highContrastInk,
+                ),
+              ),
+              if (cueText != null && cueText.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  cueText,
+                  key: const Key('memora-user-conversation-help-cue'),
+                  softWrap: true,
+                  style: textTheme.bodyLarge?.copyWith(
+                    fontSize: 18,
+                    height: 1.35,
+                    color: MemoraTheme.highContrastInk,
+                  ),
+                ),
+              ],
+              if (memory != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  memory!.caption,
+                  key: Key(
+                    'memora-user-conversation-help-memory-${memory!.id.value}',
+                  ),
+                  softWrap: true,
+                  style: textTheme.bodyLarge?.copyWith(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: MemoraTheme.highContrastInk,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  memory!.dateContext,
+                  softWrap: true,
+                  style: textTheme.bodyMedium?.copyWith(
+                    fontSize: 16,
+                    color: MemoraTheme.highContrastInk,
+                  ),
+                ),
+                if (memory!.media != null && !memory!.hasFailedMedia) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    '${MemoraCopy.memoryMediaPathLabel}: '
+                    '${memory!.media!.familyScopedPath}',
+                    key: Key(
+                      'memora-user-conversation-help-media-'
+                      '${memory!.id.value}',
+                    ),
+                    softWrap: true,
+                    style: textTheme.bodyMedium?.copyWith(fontSize: 15),
+                  ),
+                ] else if (memory!.hasFailedMedia || memory!.media == null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    memory!.hasFailedMedia
+                        ? MemoraCopy.mediaFailedPlaceholder
+                        : 'Sin medio adjunto.',
+                    key: Key(
+                      'memora-user-conversation-help-media-fallback-'
+                      '${memory!.id.value}',
+                    ),
+                    softWrap: true,
+                    style: textTheme.bodyMedium?.copyWith(fontSize: 15),
+                  ),
+                ],
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

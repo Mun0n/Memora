@@ -4,12 +4,14 @@ import '../sync/aggregate_version.dart';
 import '../sync/sync_state.dart';
 import '../sync/tombstone.dart';
 import 'conversation_prompt.dart';
+import 'conversation_prompt_help.dart';
 import 'conversation_topic_lifecycle_status.dart';
 
 /// Family-scoped guided conversation topic (intro, prompts, closing).
 ///
 /// Local-first aggregate. No scoring, recall test or therapeutic claim is
-/// modeled. Session speech is never part of this record.
+/// modeled. Session speech is never part of this record. Prompt help cards
+/// travel with their prompts inside this aggregate (conflict/sync unit).
 final class ConversationTopic {
   static const int maxTitleLength = 60;
   static const int maxIntroductionLength = 240;
@@ -17,6 +19,7 @@ final class ConversationTopic {
   static const int minPrompts = 1;
   static const int maxPrompts = 5;
   static const int maxActivePerFamily = 6;
+  static const int maxPromptHelpCards = maxPrompts;
 
   ConversationTopic({
     required this.id,
@@ -77,6 +80,14 @@ final class ConversationTopic {
     if (displayOrder < 0) {
       throw ArgumentError.value(displayOrder, 'displayOrder', 'must be >= 0');
     }
+    final helpCount = sorted.where((p) => p.help != null).length;
+    if (helpCount > maxPromptHelpCards) {
+      throw ArgumentError.value(
+        helpCount,
+        'prompts.help',
+        'at most $maxPromptHelpCards help cards',
+      );
+    }
   }
 
   final ConversationTopicId id;
@@ -90,7 +101,8 @@ final class ConversationTopic {
   final AggregateVersion version;
   final SyncState syncState;
 
-  /// Optional reference to one already-approved family memory (visual context).
+  /// Optional reference to one already-approved family memory (topic cover).
+  /// Independent from per-prompt [ConversationPromptHelp] cards.
   final MemoryId? memoryId;
   final Tombstone? tombstone;
 
@@ -99,6 +111,18 @@ final class ConversationTopic {
   /// Eligible for supported-person presentation (active, non-tombstoned).
   bool get isActiveForViewing =>
       !isDeleted && lifecycleStatus == ConversationTopicLifecycleStatus.active;
+
+  /// Prompt-level help cards currently attached (at most [maxPromptHelpCards]).
+  List<ConversationPromptHelp> get promptHelpCards => prompts
+      .map((p) => p.help)
+      .whereType<ConversationPromptHelp>()
+      .toList(growable: false);
+
+  /// Prompt-level approved-memory references (≤ five).
+  List<MemoryId> get promptHelpMemoryIds => promptHelpCards
+      .map((h) => h.memoryId)
+      .whereType<MemoryId>()
+      .toList(growable: false);
 
   ConversationTopic copyWith({
     String? title,

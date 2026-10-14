@@ -45,8 +45,27 @@ void main() {
         isNot(contains('modelo')),
       );
       expect(ConversationCopy.safetyLimitation, contains('emergencias'));
+      expect(ConversationCopy.requestHelpLabel, 'Dame una idea');
+      expect(ConversationCopy.helpUnavailable, isNot(contains('IA')));
+      expect(ConversationCopy.caregiverHelpGuidance, contains('contexto'));
     },
   );
+
+  test('help usage stays out of outbox types and export exclusions', () {
+    final outboxTypes = OutboxAggregateType.values.map((e) => e.name).toSet();
+    expect(outboxTypes, isNot(contains('helpUse')));
+    expect(outboxTypes, isNot(contains('displayedMemoryHistory')));
+    expect(
+      FamilyContentScope.excludedConversationSessionSurfaces,
+      containsAll(<String>[
+        'helpUseEvent',
+        'displayedMemoryHistory',
+        'revealedHelpHistory',
+      ]),
+    );
+    // Authored help rides on the topic aggregate as family content.
+    expect(OfflineFixtures.gardenTalkTopic.prompts[0].help, isNotNull);
+  });
 
   test('speech-output fallback copy stays written and manual', () {
     expect(ConversationCopy.speechOutputUnavailable, contains('Hablar'));

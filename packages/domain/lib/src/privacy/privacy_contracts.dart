@@ -37,6 +37,10 @@ abstract final class FamilyContentScope {
 
   /// Surfaces that must never appear in persistence, outbox, sync, audit or
   /// export packages for guided conversations.
+  ///
+  /// Authored prompt help cards travel with [FamilyContentType.conversationTopics]
+  /// as family content. Help *usage*, revealed-memory history and session speech
+  /// remain excluded.
   static const Set<String> excludedConversationSessionSurfaces = <String>{
     'audio',
     'synthesizedAudio',
@@ -53,6 +57,11 @@ abstract final class FamilyContentScope {
     'conversationHistory',
     'participationScore',
     'completionEvent',
+    'helpUseEvent',
+    'helpRequestCount',
+    'displayedMemoryHistory',
+    'revealedHelpHistory',
+    'helpTiming',
   };
 
   static bool includesConversationTopics() =>

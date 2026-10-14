@@ -1,3 +1,4 @@
+import '../offline/offline_identifiers.dart';
 import 'conversation_command.dart';
 import 'conversation_session_phase.dart';
 import 'conversation_topic.dart';
@@ -46,9 +47,21 @@ enum ConversationSpeechOutcome {
 }
 
 /// Visible manual controls mirrored in the UI.
-enum ConversationControlAction { finishedSpeaking, repeat, changeTopic, finish }
+enum ConversationControlAction {
+  finishedSpeaking,
+  repeat,
+  changeTopic,
+  finish,
+  requestHelp,
+
+  /// After Memora finishes speaking revealed help — return to the same prompt.
+  completeHelpPresentation,
+}
 
 /// Ephemeral in-memory session view. Never persisted, synced or audited.
+///
+/// Help-reveal fields ([helpRevealed], [revealedHelpCue], [revealedHelpMemoryId])
+/// are session-only and must never reach outbox, sync, export or caregiver UI.
 final class ConversationSessionSnapshot {
   const ConversationSessionSnapshot({
     required this.phase,
@@ -58,6 +71,9 @@ final class ConversationSessionSnapshot {
     required this.topic,
     this.lastCommand,
     this.safetyStopped = false,
+    this.helpRevealed = false,
+    this.revealedHelpCue,
+    this.revealedHelpMemoryId,
   });
 
   final ConversationSessionPhase phase;
@@ -67,6 +83,15 @@ final class ConversationSessionSnapshot {
   final ConversationTopic? topic;
   final ConversationCommand? lastCommand;
   final bool safetyStopped;
+
+  /// True after an explicit help reveal for the current prompt turn.
+  final bool helpRevealed;
+
+  /// Authored cue (or memory caption fallback) shown after explicit help.
+  final String? revealedHelpCue;
+
+  /// Linked approved-memory id for presentation only (ephemeral).
+  final MemoryId? revealedHelpMemoryId;
 
   static const ConversationSessionSnapshot empty = ConversationSessionSnapshot(
     phase: ConversationSessionPhase.idle,
@@ -91,7 +116,14 @@ final class ConversationSessionSnapshot {
     ConversationCommand? lastCommand,
     bool clearLastCommand = false,
     bool? safetyStopped,
+    bool? helpRevealed,
+    String? revealedHelpCue,
+    bool clearRevealedHelpCue = false,
+    MemoryId? revealedHelpMemoryId,
+    bool clearRevealedHelpMemoryId = false,
+    bool clearHelpReveal = false,
   }) {
+    final clearHelp = clearHelpReveal;
     return ConversationSessionSnapshot(
       phase: phase ?? this.phase,
       promptIndex: promptIndex ?? this.promptIndex,
@@ -100,6 +132,13 @@ final class ConversationSessionSnapshot {
       topic: clearTopic ? null : (topic ?? this.topic),
       lastCommand: clearLastCommand ? null : (lastCommand ?? this.lastCommand),
       safetyStopped: safetyStopped ?? this.safetyStopped,
+      helpRevealed: clearHelp ? false : (helpRevealed ?? this.helpRevealed),
+      revealedHelpCue: clearHelp || clearRevealedHelpCue
+          ? null
+          : (revealedHelpCue ?? this.revealedHelpCue),
+      revealedHelpMemoryId: clearHelp || clearRevealedHelpMemoryId
+          ? null
+          : (revealedHelpMemoryId ?? this.revealedHelpMemoryId),
     );
   }
 }

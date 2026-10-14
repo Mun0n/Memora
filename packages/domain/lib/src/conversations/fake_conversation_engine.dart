@@ -1,3 +1,4 @@
+import '../memories/memory_entry.dart';
 import 'conversation_engine_port.dart';
 import 'conversation_topic.dart';
 import 'deterministic_conversation_engine.dart';
@@ -15,6 +16,7 @@ final class FakeConversationEngine implements ConversationEnginePort {
   int beginListeningCount = 0;
   int speechResultCount = 0;
   int controlCount = 0;
+  int helpRequestCount = 0;
   int cancelCount = 0;
   int clearCount = 0;
 
@@ -54,6 +56,15 @@ final class FakeConversationEngine implements ConversationEnginePort {
   ConversationSessionSnapshot applyControl(ConversationControlAction action) {
     controlCount++;
     return _delegate.applyControl(action);
+  }
+
+  ConversationSessionSnapshot requestHelp({MemoryEntry? resolvedHelpMemory}) {
+    helpRequestCount++;
+    return _delegate.requestHelp(resolvedHelpMemory: resolvedHelpMemory);
+  }
+
+  ConversationSessionSnapshot completeHelpPresentation() {
+    return _delegate.completeHelpPresentation();
   }
 
   @override

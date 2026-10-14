@@ -1,7 +1,8 @@
-/// Fixed reviewed Spanish copy for guided conversations (Slice 10).
+/// Fixed reviewed Spanish copy for guided conversations (Slices 10–11).
 ///
 /// All non-family-authored sentences come from here. Never scores, corrects,
 /// claims understanding, offers medical advice or promises emergency help.
+/// Never generates cues — family-authored help text is spoken as authored.
 abstract final class ConversationCopy {
   static const String neutralAcknowledgement = 'Gracias por contármelo';
 
@@ -52,4 +53,21 @@ abstract final class ConversationCopy {
   static const String changeTopicLabel = 'Cambiar de tema';
 
   static const String finishLabel = 'Terminar';
+
+  /// Persistent supported-person control to reveal the current prompt's help.
+  static const String requestHelpLabel = 'Dame una idea';
+
+  /// Honest fixed copy when help is requested but none is usable.
+  static const String helpUnavailable =
+      'Ahora no tengo una idea preparada para esto. Puedes seguir, repetir, '
+      'cambiar de tema o terminar.';
+
+  /// Caregiver guidance: cues offer context, not recall tests.
+  static const String caregiverHelpGuidance =
+      'Escribe una pista breve que dé contexto, no una pregunta de examen. '
+      'Evita «¿Te acuerdas de…?», respuestas correctas, correcciones, '
+      'sorpresas delicadas, afirmaciones médicas o situaciones de emergencia.';
+
+  /// Caregiver section label beside each invitation.
+  static const String caregiverHelpSectionLabel = 'Ayuda familiar';
 }
