@@ -203,8 +203,8 @@ for role in SUPERVISOR DOMAIN UI QA AUDITOR; do
   write_prompt "$role" "DRY-RUN preview only. Do not act."
 done
 
-if [[ "$QA_REPAIR" -eq 1 ]]; then
-  echo "Initial validation deferred until DOMAIN/UI repair the recorded QA failures."
+if [[ "$QA_REPAIR" -eq 1 || "$REVIEW_REPAIR" -eq 1 ]]; then
+  echo "Initial validation deferred until DOMAIN/UI repair the recorded findings."
 else
   ./scripts/validate.sh
 fi

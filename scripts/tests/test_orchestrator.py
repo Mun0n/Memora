@@ -63,6 +63,19 @@ class OrchestratorContracts(unittest.TestCase):
         review_block = runner[runner.index('if [[ "$REVIEW_REPAIR" -eq 1 ]]', runner.index("./scripts/validate.sh")) :]
         self.assertIn('invoke DOMAIN "HUMAN_REVIEW_REPAIR:', review_block)
         self.assertIn('invoke UI "HUMAN_REVIEW_REPAIR:', review_block)
+        role_preview = runner.index("for role in SUPERVISOR DOMAIN UI QA AUDITOR")
+        repair_validation_gate = runner.index(
+            'if [[ "$QA_REPAIR" -eq 1 || "$REVIEW_REPAIR" -eq 1 ]]',
+            role_preview,
+        )
+        repair_roles = runner.index(
+            'invoke DOMAIN "HUMAN_REVIEW_REPAIR:', repair_validation_gate
+        )
+        self.assertLess(repair_validation_gate, repair_roles)
+        self.assertIn(
+            "Initial validation deferred until DOMAIN/UI repair",
+            runner[repair_validation_gate:repair_roles],
+        )
 
     def test_mvp_runner_is_bounded_and_never_pushes(self):
         runner = (ROOT / "scripts/run_mvp.sh").read_text()
@@ -110,7 +123,10 @@ class OrchestratorContracts(unittest.TestCase):
         self.assertIn('invoke UI "QA_REPAIR:', runner)
         self.assertIn('elif [[ "$QA_REPAIR" -eq 1 ]]', runner)
         role_preview = runner.index("for role in SUPERVISOR DOMAIN UI QA AUDITOR")
-        repair_validation_gate = runner.index('if [[ "$QA_REPAIR" -eq 1 ]]', role_preview)
+        repair_validation_gate = runner.index(
+            'if [[ "$QA_REPAIR" -eq 1 || "$REVIEW_REPAIR" -eq 1 ]]',
+            role_preview,
+        )
         repair_roles = runner.index('invoke DOMAIN "QA_REPAIR:', repair_validation_gate)
         self.assertLess(repair_validation_gate, repair_roles)
         self.assertIn(
