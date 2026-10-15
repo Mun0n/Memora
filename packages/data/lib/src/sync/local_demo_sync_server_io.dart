@@ -37,8 +37,9 @@ final class LocalDemoSyncServer {
   /// Binds to [host]:[port]. Use port `0` for an ephemeral test port.
   ///
   /// When [snapshotPath] is set, the authority is loaded from that file and
-  /// persisted after mutations. [ensureFictionalBaselineWhenEmpty] publishes
-  /// the documented pastime baseline exactly once when no pastime rows exist.
+  /// persisted after mutations. [ensureFictionalBaselineWhenEmpty] ensures the
+  /// documented Slice 14 pastime baseline (retiring obsolete Slice 8 Demo IDs
+  /// when present) plus topic/profile baselines when those aggregates are empty.
   static Future<LocalDemoSyncServer> bind({
     String host = LocalDemoSyncConfig.defaultHost,
     int port = LocalDemoSyncConfig.defaultPort,

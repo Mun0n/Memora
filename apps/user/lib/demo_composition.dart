@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:data/data.dart';
 import 'package:domain/domain.dart';
 import 'package:ui/ui.dart';
@@ -26,6 +28,10 @@ final class UserDemoComposition {
     bool? sharedLocalDemoTransport,
     SpeechRecognizerPort? speechRecognizer,
     SpeechOutputPort? speechOutput,
+    PastimeSessionRecoveryPort? sessionRecovery,
+    String? sessionRecoveryPath,
+    int Function()? pastimeSeedFactory,
+    PreferredOrientationsPort? pastimeOrientations,
   }) : store = store ?? InMemoryOfflineStore(),
        transport =
            transport ??
@@ -47,7 +53,14 @@ final class UserDemoComposition {
            speechOutput ??
            (AndroidLocalSpeechOutput.isSupportedPlatform
                ? AndroidLocalSpeechOutput()
-               : FakeSpeechOutput()) {
+               : FakeSpeechOutput()),
+       sessionRecovery =
+           sessionRecovery ??
+           FilePastimeSessionRecoveryStore(
+             sessionRecoveryPath ??
+                 '${Directory.systemTemp.path}/'
+                     'memora_demo_pastime_session_recovery.json',
+           ) {
     final resolvedNetwork = networkAvailable ?? usesSharedLocalDemoTransport;
     final scope = usesSharedLocalDemoTransport
         ? DemoDataScope.sharedLocalDemo
@@ -96,6 +109,10 @@ final class UserDemoComposition {
       pastimes: pastimes,
       networkAvailable: resolvedNetwork,
       demoDataScope: scope,
+      sessionRecovery: sessionRecovery,
+      seedFactory: pastimeSeedFactory,
+      orientations:
+          pastimeOrientations ?? const SystemPreferredOrientationsPort(),
     );
     conversationTopicController = UserConversationTopicController(
       actor: IdentityFixtures.amparoSupportedMembership,
@@ -137,6 +154,7 @@ final class UserDemoComposition {
   late final InMemoryRoutineRepository routines;
   late final InMemoryRoutineProgressRepository progress;
   late final InMemoryPastimeRepository pastimes;
+  final PastimeSessionRecoveryPort sessionRecovery;
   late final InMemoryConversationTopicRepository conversationTopics;
   late final InMemoryMemoryRepository memories;
   late final InMemorySupportedPersonProfileRepository profiles;

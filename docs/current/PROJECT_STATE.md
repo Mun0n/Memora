@@ -1,10 +1,12 @@
 # Current project state
 
-- Phase: **Slice 13 accepted after physical-device review** (2026-10-14,
-  post-MVP supported-person readability). Slice 12 preferred-name greeting,
-  live orientation, centred home / ≥104 dp `Ayúdame`, and caregiver-web
-  Finding 3 chrome remain the accepted baseline. Slice 11 enriched family
-  conversation context remains human-accepted (2026-10-14).
+- Phase: **Slice 14 HUMAN_REVIEW_REPAIR (UI Findings 2–4 + app baseline tests
+  done; QA/audit + physical re-review pending)** — native pastime runtime
+  (post-MVP, gated on accepted Slice 13).
+  Slice 13 accepted after physical-device review (2026-10-14). Slice 12
+  preferred-name greeting, live orientation, centred home / ≥104 dp `Ayúdame`,
+  and caregiver-web Finding 3 chrome remain the accepted baseline. Slice 11
+  enriched family conversation context remains human-accepted (2026-10-14).
 - Slice 13 (supported-person app only): Flutter `DEBUG` ribbon off; centralized
   `MemoraSupportedPersonTypography` / `MemoraTheme.supportedPerson()` (caregiver
   `MemoraTheme.light()` unchanged); home hierarchy greeting → invitation
@@ -29,27 +31,36 @@
   `demo-web` fixture label (`Este navegador`), one shell section heading per
   page (no duplicated page headlines).
 - Shared packages: `packages/domain` / `packages/data` (preferred-name profile +
-  codec + baseline), `packages/ui` (greeting, invitation, live clock, home
-  geometry, supported-person typography tokens, caregiver profile + product
-  chrome).
+  codec + baseline; Slice 14 pastime experience model, Sudoku/word-search/
+  Spider engines, device-local session recovery, pastime codec), `packages/ui`
+  (greeting, invitation, live clock, home geometry, supported-person typography
+  tokens, caregiver profile + product chrome; Slice 14 caregiver experience
+  editor + preview, supported-person intro/player shell, Sudoku/word-search/
+  Spider renderers, recovery offer).
 - App shells: shared demo URL unchanged (`MEMORA_LOCAL_DEMO_SYNC_URL`). Garden
   Demo baseline prompt 0 cue-only help; preferred-name baseline `Amparo Demo`.
-  Executable user composition uses `enableLiveOrientation: true` (device clock);
-  widget tests inject a fixed fake clock. User `MaterialApp` uses
-  `debugShowCheckedModeBanner: false` and `MemoraTheme.supportedPerson()`.
-- Persistence: in-memory + snapshot restart + fake remote now cover pastimes,
-  conversation topics (incl. help) and preferred-name profiles. Media metadata-only.
-- Backend: migrations through Slice 12 `supported_person_profiles` + full
-  `memora_has_capability` restatement (`viewSupportedPersonProfile` /
-  `editSupportedPersonProfile` primary-only edit); forced RLS unchanged. Slice 13
-  requires no migration or domain change.
-- Validation: Slice 13 readability/home/destination/spoken-greeting/
-  one-tap-Terminar tests + prior suites green: user **92**, web **46**, data
-  **58**, domain **418**, ui **55**. Full `./scripts/validate.sh`, secret scan,
-  package boundaries, Android local-demo launcher and RLS contracts pass;
-  independent audit `PASS_WITH_NOTES`. Physical Android review accepted the
-  fresh shared-demo build, synchronized fictional name, spoken greeting and
-  one-tap conversation finish.
+  Executable user composition uses `enableLiveOrientation: true` (device clock)
+  and wires durable `FilePastimeSessionRecoveryStore` (temp-dir JSON path) into
+  `UserPastimeController` by default; widget tests inject
+  `InMemoryPastimeSessionRecoveryStore` + fixed seed/clock. User `MaterialApp`
+  uses `debugShowCheckedModeBanner: false` and `MemoraTheme.supportedPerson()`.
+- Persistence: in-memory + snapshot restart + fake remote now cover pastimes
+  (incl. versioned experience), conversation topics (incl. help), preferred-name
+  profiles, and device-local pastime session recovery (not synced; file-backed
+  recovery is the executable default). Media metadata-only.
+- Backend: migrations through Slice 14 `pastime_experience` columns/constraints
+  on `pastimes` (CHECK-legal exact key sets; no subquery) + forced RLS
+  restatement; Slice 12 `supported_person_profiles` + full
+  `memora_has_capability` matrix unchanged in capability terms. Slice 13
+  required no migration.
+- Validation: Slice 14 DOMAIN Finding 1 (demo baseline) and UI Findings 2–4
+  repaired — word-search press-drag selection (stable preview slot; no mid-drag
+  grid reflow); Sudoku revealed solution stays visible with distinct
+  clue/revealed styling; Spider landscape lock via injectable orientation port
+  + local playing-card faces (`playing_cards` package not adopted). App-owned
+  web/user tests now expect the three native Demo cards (no obsolete
+  `Radio Demo` / `…0802` assertions). Full `./scripts/validate.sh` + fresh
+  auditor + physical Android re-review still pending before acceptance.
 - Data: fictional development data only (`Amparo Demo`, `Elena Demo`,
   `Familia Ejemplo`, `Casa Demo B`, reserved Slice-2–12 UUIDs); no auth credentials
   or production endpoints. Preferred names never enter diagnostic logs.
@@ -59,9 +70,10 @@
   caregiver/family web; routines, reminders, memories, weight/blood-pressure
   recording, local persistence and synchronization. No native caregiver app or
   meal tracking.
-- Next work: none authorized. Do not begin Slice 14 automatically. Family
-  Stories, calls/contacts, LLM, deployment and real-data connection remain out
-  of scope.
+- Next work: Slice 14 QA/audit + physical device re-review against the three
+  native demo cards (drag word-search, persistent Sudoku solution, landscape
+  Spider cards). Do not begin Slice 15. Family Stories, calls/contacts, LLM,
+  deployment and real-data connection remain out of scope.
 
 ## Human handoff — run fictional demo mode
 
@@ -99,9 +111,12 @@ Restarting the server terminal reloads this file; caregiver configuration is
 kept. Corrupt/incompatible snapshots fail startup with an actionable error
 (delete the file or reset — no silent fixture fallback).
 
-**Baseline:** when the authority has no Familia Ejemplo pastime rows, the
-server publishes the deterministic fictional pastime set once
-(`Radio Demo` active, `Puzzle Ejemplo` draft, `Fotos Ejemplo` archived).
+**Baseline:** the authority ensures the Slice 14 fictional pastime set
+(`Sudoku Demo` 4×4, `Sopa de letras Demo` 8×8, `Solitario Spider Demo`
+one-suit — all active). A restarted authority with the obsolete Slice 8 Demo
+IDs (`Radio Demo`, `Puzzle Ejemplo`, `Fotos Ejemplo`) tombstones exactly those
+rows and publishes the three native games; caregiver-created pastimes outside
+those reserved IDs are preserved. Empty authorities seed the three games once.
 When conversation-topic rows are missing, it also publishes
 (`El jardín Demo` active with cue-only help on prompt 0, `Cocina Ejemplo`
 draft, `Música Ejemplo` archived). When the preferred-name profile is missing,

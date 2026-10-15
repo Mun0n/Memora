@@ -167,6 +167,23 @@ final class InMemorySyncAuthority {
   bool isTombstoned(String aggregateId) =>
       _rows[aggregateId]?.tombstoned ?? false;
 
+  /// Inspection helper for baseline upgrades and tests.
+  RemoteRecord? recordFor(String aggregateId) {
+    final row = _rows[aggregateId];
+    if (row == null) {
+      return null;
+    }
+    return RemoteRecord(
+      aggregateType: row.aggregateType,
+      aggregateId: row.aggregateId,
+      familySpaceId: row.familySpaceId,
+      version: row.version,
+      payload: Map<String, Object?>.from(row.payload),
+      cursor: row.cursor,
+      tombstoned: row.tombstoned,
+    );
+  }
+
   PushResult push(SyncEnvelope envelope) {
     final key = envelope.operation.idempotencyKey.value;
     if (_appliedKeys.contains(key)) {

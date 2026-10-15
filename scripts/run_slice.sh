@@ -105,28 +105,23 @@ fi
 mkdir -p "$REPORT_DIR" "$TMP"
 
 context_for() {
-  local role="$1"
-  case "$role" in
-    SUPERVISOR) printf '%s\n' AGENTS.md .agent/workflow.md "$SPEC" docs/current/PROJECT_STATE.md ;;
-    DOMAIN) printf '%s\n' AGENTS.md agents/DOMAIN.md "$SPEC" docs/architecture/ARCHITECTURE_V0.1.md docs/current/PROJECT_STATE.md ;;
-    UI) printf '%s\n' AGENTS.md agents/UI.md "$SPEC" docs/product/FUNCTIONAL_SPEC_V0.1.md docs/current/PROJECT_STATE.md ;;
-    QA) printf '%s\n' AGENTS.md agents/QA.md "$SPEC" "$REPORT_REL/validation.log" ;;
-    AUDITOR) printf '%s\n' AGENTS.md agents/AUDITOR.md "$SPEC" "$REPORT_REL/validation.log" ;;
-  esac
+  python3 scripts/lib/orch.py context-files "$1" "$SPEC" "$REPORT_REL"
 }
 
 write_prompt() {
   local role="$1" extra="$2" dest="$TMP/${role}.prompt.md"
+  local initial_context
+  initial_context="$(context_for "$role")" || return 1
   {
     echo "You are the ${role} specialist for Memora Slice ${SLICE}. Follow agents/${role}.md exactly."
     echo "Read only this initial context, expanding with targeted searches only when evidence requires it:"
-    context_for "$role" | sed 's/^/- /'
+    printf '%s\n' "$initial_context" | sed 's/^/- /'
     echo
     echo "Global constraints: fictional data only; no credentials; no medical claims; no LLM; no push, deployment, history rewrite or next slice."
     echo "Active specification: ${SPEC}. Report directory: ${REPORT_REL}."
     echo "$extra"
   } > "$dest"
-  python3 scripts/lib/orch.py prompt-metrics "$dest"
+  python3 scripts/lib/orch.py prompt-metrics "$dest" "$role" "$SPEC" "$REPORT_REL"
 }
 
 show_progress() {
@@ -188,7 +183,7 @@ invoke() {
 echo "MEMORA SLICE $SLICE"
 echo "Spec: $SPEC"
 echo "Cursor CLI: $CLI"
-echo "Context policy: role-specific, fresh process, maximum 10 initial files"
+echo "Context policy: .agent/context_defaults.json; fresh process; soft file/character budgets"
 echo "Phases: SUPERVISOR → DOMAIN → UI → QA → REVALIDATE → AUDITOR"
 echo "Repair cap: $MAX_REPAIR"
 if [[ "$REVIEW_REPAIR" -eq 1 ]]; then

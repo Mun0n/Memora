@@ -2,6 +2,7 @@ import 'package:domain/domain.dart';
 
 import '../offline/in_memory_offline_store.dart';
 import 'conversation_topic_codec.dart';
+import 'pastime_codec.dart';
 import 'supported_person_profile_codec.dart';
 
 /// Bridges [InMemoryOfflineStore] aggregates to [SyncEngine] ports.
@@ -78,14 +79,7 @@ final class OfflineSyncBridge implements SyncPayloadLoader, SyncApplyHandler {
         return SyncEnvelope(
           operation: operation,
           familySpaceId: pastime.familySpaceId.value,
-          payload: <String, Object?>{
-            'title': pastime.title,
-            'instruction': pastime.instruction,
-            'displayOrder': pastime.displayOrder,
-            'lifecycle': pastime.lifecycleStatus.wireName,
-            'tombstoned': pastime.isDeleted,
-            'version': pastime.version.value,
-          },
+          payload: PastimeCodec.encodePayload(pastime),
         );
       case OutboxAggregateType.conversationTopic:
         final topic = _store.conversationTopicById(
@@ -290,24 +284,13 @@ final class OfflineSyncBridge implements SyncPayloadLoader, SyncApplyHandler {
           return SyncApplyOutcome.skipped;
         }
         _store.putPastime(
-          Pastime(
-            id: PastimeId(record.aggregateId),
-            familySpaceId: FamilySpaceId(record.familySpaceId),
-            title: record.payload['title']! as String,
-            instruction: record.payload['instruction']! as String,
-            displayOrder: record.payload['displayOrder'] as int? ?? 0,
-            lifecycleStatus: PastimeLifecycleStatus.parse(
-              record.payload['lifecycle'] as String? ?? 'draft',
-            ),
+          PastimeCodec.decodePastime(
+            aggregateId: record.aggregateId,
+            familySpaceId: record.familySpaceId,
+            payload: record.payload,
             version: record.version,
+            tombstoned: record.tombstoned,
             syncState: SyncState.synced,
-            tombstone: record.tombstoned
-                ? Tombstone(
-                    aggregateId: record.aggregateId,
-                    version: record.version,
-                    deletedAt: DateTime.now().toUtc(),
-                  )
-                : null,
           ),
         );
         return SyncApplyOutcome.applied;
@@ -548,35 +531,29 @@ final class OfflineSyncBridge implements SyncPayloadLoader, SyncApplyHandler {
                 ? conflict.localVersion.value
                 : conflict.remoteVersion.value,
           );
-    _store.putPastime(
-      Pastime(
-        id: PastimeId(conflict.aggregateId),
-        familySpaceId: conflict.familySpaceId,
-        title: payload['title']! as String,
-        instruction: payload['instruction']! as String,
-        displayOrder: payload['displayOrder'] as int? ?? 0,
-        lifecycleStatus: PastimeLifecycleStatus.parse(
-          payload['lifecycle'] as String? ?? 'draft',
-        ),
-        version: version,
-        syncState: SyncState.synced,
-      ),
+    final decoded = PastimeCodec.tryDecodePastime(
+      aggregateId: conflict.aggregateId,
+      familySpaceId: conflict.familySpaceId.value,
+      payload: payload,
+      version: version,
+      tombstoned: false,
+      syncState: SyncState.synced,
     );
+    if (decoded != null) {
+      _store.putPastime(decoded);
+    }
     if (conflict.resolution == SyncConflictResolution.keepBoth) {
-      _store.putPastime(
-        Pastime(
-          id: PastimeId(_forkUuid(conflict.aggregateId)),
-          familySpaceId: conflict.familySpaceId,
-          title: conflict.remotePayload['title']! as String,
-          instruction: conflict.remotePayload['instruction']! as String,
-          displayOrder: conflict.remotePayload['displayOrder'] as int? ?? 0,
-          lifecycleStatus: PastimeLifecycleStatus.parse(
-            conflict.remotePayload['lifecycle'] as String? ?? 'draft',
-          ),
-          version: conflict.remoteVersion,
-          syncState: SyncState.synced,
-        ),
+      final forked = PastimeCodec.tryDecodePastime(
+        aggregateId: _forkUuid(conflict.aggregateId),
+        familySpaceId: conflict.familySpaceId.value,
+        payload: conflict.remotePayload,
+        version: conflict.remoteVersion,
+        tombstoned: false,
+        syncState: SyncState.synced,
       );
+      if (forked != null) {
+        _store.putPastime(forked);
+      }
     }
   }
 

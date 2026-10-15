@@ -977,4 +977,133 @@ begin
   perform pg_temp.assert_true('contributor_sees_no_supported_person_profile', n = 0);
 end $$;
 
+-- Slice 14 — pastime experience defaults + allowlist constraints + deny paths
+do $$
+declare
+  exp_type text;
+  exp_ver integer;
+begin
+  set local role authenticated;
+  perform pg_temp.claim_as('01932f00-0002-7000-8000-000000000101');
+
+  select experience_type, experience_schema_version
+    into exp_type, exp_ver
+  from public.pastimes
+  where id = '01932f00-0008-7000-8000-000000000801';
+  perform pg_temp.assert_true('legacy_pastime_defaults_guided', exp_type = 'guided');
+  perform pg_temp.assert_true('legacy_pastime_schema_v1', exp_ver = 1);
+
+  update public.pastimes
+  set
+    experience_type = 'sudoku',
+    experience_schema_version = 1,
+    experience_config = jsonb_build_object(
+      'boardSize', '4x4',
+      'puzzlePackId', 'sudoku_starter_4x4_demo'
+    ),
+    row_version = row_version + 1
+  where id = '01932f00-0008-7000-8000-000000000802';
+  perform pg_temp.assert_true('caregiver_can_set_sudoku_experience', true);
+
+  update public.pastimes
+  set
+    experience_type = 'wordSearch',
+    experience_schema_version = 1,
+    experience_config = jsonb_build_object(
+      'boardSize', '8x8',
+      'wordSetId', 'wordset_jardin_demo'
+    ),
+    row_version = row_version + 1
+  where id = '01932f00-0008-7000-8000-000000000802';
+  perform pg_temp.assert_true('caregiver_can_set_wordsearch_experience', true);
+
+  update public.pastimes
+  set
+    experience_type = 'spiderSolitaire',
+    experience_schema_version = 1,
+    experience_config = jsonb_build_object('suitCount', 1),
+    row_version = row_version + 1
+  where id = '01932f00-0008-7000-8000-000000000802';
+  perform pg_temp.assert_true('caregiver_can_set_spider_experience', true);
+
+  begin
+    update public.pastimes
+    set
+      experience_type = 'sudoku',
+      experience_config = jsonb_build_object(
+        'boardSize', '4x4',
+        'puzzlePackId', 'remote_evil_pack'
+      )
+    where id = '01932f00-0008-7000-8000-000000000802';
+    perform pg_temp.assert_true('rejects_unknown_puzzle_pack', false);
+  exception
+    when check_violation then
+      perform pg_temp.assert_true('rejects_unknown_puzzle_pack', true);
+  end;
+
+  begin
+    update public.pastimes
+    set experience_type = 'arcadeShooter'
+    where id = '01932f00-0008-7000-8000-000000000802';
+    perform pg_temp.assert_true('rejects_unknown_experience_type', false);
+  exception
+    when check_violation then
+      perform pg_temp.assert_true('rejects_unknown_experience_type', true);
+  end;
+end $$;
+
+do $$
+declare
+  n integer;
+  exp_type text;
+begin
+  set local role authenticated;
+  perform pg_temp.claim_as('01932f00-0002-7000-8000-000000000103');
+  -- RLS filters UPDATE (0 rows); it does not raise for missing USING match.
+  update public.pastimes
+  set
+    experience_type = 'sudoku',
+    experience_config = jsonb_build_object(
+      'boardSize', '4x4',
+      'puzzlePackId', 'sudoku_starter_4x4_demo'
+    )
+  where id = '01932f00-0008-7000-8000-000000000801';
+  get diagnostics n = row_count;
+  perform pg_temp.assert_true('contributor_cannot_mutate_experience', n = 0);
+
+  reset role;
+  select experience_type into exp_type
+  from public.pastimes
+  where id = '01932f00-0008-7000-8000-000000000801';
+  perform pg_temp.assert_true(
+    'contributor_experience_unchanged',
+    exp_type = 'guided'
+  );
+end $$;
+
+do $$
+declare
+  n integer;
+  exp_type text;
+begin
+  set local role authenticated;
+  perform pg_temp.claim_as('01932f00-0002-7000-8000-000000000104');
+  update public.pastimes
+  set
+    experience_type = 'guided',
+    experience_config = '{}'::jsonb
+  where id = '01932f00-0008-7000-8000-000000000801';
+  get diagnostics n = row_count;
+  perform pg_temp.assert_true('supported_cannot_mutate_experience', n = 0);
+
+  reset role;
+  select experience_type into exp_type
+  from public.pastimes
+  where id = '01932f00-0008-7000-8000-000000000801';
+  perform pg_temp.assert_true(
+    'supported_experience_unchanged',
+    exp_type = 'guided'
+  );
+end $$;
+
 \echo PRODUCT_TABLES_RLS_CONTRACTS_PASS

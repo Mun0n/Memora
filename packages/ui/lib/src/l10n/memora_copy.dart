@@ -181,7 +181,7 @@ abstract final class MemoraCopy {
       'Aquí aparecerán las actividades que configure tu familia. '
       'De momento no hay ninguna preparada.';
   static const String pasatiemposBackToList = 'Volver a Pasatiempos';
-  static const String pasatiemposOpenHint = 'Ver indicación';
+  static const String pasatiemposOpenHint = 'Abrir';
   static const String pasatiemposLoading = 'Cargando pasatiempos…';
   static const String pasatiemposOffline =
       'Sin red. Los pasatiempos guardados siguen disponibles.';
@@ -192,6 +192,43 @@ abstract final class MemoraCopy {
       'Se muestran las actividades guardadas aquí.';
   static const String pasatiemposSharedPending =
       'Actualizando las actividades…';
+  static const String pasatiemposStart = 'Empezar';
+  static const String pasatiemposFinish = 'Terminar';
+  static const String pasatiemposRestart = 'Volver a empezar';
+  static const String pasatiemposRestartConfirm =
+      '¿Quieres volver a empezar esta actividad? '
+      'Se perderá el progreso actual.';
+  static const String pasatiemposExitConfirm =
+      '¿Quieres salir de esta actividad? Puedes volver más tarde.';
+  static const String pasatiemposExitConfirmYes = 'Salir';
+  static const String pasatiemposExitConfirmStay = 'Seguir';
+  static const String pasatiemposConfirmYes = 'Sí';
+  static const String pasatiemposConfirmNo = 'No';
+  static const String pasatiemposCompletedTitle =
+      'Has terminado. ¿Qué quieres hacer ahora?';
+  static const String pasatiemposPlayAgain = 'Jugar otra vez';
+  static const String pasatiemposContinue = 'Continuar';
+  static const String pasatiemposStartOver = 'Empezar de nuevo';
+  static const String pasatiemposRecoveryBody =
+      'Hay una actividad sin terminar en este dispositivo.';
+  static const String pasatiemposRecoveryDiscarded =
+      'No se pudo recuperar la actividad anterior. Puedes empezar de nuevo.';
+  static const String pasatiemposUnavailable =
+      'Esta actividad no se puede abrir ahora. Vuelve a Pasatiempos.';
+  static const String pasatiemposUndo = 'Deshacer';
+  static const String pasatiemposClear = 'Borrar';
+  static const String pasatiemposNotes = 'Notas';
+  static const String pasatiemposShowSolution = 'Mostrar la solución';
+  static const String pasatiemposShowSolutionConfirm =
+      'Si muestras la solución, esta partida terminará. ¿Continuar?';
+  static const String pasatiemposSolutionShown = 'Solución mostrada';
+  static const String pasatiemposSolutionContinue =
+      'Continuar después de la solución';
+  static const String pasatiemposShowHint = 'Mostrar un movimiento';
+  static const String pasatiemposDealStock = 'Repartir cartas';
+  static const String pasatiemposGoToColumn = 'Ir a columna';
+  static const String pasatiemposWordList = 'Palabras';
+  static const String pasatiemposCancelSelection = 'Cancelar selección';
 
   // Quiero hablar — family-guided conversation topics (never a telephone)
   static const String quieroHablarTitle = 'Quiero hablar';
@@ -312,10 +349,51 @@ abstract final class MemoraCopy {
       'Aún no hay pasatiempos. Crea uno para la persona apoyada.';
   static const String pastimesValidationError =
       'Título (1–60) e indicación (1–240) son obligatorios.';
+  static const String pastimesExperienceValidationError =
+      'Revisa el tipo de pasatiempo y sus opciones antes de guardar.';
   static const String pastimesUnauthorized =
       'Tu rol no puede configurar pasatiempos.';
   static const String pastimesActiveLimitError =
       'Ya hay seis pasatiempos activos. Archiva uno antes de activar otro.';
+  static const String pastimesActivateExperienceError =
+      'No se puede activar: la configuración del pasatiempo no está completa '
+      'o no es compatible.';
+  static const String pastimeTypeLabel = 'Tipo de pasatiempo';
+  static const String pastimeTypeGuided = 'Actividad guiada';
+  static const String pastimeTypeGuidedDesc =
+      'Título e indicación. La persona lee la actividad; no hay tablero en '
+      'Memora.';
+  static const String pastimeTypeSudoku = 'Sudoku';
+  static const String pastimeTypeSudokuDesc =
+      'Tablero numérico. El tamaño 9×9 tiene más reglas que el 4×4.';
+  static const String pastimeTypeWordSearch = 'Sopa de letras';
+  static const String pastimeTypeWordSearchDesc =
+      'Buscar palabras en un tablero. El tablero 10×10 es más amplio.';
+  static const String pastimeTypeSpider = 'Solitario Spider';
+  static const String pastimeTypeSpiderDesc =
+      'Solitario con columnas. Más palos implica más variedad de cartas.';
+  static const String pastimeTypeChangeConfirm =
+      'Al cambiar el tipo se reinician las opciones que ya no aplican. '
+      '¿Continuar?';
+  static const String pastimeSudokuSizeLabel = 'Tamaño del tablero';
+  static const String pastimeSudokuLevelLabel = 'Nivel inicial revisado';
+  static const String pastimeWordSearchSizeLabel = 'Tamaño del tablero';
+  static const String pastimeWordSearchThemeLabel = 'Tema de palabras';
+  static const String pastimeSpiderSuitsLabel = 'Número de palos';
+  static const String pastimePreviewLabel = 'Vista previa';
+  static const String pastimePreviewHint =
+      'Vista no interactiva del modelo elegido. No es la partida de la '
+      'persona apoyada.';
+  static const String pastimeQuarantinedLabel = 'Configuración no usable';
+  static const String pastimeSudokuSize4 = '4×4';
+  static const String pastimeSudokuSize6 = '6×6';
+  static const String pastimeSudokuSize9 = '9×9';
+  static const String pastimeWordSearchSize8 = '8×8';
+  static const String pastimeWordSearchSize10 = '10×10';
+  static const String pastimeSpiderSuits1 = '1 palo';
+  static const String pastimeSpiderSuits2 = '2 palos';
+  static const String pastimeSpiderSuits4 = '4 palos';
+  static const String pastimeSudokuLevelStarter = 'Nivel inicial Demo';
 
   // Family web — conversation topic configure
   static const String conversationsSectionTitle =

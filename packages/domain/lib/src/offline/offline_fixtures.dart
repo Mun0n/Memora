@@ -10,6 +10,7 @@ import '../conversations/conversation_topic.dart';
 import '../conversations/conversation_topic_lifecycle_status.dart';
 import '../identity/supported_person_profile.dart';
 import '../pastimes/pastime.dart';
+import '../pastimes/pastime_experience.dart';
 import '../pastimes/pastime_lifecycle_status.dart';
 import '../reminders/quiet_hours.dart';
 import '../reminders/reminder.dart';
@@ -68,6 +69,8 @@ abstract final class OfflineFixtures {
     '01932f00-0004-7000-8000-000000000402',
   );
 
+  /// Retired Slice 8 Demo pastime IDs. Slice 14 baseline upgrade tombstones
+  /// exactly these Familia Ejemplo rows and never any other pastime ID.
   static final PastimeId radioPastimeId = PastimeId(
     '01932f00-0008-7000-8000-000000000801',
   );
@@ -78,6 +81,25 @@ abstract final class OfflineFixtures {
 
   static final PastimeId archivedPhotosPastimeId = PastimeId(
     '01932f00-0008-7000-8000-000000000803',
+  );
+
+  static final List<PastimeId> obsoleteSlice8DemoPastimeIds = <PastimeId>[
+    radioPastimeId,
+    draftPuzzlePastimeId,
+    archivedPhotosPastimeId,
+  ];
+
+  /// Slice 14 reserved Demo native-game pastime IDs (distinct from Slice 8).
+  static final PastimeId sudokuDemoPastimeId = PastimeId(
+    '01932f00-0014-7000-8000-000000001401',
+  );
+
+  static final PastimeId wordSearchDemoPastimeId = PastimeId(
+    '01932f00-0014-7000-8000-000000001402',
+  );
+
+  static final PastimeId spiderSolitaireDemoPastimeId = PastimeId(
+    '01932f00-0014-7000-8000-000000001403',
   );
 
   static final ConversationTopicId gardenTalkTopicId = ConversationTopicId(
@@ -122,6 +144,17 @@ abstract final class OfflineFixtures {
   static final IdempotencyKey radioPastimeSaveKey = IdempotencyKey(
     'demo-pastime-save-01932f00-0008-7000-8000-000000000801',
   );
+
+  static final IdempotencyKey sudokuDemoPastimeSaveKey = IdempotencyKey(
+    'demo-pastime-save-01932f00-0014-7000-8000-000000001401',
+  );
+
+  static final IdempotencyKey wordSearchDemoPastimeSaveKey = IdempotencyKey(
+    'demo-pastime-save-01932f00-0014-7000-8000-000000001402',
+  );
+
+  static final IdempotencyKey spiderSolitaireDemoPastimeSaveKey =
+      IdempotencyKey('demo-pastime-save-01932f00-0014-7000-8000-000000001403');
 
   static final IdempotencyKey gardenTalkTopicSaveKey = IdempotencyKey(
     'demo-topic-save-01932f00-0010-7000-8000-000000001001',
@@ -263,7 +296,8 @@ abstract final class OfflineFixtures {
         syncState: SyncState.local,
       );
 
-  /// Active Demo pastime for supported-person Pasatiempos presentation.
+  /// Obsolete Slice 8 Demo pastime (guided). Kept only for upgrade/tombstone
+  /// proofs and lifecycle tests — not part of the Slice 14 demo baseline.
   static final Pastime radioPastime = Pastime(
     id: radioPastimeId,
     familySpaceId: IdentityFixtures.familiaEjemploSpaceId,
@@ -273,21 +307,26 @@ abstract final class OfflineFixtures {
     lifecycleStatus: PastimeLifecycleStatus.active,
     version: AggregateVersion.initial,
     syncState: SyncState.local,
+    experience: const GuidedPastimeExperience(),
   );
 
-  /// Draft Demo pastime — never shown to the supported person.
+  /// Obsolete Slice 8 Demo draft — retired by baseline upgrade.
   static final Pastime draftPuzzlePastime = Pastime(
     id: draftPuzzlePastimeId,
     familySpaceId: IdentityFixtures.familiaEjemploSpaceId,
     title: 'Puzzle Ejemplo',
-    instruction: 'Hacer un puzzle sencillo en la mesa Demo.',
+    instruction: 'Hacer un sudoku sencillo en la mesa Demo.',
     displayOrder: 1,
     lifecycleStatus: PastimeLifecycleStatus.draft,
     version: AggregateVersion.initial,
     syncState: SyncState.local,
+    experience: SudokuPastimeExperience(
+      boardSize: SudokuBoardSize.fourByFour,
+      puzzlePackId: SudokuPuzzlePackCatalog.starter4,
+    ),
   );
 
-  /// Archived Demo pastime — excluded from supported-person view.
+  /// Obsolete Slice 8 Demo archived pastime — retired by baseline upgrade.
   static final Pastime archivedPhotosPastime = Pastime(
     id: archivedPhotosPastimeId,
     familySpaceId: IdentityFixtures.familiaEjemploSpaceId,
@@ -297,7 +336,69 @@ abstract final class OfflineFixtures {
     lifecycleStatus: PastimeLifecycleStatus.archived,
     version: AggregateVersion.initial,
     syncState: SyncState.local,
+    experience: const GuidedPastimeExperience(),
   );
+
+  /// Active Slice 14 Demo Sudoku (4×4 starter pack).
+  static final Pastime sudokuDemoPastime = Pastime(
+    id: sudokuDemoPastimeId,
+    familySpaceId: IdentityFixtures.familiaEjemploSpaceId,
+    title: 'Sudoku Demo',
+    instruction: 'Completa el sudoku Demo con calma.',
+    displayOrder: 0,
+    lifecycleStatus: PastimeLifecycleStatus.active,
+    version: AggregateVersion.initial,
+    syncState: SyncState.local,
+    experience: SudokuPastimeExperience(
+      boardSize: SudokuBoardSize.fourByFour,
+      puzzlePackId: SudokuPuzzlePackCatalog.starter4,
+    ),
+  );
+
+  /// Active Slice 14 Demo word search (8×8 Jardín Demo set).
+  static final Pastime wordSearchDemoPastime = Pastime(
+    id: wordSearchDemoPastimeId,
+    familySpaceId: IdentityFixtures.familiaEjemploSpaceId,
+    title: 'Sopa de letras Demo',
+    instruction: 'Encuentra las palabras Demo en la sopa de letras.',
+    displayOrder: 1,
+    lifecycleStatus: PastimeLifecycleStatus.active,
+    version: AggregateVersion.initial,
+    syncState: SyncState.local,
+    experience: WordSearchPastimeExperience(
+      boardSize: WordSearchBoardSize.eightByEight,
+      wordSetId: WordSearchWordSetCatalog.jardinDemo,
+    ),
+  );
+
+  /// Active Slice 14 Demo Spider Solitaire (one-suit).
+  static final Pastime spiderSolitaireDemoPastime = Pastime(
+    id: spiderSolitaireDemoPastimeId,
+    familySpaceId: IdentityFixtures.familiaEjemploSpaceId,
+    title: 'Solitario Spider Demo',
+    instruction: 'Ordena las cartas del solitario Spider Demo.',
+    displayOrder: 2,
+    lifecycleStatus: PastimeLifecycleStatus.active,
+    version: AggregateVersion.initial,
+    syncState: SyncState.local,
+    experience: SpiderSolitairePastimeExperience(
+      suitCount: SpiderSuitCount.one,
+    ),
+  );
+
+  /// Ordered Slice 14 shared-demo pastime baseline (all active, playable).
+  static final List<Pastime> slice14NativeDemoPastimes = <Pastime>[
+    sudokuDemoPastime,
+    wordSearchDemoPastime,
+    spiderSolitaireDemoPastime,
+  ];
+
+  /// Obsolete Slice 8 baseline rows used only to seed pre-upgrade snapshots.
+  static final List<Pastime> obsoleteSlice8DemoPastimes = <Pastime>[
+    radioPastime,
+    draftPuzzlePastime,
+    archivedPhotosPastime,
+  ];
 
   /// Active Demo conversation topic for supported-person Quiero hablar.
   ///

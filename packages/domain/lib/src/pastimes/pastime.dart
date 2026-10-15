@@ -3,11 +3,13 @@ import '../offline/offline_identifiers.dart';
 import '../sync/aggregate_version.dart';
 import '../sync/sync_state.dart';
 import '../sync/tombstone.dart';
+import 'pastime_experience.dart';
 import 'pastime_lifecycle_status.dart';
 
 /// Family-scoped pastime card with title, instruction and display order.
 ///
 /// Local-first aggregate. No completion or performance claim is modeled.
+/// [experience] defaults to guided for Slice 8 compatibility.
 final class Pastime {
   static const int maxTitleLength = 60;
   static const int maxInstructionLength = 240;
@@ -22,6 +24,7 @@ final class Pastime {
     required this.lifecycleStatus,
     required this.version,
     required this.syncState,
+    this.experience = PastimeExperience.guidedDefault,
     this.tombstone,
   }) {
     final trimmedTitle = title.trim();
@@ -54,13 +57,25 @@ final class Pastime {
   final PastimeLifecycleStatus lifecycleStatus;
   final AggregateVersion version;
   final SyncState syncState;
+  final PastimeExperience experience;
   final Tombstone? tombstone;
 
   bool get isDeleted => tombstone != null;
 
-  /// Eligible for supported-person presentation (active, non-tombstoned).
-  bool get isActiveForViewing =>
+  /// Lifecycle-active and not tombstoned (counts toward the six-active limit).
+  bool get isLifecycleActive =>
       !isDeleted && lifecycleStatus == PastimeLifecycleStatus.active;
+
+  /// Eligible for supported-person presentation (active, valid, non-tombstoned).
+  ///
+  /// Quarantined / incomplete experiences are excluded from the playable list
+  /// while remaining visible to authorized caregivers via [listForFamily].
+  bool get isActiveForViewing =>
+      isLifecycleActive && experience.isCompleteAndSupported;
+
+  /// Caregiver signal when an otherwise-active row cannot be opened safely.
+  bool get isQuarantinedFromPlay =>
+      isLifecycleActive && !experience.isCompleteAndSupported;
 
   Pastime copyWith({
     String? title,
@@ -69,6 +84,7 @@ final class Pastime {
     PastimeLifecycleStatus? lifecycleStatus,
     AggregateVersion? version,
     SyncState? syncState,
+    PastimeExperience? experience,
     Tombstone? tombstone,
     bool clearTombstone = false,
   }) {
@@ -81,6 +97,7 @@ final class Pastime {
       lifecycleStatus: lifecycleStatus ?? this.lifecycleStatus,
       version: version ?? this.version,
       syncState: syncState ?? this.syncState,
+      experience: experience ?? this.experience,
       tombstone: clearTombstone ? null : (tombstone ?? this.tombstone),
     );
   }

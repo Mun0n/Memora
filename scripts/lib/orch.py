@@ -25,6 +25,43 @@ def allowed(role: str, changed: list[str]) -> list[str]:
             bad.append(f"OUTSIDE_{role}:{name}")
     return bad
 
+def context_files(role: str, spec: str, report: str) -> list[Path]:
+    config = json.loads((ROOT / ".agent/context_defaults.json").read_text())
+    aliases = {"spec": spec, "validation_log": f"{report}/validation.log",
+               "changed_files": f"{report}/changed_files.log", "diff": f"{report}/diff.patch"}
+    names = dict.fromkeys(aliases.get(name, name) for name in config["role_context"][role])
+    files = []
+    for name in names:
+        path = ROOT / name
+        if not path.resolve().is_relative_to(ROOT.resolve()):
+            raise ValueError(f"context path escapes repository: {name}")
+        files.append(path)
+    return files
+
+
+def prompt_metrics(prompt: Path, role: str, spec: str, report: str) -> dict:
+    config = json.loads((ROOT / ".agent/context_defaults.json").read_text())
+    files = context_files(role, spec, report)
+    # Reports can be absent in preview; static contracts must always exist.
+    missing = [str(p.relative_to(ROOT)) for p in files if not p.is_file()]
+    for name in missing:
+        if not name.startswith(report.rstrip("/") + "/"):
+            raise FileNotFoundError(f"missing initial context: {name}")
+    contents = [p.read_text() for p in files if p.is_file()]
+    prompt_text = prompt.read_text()
+    chars = len(prompt_text) + sum(map(len, contents))
+    budget = config["context_budget"]
+    warnings = []
+    if len(files) > budget["max_initial_files"]:
+        warnings.append("initial file count exceeds soft budget")
+    if chars >= budget["warn_prompt_chars"]:
+        warnings.append("initial context characters reach soft budget")
+    return {"file": str(prompt), "role": role, "initial_files": len(files),
+            "prompt_chars": len(prompt_text), "context_chars": sum(map(len, contents)),
+            "chars": chars, "bytes": len(prompt_text.encode()) + sum(len(c.encode()) for c in contents),
+            "missing_reports": missing, "warnings": warnings}
+
+
 def main(args: list[str]) -> int:
     op = args[1]
     if op == "snapshot":
@@ -34,8 +71,14 @@ def main(args: list[str]) -> int:
         changed = sorted(n for n in set(before) | set(after) if before.get(n) != after.get(n))
         violations = allowed(args[2], changed)
         print("\n".join(violations)); return 1 if violations else 0
+    if op == "context-files":
+        print("\n".join(str(p.relative_to(ROOT)) for p in context_files(*args[2:5]))); return 0
     if op == "prompt-metrics":
-        path = Path(args[2]); print(json.dumps({"file": str(path), "chars": len(path.read_text()), "bytes": path.stat().st_size})); return 0
+        metrics = prompt_metrics(Path(args[2]), *args[3:6])
+        print(json.dumps(metrics))
+        for warning in metrics["warnings"]:
+            print(f"WARNING: {warning}", file=sys.stderr)
+        return 0
     raise SystemExit(f"unknown operation: {op}")
 
 if __name__ == "__main__": raise SystemExit(main(sys.argv))

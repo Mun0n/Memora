@@ -5,6 +5,7 @@ import '../l10n/memora_copy.dart';
 import '../theme/memora_theme.dart';
 import '../widgets/draft_text_field.dart';
 import 'family_pastime_controller.dart';
+import 'family_pastime_preview.dart';
 
 /// Caregiver/family web: create/edit/order/activate/archive pastimes.
 class FamilyPastimeConfigureContent extends StatelessWidget {
@@ -120,7 +121,9 @@ class _PastimeCard extends StatelessWidget {
       PastimeLifecycleStatus.active => MemoraCopy.pastimeLifecycleActive,
       PastimeLifecycleStatus.archived => MemoraCopy.pastimeLifecycleArchived,
     };
+    final typeLabel = _typeLabel(pastime.experience);
     final isActive = pastime.lifecycleStatus == PastimeLifecycleStatus.active;
+    final quarantined = pastime.experience is QuarantinedPastimeExperience;
     return DecoratedBox(
       decoration: BoxDecoration(
         border: Border.all(color: MemoraTheme.borderInk, width: 2),
@@ -139,11 +142,31 @@ class _PastimeCard extends StatelessWidget {
                 fontSize: 20,
               ),
             ),
+            const SizedBox(height: 4),
+            Text(
+              typeLabel,
+              key: Key('memora-family-pastime-type-${pastime.id.value}'),
+              style: textTheme.bodyMedium?.copyWith(fontSize: 15),
+            ),
             const SizedBox(height: 6),
             Text(
               pastime.instruction,
               style: textTheme.bodyLarge?.copyWith(fontSize: 17),
             ),
+            if (quarantined) ...[
+              const SizedBox(height: 8),
+              Text(
+                (pastime.experience as QuarantinedPastimeExperience)
+                    .plainLanguageReason,
+                key: Key(
+                  'memora-family-pastime-quarantine-${pastime.id.value}',
+                ),
+                style: textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.error,
+                  fontSize: 15,
+                ),
+              ),
+            ],
             if (controller.canEdit) ...[
               const SizedBox(height: 12),
               Wrap(
@@ -189,6 +212,16 @@ class _PastimeCard extends StatelessWidget {
       ),
     );
   }
+
+  static String _typeLabel(PastimeExperience experience) {
+    return switch (experience) {
+      GuidedPastimeExperience() => MemoraCopy.pastimeTypeGuided,
+      SudokuPastimeExperience() => MemoraCopy.pastimeTypeSudoku,
+      WordSearchPastimeExperience() => MemoraCopy.pastimeTypeWordSearch,
+      SpiderSolitairePastimeExperience() => MemoraCopy.pastimeTypeSpider,
+      QuarantinedPastimeExperience() => MemoraCopy.pastimeQuarantinedLabel,
+    };
+  }
 }
 
 class _PastimeEditor extends StatelessWidget {
@@ -201,6 +234,7 @@ class _PastimeEditor extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final isEdit = controller.editingPastimeId != null;
     final revision = controller.editorRevision;
+    final type = controller.draftExperienceType;
     return DecoratedBox(
       key: const Key('memora-family-pastime-editor'),
       decoration: BoxDecoration(
@@ -218,6 +252,10 @@ class _PastimeEditor extends StatelessWidget {
                 fontWeight: FontWeight.w700,
               ),
             ),
+            if (controller.pendingTypeChange != null) ...[
+              const SizedBox(height: 12),
+              _TypeChangeConfirm(controller: controller),
+            ],
             const SizedBox(height: 12),
             DraftTextField(
               key: const Key('memora-family-pastime-title'),
@@ -234,11 +272,281 @@ class _PastimeEditor extends StatelessWidget {
               labelText: MemoraCopy.pastimeInstructionLabel,
               onChanged: controller.setDraftInstruction,
             ),
+            const SizedBox(height: 16),
+            Text(
+              MemoraCopy.pastimeTypeLabel,
+              style: textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _TypeOption(
+              keyName: 'guided',
+              label: MemoraCopy.pastimeTypeGuided,
+              description: MemoraCopy.pastimeTypeGuidedDesc,
+              selected: type == GuidedPastimeExperience.wireType,
+              onTap: () => controller.requestExperienceType(
+                GuidedPastimeExperience.wireType,
+              ),
+            ),
+            _TypeOption(
+              keyName: 'sudoku',
+              label: MemoraCopy.pastimeTypeSudoku,
+              description: MemoraCopy.pastimeTypeSudokuDesc,
+              selected: type == SudokuPastimeExperience.wireType,
+              onTap: () => controller.requestExperienceType(
+                SudokuPastimeExperience.wireType,
+              ),
+            ),
+            _TypeOption(
+              keyName: 'wordSearch',
+              label: MemoraCopy.pastimeTypeWordSearch,
+              description: MemoraCopy.pastimeTypeWordSearchDesc,
+              selected: type == WordSearchPastimeExperience.wireType,
+              onTap: () => controller.requestExperienceType(
+                WordSearchPastimeExperience.wireType,
+              ),
+            ),
+            _TypeOption(
+              keyName: 'spiderSolitaire',
+              label: MemoraCopy.pastimeTypeSpider,
+              description: MemoraCopy.pastimeTypeSpiderDesc,
+              selected: type == SpiderSolitairePastimeExperience.wireType,
+              onTap: () => controller.requestExperienceType(
+                SpiderSolitairePastimeExperience.wireType,
+              ),
+            ),
+            if (type == SudokuPastimeExperience.wireType) ...[
+              const SizedBox(height: 12),
+              Text(
+                MemoraCopy.pastimeSudokuSizeLabel,
+                style: textTheme.bodyLarge,
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final size in SudokuBoardSize.values)
+                    ChoiceChip(
+                      key: Key('memora-family-sudoku-size-${size.wireName}'),
+                      label: Text(_sudokuSizeLabel(size)),
+                      selected: controller.draftSudokuSize == size,
+                      onSelected: (_) => controller.setDraftSudokuSize(size),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${MemoraCopy.pastimeSudokuLevelLabel}: '
+                '${MemoraCopy.pastimeSudokuLevelStarter}',
+                key: const Key('memora-family-sudoku-level'),
+                style: textTheme.bodyMedium,
+              ),
+            ],
+            if (type == WordSearchPastimeExperience.wireType) ...[
+              const SizedBox(height: 12),
+              Text(
+                MemoraCopy.pastimeWordSearchSizeLabel,
+                style: textTheme.bodyLarge,
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final size in WordSearchBoardSize.values)
+                    ChoiceChip(
+                      key: Key(
+                        'memora-family-wordsearch-size-${size.wireName}',
+                      ),
+                      label: Text(_wordSearchSizeLabel(size)),
+                      selected: controller.draftWordSearchSize == size,
+                      onSelected: (_) =>
+                          controller.setDraftWordSearchSize(size),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                MemoraCopy.pastimeWordSearchThemeLabel,
+                style: textTheme.bodyLarge,
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final set in WordSearchWordSets.all)
+                    ChoiceChip(
+                      key: Key('memora-family-wordsearch-theme-${set.id}'),
+                      label: Text(set.themeLabelEs),
+                      selected: controller.draftWordSetId == set.id,
+                      onSelected: (_) => controller.setDraftWordSetId(set.id),
+                    ),
+                ],
+              ),
+            ],
+            if (type == SpiderSolitairePastimeExperience.wireType) ...[
+              const SizedBox(height: 12),
+              Text(
+                MemoraCopy.pastimeSpiderSuitsLabel,
+                style: textTheme.bodyLarge,
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final suits in SpiderSuitCount.values)
+                    ChoiceChip(
+                      key: Key('memora-family-spider-suits-${suits.value}'),
+                      label: Text(_spiderSuitsLabel(suits)),
+                      selected: controller.draftSpiderSuits == suits,
+                      onSelected: (_) => controller.setDraftSpiderSuits(suits),
+                    ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 16),
+            FamilyPastimePreview(experience: controller.draftExperience),
             const SizedBox(height: 12),
             FilledButton(
               key: const Key('memora-family-save-pastime'),
               onPressed: () => controller.saveDraft(),
               child: const Text(MemoraCopy.savePastime),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static String _sudokuSizeLabel(SudokuBoardSize size) => switch (size) {
+    SudokuBoardSize.fourByFour => MemoraCopy.pastimeSudokuSize4,
+    SudokuBoardSize.sixBySix => MemoraCopy.pastimeSudokuSize6,
+    SudokuBoardSize.nineByNine => MemoraCopy.pastimeSudokuSize9,
+  };
+
+  static String _wordSearchSizeLabel(WordSearchBoardSize size) =>
+      switch (size) {
+        WordSearchBoardSize.eightByEight => MemoraCopy.pastimeWordSearchSize8,
+        WordSearchBoardSize.tenByTen => MemoraCopy.pastimeWordSearchSize10,
+      };
+
+  static String _spiderSuitsLabel(SpiderSuitCount suits) => switch (suits) {
+    SpiderSuitCount.one => MemoraCopy.pastimeSpiderSuits1,
+    SpiderSuitCount.two => MemoraCopy.pastimeSpiderSuits2,
+    SpiderSuitCount.four => MemoraCopy.pastimeSpiderSuits4,
+  };
+}
+
+class _TypeOption extends StatelessWidget {
+  const _TypeOption({
+    required this.keyName,
+    required this.label,
+    required this.description,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String keyName;
+  final String label;
+  final String description;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: selected ? const Color(0xFFE8F0EC) : Colors.white,
+        child: InkWell(
+          key: Key('memora-family-pastime-type-$keyName'),
+          onTap: onTap,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: selected
+                    ? MemoraTheme.accentBand
+                    : MemoraTheme.borderInk,
+                width: selected ? 2.5 : 1.5,
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    selected
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_off,
+                    semanticLabel: selected
+                        ? 'Seleccionado'
+                        : 'No seleccionado',
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          label,
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(description),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TypeChangeConfirm extends StatelessWidget {
+  const _TypeChangeConfirm({required this.controller});
+
+  final FamilyPastimeController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      key: const Key('memora-family-pastime-type-change-dialog'),
+      decoration: BoxDecoration(
+        border: Border.all(color: MemoraTheme.borderInk, width: 2),
+        color: const Color(0xFFFFF8E7),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(MemoraCopy.pastimeTypeChangeConfirm),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                OutlinedButton(
+                  key: const Key('memora-family-pastime-type-change-cancel'),
+                  onPressed: controller.cancelPendingTypeChange,
+                  child: const Text(MemoraCopy.pasatiemposConfirmNo),
+                ),
+                FilledButton(
+                  key: const Key('memora-family-pastime-type-change-confirm'),
+                  onPressed: controller.confirmPendingTypeChange,
+                  child: const Text(MemoraCopy.pasatiemposConfirmYes),
+                ),
+              ],
             ),
           ],
         ),

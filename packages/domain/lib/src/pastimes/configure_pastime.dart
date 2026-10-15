@@ -8,11 +8,14 @@ import '../sync/idempotency_key.dart';
 import '../sync/sync_state.dart';
 import 'pastime.dart';
 import 'pastime_care_policy.dart';
+import 'pastime_experience.dart';
 import 'pastime_lifecycle_status.dart';
 
 /// Caregiver configure use cases for pastimes (create/edit/order/lifecycle).
 ///
 /// Invalid field values throw before save so UI-held draft fields are preserved.
+/// Experience type changes require [confirmExperienceTypeChange] when the type
+/// wire name differs; UI owns the confirmation dialog.
 final class ConfigurePastime {
   ConfigurePastime(this._pastimes);
 
@@ -26,10 +29,13 @@ final class ConfigurePastime {
     required String instruction,
     required IdempotencyKey idempotencyKey,
     PastimeLifecycleStatus lifecycleStatus = PastimeLifecycleStatus.draft,
+    PastimeExperience experience = PastimeExperience.guidedDefault,
     int? displayOrder,
   }) async {
     _assertCanEdit(actor, familySpaceId);
+    _assertExperienceWritable(experience);
     if (lifecycleStatus == PastimeLifecycleStatus.active) {
+      _assertActivatable(experience);
       await _assertActiveLimit(familySpaceId, excluding: null);
     }
     final order = displayOrder ?? await _nextDisplayOrder(familySpaceId);
@@ -42,6 +48,7 @@ final class ConfigurePastime {
       lifecycleStatus: lifecycleStatus,
       version: AggregateVersion.initial,
       syncState: SyncState.local,
+      experience: experience,
     );
     return _pastimes.save(pastime: pastime, idempotencyKey: idempotencyKey);
   }
@@ -52,15 +59,29 @@ final class ConfigurePastime {
     required IdempotencyKey idempotencyKey,
     String? title,
     String? instruction,
+    PastimeExperience? experience,
+    bool confirmExperienceTypeChange = false,
   }) async {
     final current = await _requirePastime(id);
     _assertCanEdit(actor, current.familySpaceId);
     if (current.isDeleted) {
       throw StateError('cannot edit deleted pastime: ${id.value}');
     }
+    var nextExperience = current.experience;
+    if (experience != null) {
+      _assertExperienceWritable(experience);
+      if (experience.typeWireName != current.experience.typeWireName &&
+          !confirmExperienceTypeChange) {
+        throw StateError(
+          'changing pastime experience type requires confirmExperienceTypeChange',
+        );
+      }
+      nextExperience = experience;
+    }
     final updated = current.copyWith(
       title: title,
       instruction: instruction,
+      experience: nextExperience,
       version: current.version.next(),
       syncState: SyncState.pending,
     );
@@ -117,6 +138,7 @@ final class ConfigurePastime {
     if (current.isDeleted) {
       throw StateError('cannot activate deleted pastime: ${id.value}');
     }
+    _assertActivatable(current.experience);
     if (current.lifecycleStatus != PastimeLifecycleStatus.active) {
       await _assertActiveLimit(current.familySpaceId, excluding: current.id);
     }
@@ -147,6 +169,8 @@ final class ConfigurePastime {
   }
 
   /// Active cached items for supported-person presentation, caregiver order.
+  ///
+  /// Quarantined / incomplete experiences are excluded.
   Future<List<Pastime>> listActiveForViewing({
     required FamilyMembership actor,
     required FamilySpaceId familySpaceId,
@@ -177,13 +201,37 @@ final class ConfigurePastime {
     }
   }
 
+  void _assertExperienceWritable(PastimeExperience experience) {
+    if (experience is QuarantinedPastimeExperience) {
+      throw ArgumentError.value(
+        experience.typeWireName,
+        'experience',
+        'quarantined experiences cannot be saved',
+      );
+    }
+    if (!experience.isCompleteAndSupported) {
+      throw ArgumentError.value(
+        experience.typeWireName,
+        'experience',
+        'experience configuration is incomplete or unsupported',
+      );
+    }
+  }
+
+  void _assertActivatable(PastimeExperience experience) {
+    _assertExperienceWritable(experience);
+  }
+
   Future<void> _assertActiveLimit(
     FamilySpaceId familySpaceId, {
     required PastimeId? excluding,
   }) async {
-    final active = await _pastimes.listActiveForFamily(familySpaceId);
-    final count = active
-        .where((p) => excluding == null || p.id != excluding)
+    final listed = await _pastimes.listForFamily(familySpaceId);
+    final count = listed
+        .where(
+          (p) =>
+              p.isLifecycleActive && (excluding == null || p.id != excluding),
+        )
         .length;
     if (count >= Pastime.maxActivePerFamily) {
       throw StateError(

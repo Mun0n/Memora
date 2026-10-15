@@ -85,15 +85,25 @@ void main() {
   ) async {
     final composition = await pumpPastimes(tester);
 
-    expect(find.textContaining('Radio Demo'), findsWidgets);
-    expect(find.textContaining('Puzzle Ejemplo'), findsWidgets);
-    expect(find.textContaining('Fotos Ejemplo'), findsWidgets);
+    expect(find.textContaining('Sudoku Demo'), findsWidgets);
+    expect(find.textContaining('Sopa de letras Demo'), findsWidgets);
+    expect(find.textContaining('Solitario Spider Demo'), findsWidgets);
+    expect(find.text(MemoraCopy.pastimeTypeSudoku), findsWidgets);
+    expect(find.text(MemoraCopy.pastimeTypeWordSearch), findsWidgets);
+    expect(find.text(MemoraCopy.pastimeTypeSpider), findsWidgets);
+    expect(find.textContaining('(Activo)'), findsWidgets);
+    expect(find.textContaining('Radio Demo'), findsNothing);
+    expect(find.textContaining('Puzzle Ejemplo'), findsNothing);
+    expect(find.textContaining('Fotos Ejemplo'), findsNothing);
 
-    final radioDown = find.byKey(
-      Key('memora-family-pastime-down-${OfflineFixtures.radioPastimeId.value}'),
+    final sudokuDown = find.byKey(
+      Key(
+        'memora-family-pastime-down-'
+        '${OfflineFixtures.sudokuDemoPastimeId.value}',
+      ),
     );
-    await tester.ensureVisible(radioDown);
-    await tester.tap(radioDown);
+    await tester.ensureVisible(sudokuDown);
+    await tester.tap(sudokuDown);
     await tester.pumpAndSettle();
 
     final listed = await composition.pastimes.listForFamily(
@@ -101,32 +111,41 @@ void main() {
     );
     final live = listed.where((p) => !p.isDeleted).toList()
       ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
-    expect(live.first.id, OfflineFixtures.draftPuzzlePastimeId);
+    expect(live.first.id, OfflineFixtures.wordSearchDemoPastimeId);
 
-    final activatePuzzle = find.byKey(
-      Key(
-        'memora-family-activate-pastime-'
-        '${OfflineFixtures.draftPuzzlePastimeId.value}',
-      ),
-    );
-    await tester.ensureVisible(activatePuzzle);
-    await tester.tap(activatePuzzle);
-    await tester.pumpAndSettle();
-
-    final archiveRadio = find.byKey(
+    final archiveSpider = find.byKey(
       Key(
         'memora-family-archive-pastime-'
-        '${OfflineFixtures.radioPastimeId.value}',
+        '${OfflineFixtures.spiderSolitaireDemoPastimeId.value}',
       ),
     );
-    await tester.ensureVisible(archiveRadio);
-    await tester.tap(archiveRadio);
+    await tester.ensureVisible(archiveSpider);
+    await tester.tap(archiveSpider);
     await tester.pumpAndSettle();
     expect(
       find.byKey(
         Key(
           'memora-family-activate-pastime-'
-          '${OfflineFixtures.radioPastimeId.value}',
+          '${OfflineFixtures.spiderSolitaireDemoPastimeId.value}',
+        ),
+      ),
+      findsOneWidget,
+    );
+
+    final activateSpider = find.byKey(
+      Key(
+        'memora-family-activate-pastime-'
+        '${OfflineFixtures.spiderSolitaireDemoPastimeId.value}',
+      ),
+    );
+    await tester.ensureVisible(activateSpider);
+    await tester.tap(activateSpider);
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(
+        Key(
+          'memora-family-archive-pastime-'
+          '${OfflineFixtures.spiderSolitaireDemoPastimeId.value}',
         ),
       ),
       findsOneWidget,
@@ -203,17 +222,28 @@ void main() {
 
     expect(find.byKey(const Key('memora-shared-local-demo')), findsNothing);
     expect(find.text(MemoraCopy.sharedLocalDemoNotice), findsNothing);
-    expect(find.textContaining('Radio Demo'), findsWidgets);
-    expect(find.textContaining('Puzzle Ejemplo'), findsWidgets);
+    expect(find.textContaining('Sudoku Demo'), findsWidgets);
+    expect(find.textContaining('Sopa de letras Demo'), findsWidgets);
+    expect(find.textContaining('Solitario Spider Demo'), findsWidgets);
 
-    final activatePuzzle = find.byKey(
+    final archiveSpider = find.byKey(
       Key(
-        'memora-family-activate-pastime-'
-        '${OfflineFixtures.draftPuzzlePastimeId.value}',
+        'memora-family-archive-pastime-'
+        '${OfflineFixtures.spiderSolitaireDemoPastimeId.value}',
       ),
     );
-    await tester.ensureVisible(activatePuzzle);
-    await tester.tap(activatePuzzle);
+    await tester.ensureVisible(archiveSpider);
+    await tester.tap(archiveSpider);
+    await tester.pumpAndSettle();
+
+    final activateSpider = find.byKey(
+      Key(
+        'memora-family-activate-pastime-'
+        '${OfflineFixtures.spiderSolitaireDemoPastimeId.value}',
+      ),
+    );
+    await tester.ensureVisible(activateSpider);
+    await tester.tap(activateSpider);
     await tester.pumpAndSettle();
 
     final records = await remote.pull(
@@ -222,7 +252,8 @@ void main() {
     expect(
       records.any(
         (record) =>
-            record.aggregateId == OfflineFixtures.draftPuzzlePastimeId.value &&
+            record.aggregateId ==
+                OfflineFixtures.spiderSolitaireDemoPastimeId.value &&
             record.payload['lifecycle'] == 'active',
       ),
       isTrue,
@@ -259,8 +290,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Radio Demo'), findsWidgets);
-      expect(find.textContaining('Puzzle Ejemplo'), findsWidgets);
+      expect(find.textContaining('Sudoku Demo'), findsWidgets);
+      expect(find.textContaining('Sopa de letras Demo'), findsWidgets);
+      expect(find.textContaining('Solitario Spider Demo'), findsWidgets);
+      expect(find.textContaining('Radio Demo'), findsNothing);
       expect(find.byKey(const Key('memora-isolated-local-demo')), findsNothing);
     },
   );
@@ -303,10 +336,10 @@ void main() {
     await peerEngine.pull(
       familySpaceId: IdentityFixtures.familiaEjemploSpaceId,
     );
-    await ConfigurePastime(peerPastimes).activate(
+    await ConfigurePastime(peerPastimes).archive(
       actor: IdentityFixtures.elenaPrimaryMembership,
-      id: OfflineFixtures.draftPuzzlePastimeId,
-      idempotencyKey: IdempotencyKey('web-section-activate-puzzle'),
+      id: OfflineFixtures.spiderSolitaireDemoPastimeId,
+      idempotencyKey: IdempotencyKey('web-section-archive-spider'),
     );
     final push = await peerEngine.pushPending();
     expect(push.failed, 0);
@@ -318,12 +351,21 @@ void main() {
       find.byKey(
         Key(
           'memora-family-pastime-'
-          '${OfflineFixtures.draftPuzzlePastimeId.value}',
+          '${OfflineFixtures.spiderSolitaireDemoPastimeId.value}',
         ),
       ),
       findsOneWidget,
     );
-    expect(find.textContaining('(Activo)'), findsWidgets);
+    expect(find.textContaining('(Archivado)'), findsWidgets);
+    expect(
+      find.byKey(
+        Key(
+          'memora-family-activate-pastime-'
+          '${OfflineFixtures.spiderSolitaireDemoPastimeId.value}',
+        ),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets(
@@ -363,18 +405,18 @@ void main() {
         );
         await composition.load();
 
-        await composition.pastimeController.activate(
-          OfflineFixtures.draftPuzzlePastimeId,
+        await composition.pastimeController.archive(
+          OfflineFixtures.spiderSolitaireDemoPastimeId,
         );
-        final afterActivate = await transport.pull(
+        final afterArchive = await transport.pull(
           familySpaceId: IdentityFixtures.familiaEjemploSpaceId,
         );
         expect(
-          afterActivate.any(
+          afterArchive.any(
             (record) =>
                 record.aggregateId ==
-                    OfflineFixtures.draftPuzzlePastimeId.value &&
-                record.payload['lifecycle'] == 'active',
+                    OfflineFixtures.spiderSolitaireDemoPastimeId.value &&
+                record.payload['lifecycle'] == 'archived',
           ),
           isTrue,
         );
@@ -383,7 +425,7 @@ void main() {
         await server.close();
 
         await composition.pastimeController.archive(
-          OfflineFixtures.radioPastimeId,
+          OfflineFixtures.sudokuDemoPastimeId,
         );
         expect(composition.pastimeController.sharedDeliveryFailed, isTrue);
         expect(
@@ -405,7 +447,8 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.textContaining('Puzzle Ejemplo'), findsWidgets);
+      expect(find.textContaining('Sudoku Demo'), findsWidgets);
+      expect(find.textContaining('Sopa de letras Demo'), findsWidgets);
       expect(
         find.byKey(const Key('memora-family-pastime-shared-delivery-failed')),
         findsOneWidget,
@@ -419,7 +462,7 @@ void main() {
         find.byKey(
           Key(
             'memora-family-activate-pastime-'
-            '${OfflineFixtures.radioPastimeId.value}',
+            '${OfflineFixtures.spiderSolitaireDemoPastimeId.value}',
           ),
         ),
         findsOneWidget,

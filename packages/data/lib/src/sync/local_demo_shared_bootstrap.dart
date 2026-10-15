@@ -24,20 +24,16 @@ abstract final class LocalDemoSharedBootstrap {
       return;
     }
     await pastimes.save(
-      pastime: OfflineFixtures.radioPastime,
-      idempotencyKey: OfflineFixtures.radioPastimeSaveKey,
+      pastime: OfflineFixtures.sudokuDemoPastime,
+      idempotencyKey: OfflineFixtures.sudokuDemoPastimeSaveKey,
     );
     await pastimes.save(
-      pastime: OfflineFixtures.draftPuzzlePastime,
-      idempotencyKey: IdempotencyKey(
-        'demo-pastime-save-01932f00-0008-7000-8000-000000000802',
-      ),
+      pastime: OfflineFixtures.wordSearchDemoPastime,
+      idempotencyKey: OfflineFixtures.wordSearchDemoPastimeSaveKey,
     );
     await pastimes.save(
-      pastime: OfflineFixtures.archivedPhotosPastime,
-      idempotencyKey: IdempotencyKey(
-        'demo-pastime-save-01932f00-0008-7000-8000-000000000803',
-      ),
+      pastime: OfflineFixtures.spiderSolitaireDemoPastime,
+      idempotencyKey: OfflineFixtures.spiderSolitaireDemoPastimeSaveKey,
     );
   }
 

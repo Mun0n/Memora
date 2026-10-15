@@ -100,6 +100,41 @@ void main() {
       expect(OfflineFixtures.draftPuzzlePastime.isActiveForViewing, isFalse);
       expect(OfflineFixtures.archivedPhotosPastime.isActiveForViewing, isFalse);
     });
+
+    test('Slice 14 native Demo fixtures are active and playable', () {
+      expect(OfflineFixtures.slice14NativeDemoPastimes, hasLength(3));
+      expect(
+        OfflineFixtures.slice14NativeDemoPastimes
+            .map((p) => p.id)
+            .toSet()
+            .length,
+        3,
+      );
+      expect(
+        OfflineFixtures.slice14NativeDemoPastimes.every(
+          (p) => p.isActiveForViewing,
+        ),
+        isTrue,
+      );
+      expect(
+        OfflineFixtures.sudokuDemoPastime.experience,
+        isA<SudokuPastimeExperience>(),
+      );
+      expect(
+        OfflineFixtures.wordSearchDemoPastime.experience,
+        isA<WordSearchPastimeExperience>(),
+      );
+      expect(
+        OfflineFixtures.spiderSolitaireDemoPastime.experience,
+        isA<SpiderSolitairePastimeExperience>(),
+      );
+      expect(
+        OfflineFixtures.obsoleteSlice8DemoPastimeIds.toSet().intersection(
+          OfflineFixtures.slice14NativeDemoPastimes.map((p) => p.id).toSet(),
+        ),
+        isEmpty,
+      );
+    });
   });
 
   group('PastimeCarePolicy', () {

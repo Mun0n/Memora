@@ -2,6 +2,7 @@ import 'package:domain/domain.dart';
 
 import 'conversation_topic_codec.dart';
 import 'in_memory_sync_authority.dart';
+import 'pastime_codec.dart';
 import 'supported_person_profile_codec.dart';
 
 /// Actionable failure when a durable local demo snapshot is unusable.
@@ -20,6 +21,10 @@ final class LocalDemoSyncSnapshotException implements Exception {
 /// preferred-name profile baselines when those aggregates are missing for that
 /// fictional family space. Independent clients must not each seed competing
 /// private fixtures in shared mode.
+///
+/// Slice 14 also retires the exact obsolete Slice 8 Demo pastime IDs via
+/// tombstone and publishes the three native-game baseline rows. The upgrade is
+/// idempotent and never mutates caregiver-created rows outside those IDs.
 abstract final class LocalDemoFictionalBaseline {
   static const int schemaVersion = 1;
 
@@ -28,7 +33,7 @@ abstract final class LocalDemoFictionalBaseline {
 
   /// Ensures pastimes, topics and preferred-name profile.
   ///
-  /// Returns true if any aggregate published.
+  /// Returns true if any aggregate published or upgraded.
   static bool ensureBaseline(InMemorySyncAuthority authority) {
     final pastimes = ensurePastimes(authority);
     final topics = ensureConversationTopics(authority);
@@ -36,27 +41,12 @@ abstract final class LocalDemoFictionalBaseline {
     return pastimes || topics || profile;
   }
 
-  /// Returns `true` when this call published the pastime baseline.
+  /// Returns `true` when this call retired obsolete Demo rows and/or published
+  /// the Slice 14 native-game pastime baseline.
   static bool ensurePastimes(InMemorySyncAuthority authority) {
-    if (authority.hasPastimeRowsFor(familySpaceId.value)) {
-      return false;
-    }
-    _seedPastime(
-      authority,
-      pastime: OfflineFixtures.radioPastime,
-      version: AggregateVersion(1),
-    );
-    _seedPastime(
-      authority,
-      pastime: OfflineFixtures.draftPuzzlePastime,
-      version: AggregateVersion(1),
-    );
-    _seedPastime(
-      authority,
-      pastime: OfflineFixtures.archivedPhotosPastime,
-      version: AggregateVersion(1),
-    );
-    return true;
+    final retired = _retireObsoleteSlice8DemoPastimes(authority);
+    final published = _ensureNativeGamePastimes(authority);
+    return retired || published;
   }
 
   /// Returns `true` when this call published the conversation-topic baseline.
@@ -101,6 +91,60 @@ abstract final class LocalDemoFictionalBaseline {
     return true;
   }
 
+  /// Tombstones live obsolete Slice 8 Demo pastime rows for Familia Ejemplo.
+  static bool _retireObsoleteSlice8DemoPastimes(
+    InMemorySyncAuthority authority,
+  ) {
+    var changed = false;
+    for (final pastime in OfflineFixtures.obsoleteSlice8DemoPastimes) {
+      final existing = authority.recordFor(pastime.id.value);
+      if (existing == null) {
+        continue;
+      }
+      if (existing.familySpaceId != familySpaceId.value) {
+        continue;
+      }
+      if (existing.aggregateType != OutboxAggregateType.pastime) {
+        continue;
+      }
+      if (existing.tombstoned) {
+        continue;
+      }
+      final nextVersion = AggregateVersion(existing.version.value + 1);
+      final retired = pastime.copyWith(
+        version: nextVersion,
+        tombstone: Tombstone(
+          aggregateId: pastime.id.value,
+          version: nextVersion,
+          deletedAt: DateTime.utc(2026, 10, 14, 12),
+        ),
+      );
+      authority.seed(
+        aggregateType: OutboxAggregateType.pastime,
+        aggregateId: retired.id.value,
+        familySpaceId: retired.familySpaceId.value,
+        version: nextVersion,
+        payload: PastimeCodec.encodePayload(retired),
+        tombstoned: true,
+      );
+      changed = true;
+    }
+    return changed;
+  }
+
+  /// Publishes missing Slice 14 native-game baseline rows (never overwrites).
+  static bool _ensureNativeGamePastimes(InMemorySyncAuthority authority) {
+    var changed = false;
+    for (final pastime in OfflineFixtures.slice14NativeDemoPastimes) {
+      if (authority.recordFor(pastime.id.value) != null) {
+        continue;
+      }
+      _seedPastime(authority, pastime: pastime, version: AggregateVersion(1));
+      changed = true;
+    }
+    return changed;
+  }
+
   static void _seedPastime(
     InMemorySyncAuthority authority, {
     required Pastime pastime,
@@ -111,14 +155,7 @@ abstract final class LocalDemoFictionalBaseline {
       aggregateId: pastime.id.value,
       familySpaceId: pastime.familySpaceId.value,
       version: version,
-      payload: <String, Object?>{
-        'title': pastime.title,
-        'instruction': pastime.instruction,
-        'displayOrder': pastime.displayOrder,
-        'lifecycle': pastime.lifecycleStatus.wireName,
-        'tombstoned': pastime.isDeleted,
-        'version': version.value,
-      },
+      payload: PastimeCodec.encodePayload(pastime.copyWith(version: version)),
       tombstoned: pastime.isDeleted,
     );
   }

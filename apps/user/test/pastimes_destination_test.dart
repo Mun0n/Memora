@@ -41,7 +41,7 @@ void main() {
 
   Future<void> expectLargeTargets(WidgetTester tester) async {
     final card = find.byKey(
-      Key('memora-user-pastime-${OfflineFixtures.radioPastimeId.value}'),
+      Key('memora-user-pastime-${OfflineFixtures.sudokuDemoPastimeId.value}'),
     );
     expect(card, findsOneWidget);
     final size = tester.getSize(card);
@@ -66,7 +66,10 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.byKey(const Key('memora-user-pasatiempos')), findsOneWidget);
-      expect(find.text('Radio Demo'), findsOneWidget);
+      expect(find.text('Sudoku Demo'), findsOneWidget);
+      expect(find.text('Sopa de letras Demo'), findsOneWidget);
+      expect(find.text('Solitario Spider Demo'), findsOneWidget);
+      expect(find.textContaining('Radio Demo'), findsNothing);
       expect(find.textContaining('Puzzle Ejemplo'), findsNothing);
       expect(find.textContaining('Fotos Ejemplo'), findsNothing);
       expect(find.textContaining('sincroniz'), findsNothing);
@@ -77,7 +80,10 @@ void main() {
 
       await tester.tap(
         find.byKey(
-          Key('memora-user-pastime-${OfflineFixtures.radioPastimeId.value}'),
+          Key(
+            'memora-user-pastime-'
+            '${OfflineFixtures.sudokuDemoPastimeId.value}',
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -85,13 +91,14 @@ void main() {
       expect(
         find.byKey(
           Key(
-            'memora-user-pastime-detail-'
-            '${OfflineFixtures.radioPastimeId.value}',
+            'memora-user-pastime-intro-'
+            '${OfflineFixtures.sudokuDemoPastimeId.value}',
           ),
         ),
         findsOneWidget,
       );
-      expect(find.textContaining('Escuchar la radio Ejemplo'), findsOneWidget);
+      expect(find.textContaining('Completa el sudoku Demo'), findsOneWidget);
+      expect(find.text(MemoraCopy.pasatiemposStart), findsOneWidget);
       expect(find.textContaining('hecho'), findsNothing);
       expect(find.textContaining('completado'), findsNothing);
 
@@ -276,12 +283,14 @@ void main() {
         find.byKey(const Key('memora-user-home-tile-pasatiempos')),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Radio Demo'), findsOneWidget);
+      expect(find.text('Sudoku Demo'), findsOneWidget);
+      expect(find.text('Sopa de letras Demo'), findsOneWidget);
+      expect(find.text('Solitario Spider Demo'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('memora-user-return-home')));
       await tester.pumpAndSettle();
 
-      // Caregiver activates/reorders on the shared authority after user started.
+      // Caregiver reorders on the shared authority after user started.
       final caregiver = FakeSupabaseRemote.withAuthority(authority);
       final caregiverStore = InMemoryOfflineStore();
       final caregiverPastimes = InMemoryPastimeRepository(caregiverStore);
@@ -298,23 +307,13 @@ void main() {
         conflictIdFactory: () => '01932f00-0008-7000-8000-000000000d02',
       );
       await caregiverEngine.pull(familySpaceId: space);
-      await configure.activate(
-        actor: elena,
-        id: OfflineFixtures.draftPuzzlePastimeId,
-        idempotencyKey: IdempotencyKey('ui-reenter-activate-puzzle'),
-      );
-      await configure.activate(
-        actor: elena,
-        id: OfflineFixtures.archivedPhotosPastimeId,
-        idempotencyKey: IdempotencyKey('ui-reenter-activate-photos'),
-      );
       await configure.reorder(
         actor: elena,
         familySpaceId: space,
         orderedIds: [
-          OfflineFixtures.draftPuzzlePastimeId,
-          OfflineFixtures.archivedPhotosPastimeId,
-          OfflineFixtures.radioPastimeId,
+          OfflineFixtures.wordSearchDemoPastimeId,
+          OfflineFixtures.spiderSolitaireDemoPastimeId,
+          OfflineFixtures.sudokuDemoPastimeId,
         ],
         idempotencyKey: IdempotencyKey('ui-reenter-reorder'),
       );
@@ -326,12 +325,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Puzzle Ejemplo'), findsOneWidget);
-      expect(find.textContaining('Fotos Ejemplo'), findsOneWidget);
-      expect(find.text('Radio Demo'), findsOneWidget);
-      final y0 = tester.getTopLeft(find.text('Puzzle Ejemplo')).dy;
-      final y1 = tester.getTopLeft(find.textContaining('Fotos Ejemplo')).dy;
-      final y2 = tester.getTopLeft(find.text('Radio Demo')).dy;
+      expect(find.text('Sopa de letras Demo'), findsOneWidget);
+      expect(find.text('Solitario Spider Demo'), findsOneWidget);
+      expect(find.text('Sudoku Demo'), findsOneWidget);
+      final y0 = tester.getTopLeft(find.text('Sopa de letras Demo')).dy;
+      final y1 = tester.getTopLeft(find.text('Solitario Spider Demo')).dy;
+      final y2 = tester.getTopLeft(find.text('Sudoku Demo')).dy;
       expect(y0, lessThan(y1));
       expect(y1, lessThan(y2));
     },
@@ -352,8 +351,8 @@ void main() {
     await composition.seedDemoFixtures();
     // Shared mode skips private pastime seed; plant a local cache for offline proof.
     await composition.pastimes.save(
-      pastime: OfflineFixtures.radioPastime,
-      idempotencyKey: OfflineFixtures.radioPastimeSaveKey,
+      pastime: OfflineFixtures.sudokuDemoPastime,
+      idempotencyKey: OfflineFixtures.sudokuDemoPastimeSaveKey,
     );
     await composition.pastimeController.load();
     await tester.pumpWidget(
@@ -364,7 +363,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Radio Demo'), findsOneWidget);
+    expect(find.text('Sudoku Demo'), findsOneWidget);
     expect(
       find.byKey(const Key('memora-user-pasatiempos-shared-pull-failed')),
       findsOneWidget,
@@ -396,8 +395,8 @@ void main() {
       );
       await composition.seedDemoFixtures();
       await composition.pastimes.save(
-        pastime: OfflineFixtures.radioPastime,
-        idempotencyKey: OfflineFixtures.radioPastimeSaveKey,
+        pastime: OfflineFixtures.sudokuDemoPastime,
+        idempotencyKey: OfflineFixtures.sudokuDemoPastimeSaveKey,
       );
       await composition.load();
       await tester.pumpWidget(composition.buildApp());
@@ -408,7 +407,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Radio Demo'), findsOneWidget);
+      expect(find.text('Sudoku Demo'), findsOneWidget);
       expect(
         find.byKey(const Key('memora-user-pasatiempos-shared-pull-failed')),
         findsOneWidget,
@@ -447,8 +446,8 @@ void main() {
       );
       await composition.seedDemoFixtures();
       await composition.pastimes.save(
-        pastime: OfflineFixtures.radioPastime,
-        idempotencyKey: OfflineFixtures.radioPastimeSaveKey,
+        pastime: OfflineFixtures.sudokuDemoPastime,
+        idempotencyKey: OfflineFixtures.sudokuDemoPastimeSaveKey,
       );
       await composition.load();
       await tester.pumpWidget(composition.buildApp());
@@ -459,14 +458,14 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Radio Demo'), findsOneWidget);
+      expect(find.text('Sudoku Demo'), findsOneWidget);
       expect(
         find.byKey(const Key('memora-user-pasatiempos-shared-pull-failed')),
         findsOneWidget,
       );
-      expect(find.text('Puzzle Ejemplo'), findsNothing);
+      expect(find.text('Sopa de letras Demo'), findsNothing);
 
-      // Caregiver activates/reorders while user transport is still down.
+      // Caregiver reorders while user transport is still down.
       final caregiver = FakeSupabaseRemote.withAuthority(authority);
       final caregiverStore = InMemoryOfflineStore();
       final caregiverPastimes = InMemoryPastimeRepository(caregiverStore);
@@ -483,23 +482,13 @@ void main() {
         conflictIdFactory: () => '01932f00-0008-7000-8000-000000000d03',
       );
       await caregiverEngine.pull(familySpaceId: space);
-      await configure.activate(
-        actor: elena,
-        id: OfflineFixtures.draftPuzzlePastimeId,
-        idempotencyKey: IdempotencyKey('ui-retry-activate-puzzle'),
-      );
-      await configure.activate(
-        actor: elena,
-        id: OfflineFixtures.archivedPhotosPastimeId,
-        idempotencyKey: IdempotencyKey('ui-retry-activate-photos'),
-      );
       await configure.reorder(
         actor: elena,
         familySpaceId: space,
         orderedIds: [
-          OfflineFixtures.draftPuzzlePastimeId,
-          OfflineFixtures.archivedPhotosPastimeId,
-          OfflineFixtures.radioPastimeId,
+          OfflineFixtures.wordSearchDemoPastimeId,
+          OfflineFixtures.spiderSolitaireDemoPastimeId,
+          OfflineFixtures.sudokuDemoPastimeId,
         ],
         idempotencyKey: IdempotencyKey('ui-retry-reorder'),
       );
@@ -516,12 +505,12 @@ void main() {
         find.byKey(const Key('memora-user-pasatiempos-shared-pull-failed')),
         findsNothing,
       );
-      expect(find.text('Puzzle Ejemplo'), findsOneWidget);
-      expect(find.textContaining('Fotos Ejemplo'), findsOneWidget);
-      expect(find.text('Radio Demo'), findsOneWidget);
-      final y0 = tester.getTopLeft(find.text('Puzzle Ejemplo')).dy;
-      final y1 = tester.getTopLeft(find.textContaining('Fotos Ejemplo')).dy;
-      final y2 = tester.getTopLeft(find.text('Radio Demo')).dy;
+      expect(find.text('Sopa de letras Demo'), findsOneWidget);
+      expect(find.text('Solitario Spider Demo'), findsOneWidget);
+      expect(find.text('Sudoku Demo'), findsOneWidget);
+      final y0 = tester.getTopLeft(find.text('Sopa de letras Demo')).dy;
+      final y1 = tester.getTopLeft(find.text('Solitario Spider Demo')).dy;
+      final y2 = tester.getTopLeft(find.text('Sudoku Demo')).dy;
       expect(y0, lessThan(y1));
       expect(y1, lessThan(y2));
     },
@@ -596,7 +585,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Radio Demo'), findsOneWidget);
+    expect(find.text('Sudoku Demo'), findsOneWidget);
+    expect(find.text('Sopa de letras Demo'), findsOneWidget);
+    expect(find.text('Solitario Spider Demo'), findsOneWidget);
+    expect(find.textContaining('Radio Demo'), findsNothing);
     expect(find.textContaining('Puzzle Ejemplo'), findsNothing);
     expect(find.byKey(const Key('memora-isolated-local-demo')), findsNothing);
   });

@@ -42,7 +42,13 @@ iterations per slice: 3.
 
 Initial prompts contain only the active slice, relevant v0.1 authority, role contract and changed-file evidence. Historical reports and other slice specifications are excluded unless a concrete question requires them. Agents use targeted searches and open full files only when a diff or interface is insufficient.
 
-Soft limits warn at 10 initial files or approximately 20,000 prompt characters. Reports record prompt file/character counts. The AUDITOR receives acceptance criteria, diff names and validation output, not DOMAIN/UI transcripts.
+The single initial-context authority is `.agent/context_defaults.json`, consumed by
+`scripts/lib/orch.py` and the slice runner. Each role includes its own contract.
+Soft limits warn above 10 initial files or at 20,000 characters, counting the
+prompt plus the full contents of its unique initial files (not just path names).
+Metrics distinguish prompt/context characters and report absent preview evidence.
+Static missing files fail; generated report files may be absent during preview.
+Metrics cover initial context only, not subsequent targeted reads or CLI internals. The AUDITOR receives acceptance criteria, diff names and validation output, not DOMAIN/UI transcripts.
 
 ## Guards and validation
 

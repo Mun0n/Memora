@@ -83,20 +83,24 @@ void main() {
         actor: IdentityFixtures.amparoSupportedMembership,
         familySpaceId: space,
       );
-      expect(
-        caregiverListed.map((p) => p.title),
-        containsAll([
-          'Radio Demo',
-          'Puzzle Ejemplo',
-          'Fotos Ejemplo (archivado)',
-        ]),
-      );
-      expect(userActive.map((p) => p.title), ['Radio Demo']);
+      expect(caregiverListed.map((p) => p.title), [
+        'Sudoku Demo',
+        'Sopa de letras Demo',
+        'Solitario Spider Demo',
+      ]);
+      expect(userActive.map((p) => p.title), [
+        'Sudoku Demo',
+        'Sopa de letras Demo',
+        'Solitario Spider Demo',
+      ]);
+      expect(userActive[0].experience, isA<SudokuPastimeExperience>());
+      expect(userActive[1].experience, isA<WordSearchPastimeExperience>());
+      expect(userActive[2].experience, isA<SpiderSolitairePastimeExperience>());
     },
   );
 
   test(
-    'caregiver activate/reorder converge on user pull over durable HTTP authority',
+    'caregiver reorder converges on user pull over durable HTTP authority',
     () async {
       final snapshotPath = '${tempDir.path}/authority_snapshot.json';
       final server = await LocalDemoSyncServer.bind(
@@ -125,24 +129,14 @@ void main() {
         transport: caregiverTransport,
       );
 
-      final puzzle = OfflineFixtures.draftPuzzlePastimeId;
-      final radio = OfflineFixtures.radioPastimeId;
-      final photos = OfflineFixtures.archivedPhotosPastimeId;
+      final sudoku = OfflineFixtures.sudokuDemoPastimeId;
+      final words = OfflineFixtures.wordSearchDemoPastimeId;
+      final spider = OfflineFixtures.spiderSolitaireDemoPastimeId;
 
-      await caregiver.configure.activate(
-        actor: elena,
-        id: puzzle,
-        idempotencyKey: IdempotencyKey('demo-durable-activate-puzzle'),
-      );
-      await caregiver.configure.activate(
-        actor: elena,
-        id: photos,
-        idempotencyKey: IdempotencyKey('demo-durable-activate-photos'),
-      );
       await caregiver.configure.reorder(
         actor: elena,
         familySpaceId: space,
-        orderedIds: [puzzle, photos, radio],
+        orderedIds: [spider, sudoku, words],
         idempotencyKey: IdempotencyKey('demo-durable-reorder'),
       );
 
@@ -158,7 +152,7 @@ void main() {
         actor: amparo,
         familySpaceId: space,
       );
-      expect(active.map((p) => p.id), [puzzle, photos, radio]);
+      expect(active.map((p) => p.id), [spider, sudoku, words]);
       expect(active.map((p) => p.displayOrder), [0, 1, 2]);
     },
   );
@@ -182,18 +176,13 @@ void main() {
         engine: caregiver1.engine,
         transport: transport1,
       );
-      await caregiver1.configure.activate(
-        actor: elena,
-        id: OfflineFixtures.draftPuzzlePastimeId,
-        idempotencyKey: IdempotencyKey('demo-restart-activate-puzzle'),
-      );
       await caregiver1.configure.reorder(
         actor: elena,
         familySpaceId: space,
         orderedIds: [
-          OfflineFixtures.draftPuzzlePastimeId,
-          OfflineFixtures.radioPastimeId,
-          OfflineFixtures.archivedPhotosPastimeId,
+          OfflineFixtures.wordSearchDemoPastimeId,
+          OfflineFixtures.sudokuDemoPastimeId,
+          OfflineFixtures.spiderSolitaireDemoPastimeId,
         ],
         idempotencyKey: IdempotencyKey('demo-restart-reorder'),
       );
@@ -211,8 +200,9 @@ void main() {
       );
       addTearDown(server2.close);
       expect(await transportBaselineActiveTitles(server2.baseUrl), [
-        'Puzzle Ejemplo',
-        'Radio Demo',
+        'Sopa de letras Demo',
+        'Sudoku Demo',
+        'Solitario Spider Demo',
       ]);
 
       final caregiverTransport = LocalDemoSyncTransport(
@@ -246,8 +236,12 @@ void main() {
         actor: IdentityFixtures.amparoSupportedMembership,
         familySpaceId: space,
       );
-      expect(active.map((p) => p.title), ['Puzzle Ejemplo', 'Radio Demo']);
-      expect(active.map((p) => p.displayOrder), [0, 1]);
+      expect(active.map((p) => p.title), [
+        'Sopa de letras Demo',
+        'Sudoku Demo',
+        'Solitario Spider Demo',
+      ]);
+      expect(active.map((p) => p.displayOrder), [0, 1, 2]);
     },
   );
 
@@ -292,10 +286,10 @@ void main() {
         engine: caregiver.engine,
         transport: transport,
       );
-      await caregiver.configure.activate(
+      await caregiver.configure.archive(
         actor: IdentityFixtures.elenaPrimaryMembership,
-        id: OfflineFixtures.draftPuzzlePastimeId,
-        idempotencyKey: IdempotencyKey('demo-reset-activate'),
+        id: OfflineFixtures.spiderSolitaireDemoPastimeId,
+        idempotencyKey: IdempotencyKey('demo-reset-archive'),
       );
       await caregiver.engine.pushPending();
 
@@ -304,17 +298,25 @@ void main() {
         familySpaceId: IdentityFixtures.familiaEjemploSpaceId,
       );
       final pastimes = records
-          .where((r) => r.aggregateType == OutboxAggregateType.pastime)
+          .where(
+            (r) =>
+                r.aggregateType == OutboxAggregateType.pastime && !r.tombstoned,
+          )
           .toList();
       expect(pastimes, hasLength(3));
-      final radio = pastimes.firstWhere(
-        (r) => r.aggregateId == OfflineFixtures.radioPastimeId.value,
-      );
-      expect(radio.payload['lifecycle'], 'active');
-      final puzzle = pastimes.firstWhere(
-        (r) => r.aggregateId == OfflineFixtures.draftPuzzlePastimeId.value,
-      );
-      expect(puzzle.payload['lifecycle'], 'draft');
+      expect(pastimes.map((r) => r.aggregateId).toSet(), {
+        OfflineFixtures.sudokuDemoPastimeId.value,
+        OfflineFixtures.wordSearchDemoPastimeId.value,
+        OfflineFixtures.spiderSolitaireDemoPastimeId.value,
+      });
+      for (final row in pastimes) {
+        expect(row.payload['lifecycle'], 'active');
+      }
+      expect(await transportBaselineActiveTitles(server.baseUrl), [
+        'Sudoku Demo',
+        'Sopa de letras Demo',
+        'Solitario Spider Demo',
+      ]);
     },
   );
 }

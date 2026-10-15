@@ -219,7 +219,10 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('memora-user-pasatiempos')), findsOneWidget);
-    expect(find.text('Radio Demo'), findsOneWidget);
+    expect(find.text('Sudoku Demo'), findsOneWidget);
+    expect(find.text('Sopa de letras Demo'), findsOneWidget);
+    expect(find.text('Solitario Spider Demo'), findsOneWidget);
+    expect(find.textContaining('Radio Demo'), findsNothing);
     expect(find.textContaining('Puzzle Ejemplo'), findsNothing);
     expect(find.textContaining('llamada'), findsNothing);
     expect(find.textContaining('emergencia'), findsNothing);

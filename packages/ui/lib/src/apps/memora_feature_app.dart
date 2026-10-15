@@ -429,11 +429,18 @@ class _UserShell extends StatelessWidget {
         }
 
         // Destinations may scroll when large type exceeds the viewport (Slice 13).
+        // Native pastime play uses a fixed board viewport (no outer scroll trap).
+        final pastimePlaying =
+            destination == UserHomeDestination.pasatiempos &&
+            pastimeController != null &&
+            (pastimeController!.phase == UserPastimePhase.playing ||
+                pastimeController!.phase == UserPastimePhase.completed);
         final scrollable =
-            destination == UserHomeDestination.miDia ||
-            destination == UserHomeDestination.recuerdos ||
-            destination == UserHomeDestination.pasatiempos ||
-            destination == UserHomeDestination.quieroHablar;
+            !pastimePlaying &&
+            (destination == UserHomeDestination.miDia ||
+                destination == UserHomeDestination.recuerdos ||
+                destination == UserHomeDestination.pasatiempos ||
+                destination == UserHomeDestination.quieroHablar);
         return UserDestinationScaffold(
           onReturnHome: onReturnHome,
           scrollable: scrollable,

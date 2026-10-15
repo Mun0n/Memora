@@ -31,8 +31,6 @@ final class FamilyPastimeController extends ChangeNotifier {
   DemoDataScope demoDataScope;
 
   /// Optional quiet push after a successful local pastime write (shared demo).
-  ///
-  /// Returns `true` when the shared delivery succeeded.
   Future<bool> Function()? afterLocalWrite;
 
   /// Optional quiet pull before presenting shared-demo pastimes.
@@ -42,19 +40,26 @@ final class FamilyPastimeController extends ChangeNotifier {
   List<Pastime> pastimes = const <Pastime>[];
   String? errorMessage;
 
-  /// True while a shared quiet pull is in flight (cached rows stay visible).
   bool isRefreshingShared = false;
-
-  /// Shared push did not reach the other client; local rows remain usable.
   bool sharedDeliveryFailed = false;
-
-  /// Shared pull could not refresh; cached rows remain usable.
   bool sharedPullFailed = false;
 
   PastimeId? editingPastimeId;
   String draftTitle = '';
   String draftInstruction = '';
+  String draftExperienceType = GuidedPastimeExperience.wireType;
+  SudokuBoardSize draftSudokuSize = SudokuBoardSize.fourByFour;
+  String draftSudokuPackId = SudokuPuzzlePackCatalog.starter4;
+  WordSearchBoardSize draftWordSearchSize = WordSearchBoardSize.eightByEight;
+  String draftWordSetId = WordSearchWordSetCatalog.jardinDemo;
+  SpiderSuitCount draftSpiderSuits = SpiderSuitCount.one;
+
+  /// Saved type when editing; used to require type-change confirmation.
+  String? _savedExperienceType;
   int editorRevision = 0;
+
+  /// When non-null, UI should show type-change confirmation before applying.
+  String? pendingTypeChange;
 
   bool get canEdit => PastimeCarePolicy.canEditPastimes(actor);
 
@@ -65,6 +70,14 @@ final class FamilyPastimeController extends ChangeNotifier {
       sharedPullFailed ||
       surfaceState == PresentationSurfaceState.failed ||
       surfaceState == PresentationSurfaceState.conflicted;
+
+  PastimeExperience? get draftExperience {
+    try {
+      return _buildExperience(draftExperienceType);
+    } on Object {
+      return null;
+    }
+  }
 
   String get syncLabel {
     if (isRefreshingShared) {
@@ -138,7 +151,6 @@ final class FamilyPastimeController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Quiet pull + local reload for shared-demo destination entry / retry.
   Future<void> refreshFromSharedRemote() async {
     if (!isSharedDemo) {
       await load();
@@ -219,8 +231,11 @@ final class FamilyPastimeController extends ChangeNotifier {
       return;
     }
     editingPastimeId = null;
+    _savedExperienceType = null;
+    pendingTypeChange = null;
     draftTitle = '';
     draftInstruction = '';
+    _resetExperienceDraft(GuidedPastimeExperience.wireType);
     editorRevision += 1;
     errorMessage = null;
     notifyListeners();
@@ -235,14 +250,74 @@ final class FamilyPastimeController extends ChangeNotifier {
     editingPastimeId = pastime.id;
     draftTitle = pastime.title;
     draftInstruction = pastime.instruction;
+    pendingTypeChange = null;
+    _applyExperienceToDraft(pastime.experience);
+    _savedExperienceType = draftExperienceType;
     editorRevision += 1;
     errorMessage = null;
+    if (pastime.experience is QuarantinedPastimeExperience) {
+      errorMessage = (pastime.experience as QuarantinedPastimeExperience)
+          .plainLanguageReason;
+    }
     notifyListeners();
   }
 
   void setDraftTitle(String value) => draftTitle = value;
 
   void setDraftInstruction(String value) => draftInstruction = value;
+
+  /// Requests a type change; may set [pendingTypeChange] for UI confirmation.
+  void requestExperienceType(String wireType) {
+    if (wireType == draftExperienceType) {
+      return;
+    }
+    final saved = _savedExperienceType;
+    if (saved != null && wireType != saved && pendingTypeChange == null) {
+      pendingTypeChange = wireType;
+      notifyListeners();
+      return;
+    }
+    _applyTypeChange(wireType);
+  }
+
+  void confirmPendingTypeChange() {
+    final pending = pendingTypeChange;
+    if (pending == null) {
+      return;
+    }
+    pendingTypeChange = null;
+    _applyTypeChange(pending);
+  }
+
+  void cancelPendingTypeChange() {
+    pendingTypeChange = null;
+    notifyListeners();
+  }
+
+  void setDraftSudokuSize(SudokuBoardSize size) {
+    draftSudokuSize = size;
+    draftSudokuPackId = switch (size) {
+      SudokuBoardSize.fourByFour => SudokuPuzzlePackCatalog.starter4,
+      SudokuBoardSize.sixBySix => SudokuPuzzlePackCatalog.starter6,
+      SudokuBoardSize.nineByNine => SudokuPuzzlePackCatalog.starter9,
+    };
+    notifyListeners();
+  }
+
+  void setDraftWordSearchSize(WordSearchBoardSize size) {
+    draftWordSearchSize = size;
+    notifyListeners();
+  }
+
+  void setDraftWordSetId(String id) {
+    draftWordSetId = id;
+    notifyListeners();
+  }
+
+  void setDraftSpiderSuits(SpiderSuitCount suits) {
+    draftSpiderSuits = suits;
+    notifyListeners();
+  }
 
   Future<void> saveDraft() async {
     if (!canEdit) {
@@ -256,8 +331,15 @@ final class FamilyPastimeController extends ChangeNotifier {
         title.length > Pastime.maxTitleLength ||
         instruction.isEmpty ||
         instruction.length > Pastime.maxInstructionLength) {
-      // Keep draft fields; do not bump editorRevision.
       errorMessage = MemoraCopy.pastimesValidationError;
+      notifyListeners();
+      return;
+    }
+    final PastimeExperience experience;
+    try {
+      experience = _buildExperience(draftExperienceType);
+    } on Object {
+      errorMessage = MemoraCopy.pastimesExperienceValidationError;
       notifyListeners();
       return;
     }
@@ -269,26 +351,44 @@ final class FamilyPastimeController extends ChangeNotifier {
           familySpaceId: actor.familySpaceId,
           title: title,
           instruction: instruction,
+          experience: experience,
           idempotencyKey: _ids.nextIdempotencyKey('pastime-create'),
         );
       } else {
+        final typeChanged =
+            _savedExperienceType != null &&
+            experience.typeWireName != _savedExperienceType;
         await _configure.edit(
           actor: actor,
           id: editingPastimeId!,
           title: title,
           instruction: instruction,
+          experience: experience,
+          confirmExperienceTypeChange: typeChanged,
           idempotencyKey: _ids.nextIdempotencyKey('pastime-edit'),
         );
       }
       editingPastimeId = null;
+      _savedExperienceType = null;
+      pendingTypeChange = null;
       draftTitle = '';
       draftInstruction = '';
+      _resetExperienceDraft(GuidedPastimeExperience.wireType);
       editorRevision += 1;
       errorMessage = null;
       await load();
       await _runAfterLocalWrite();
     } on ArgumentError {
-      errorMessage = MemoraCopy.pastimesValidationError;
+      errorMessage = MemoraCopy.pastimesExperienceValidationError;
+      notifyListeners();
+    } on StateError catch (error) {
+      final message = error.toString();
+      if (message.contains('confirmExperienceTypeChange')) {
+        pendingTypeChange = draftExperienceType;
+        errorMessage = MemoraCopy.pastimeTypeChangeConfirm;
+      } else {
+        errorMessage = MemoraCopy.pastimesValidationError;
+      }
       notifyListeners();
     } catch (error) {
       errorMessage = error.toString();
@@ -311,11 +411,21 @@ final class FamilyPastimeController extends ChangeNotifier {
       errorMessage = null;
       await load();
       await _runAfterLocalWrite();
+    } on ArgumentError {
+      errorMessage = MemoraCopy.pastimesActivateExperienceError;
+      notifyListeners();
     } on StateError catch (error) {
       final message = error.toString();
-      errorMessage = message.contains('active pastimes')
-          ? MemoraCopy.pastimesActiveLimitError
-          : message;
+      if (message.contains('active pastimes')) {
+        errorMessage = MemoraCopy.pastimesActiveLimitError;
+      } else if (message.contains('incomplete') ||
+          message.contains('unsupported') ||
+          message.contains('quarantined') ||
+          message.contains('experience')) {
+        errorMessage = MemoraCopy.pastimesActivateExperienceError;
+      } else {
+        errorMessage = message;
+      }
       notifyListeners();
     } catch (error) {
       errorMessage = error.toString();
@@ -372,6 +482,57 @@ final class FamilyPastimeController extends ChangeNotifier {
       errorMessage = error.toString();
       notifyListeners();
     }
+  }
+
+  void _applyTypeChange(String wireType) {
+    _resetExperienceDraft(wireType);
+    notifyListeners();
+  }
+
+  void _resetExperienceDraft(String wireType) {
+    draftExperienceType = wireType;
+    draftSudokuSize = SudokuBoardSize.fourByFour;
+    draftSudokuPackId = SudokuPuzzlePackCatalog.starter4;
+    draftWordSearchSize = WordSearchBoardSize.eightByEight;
+    draftWordSetId = WordSearchWordSetCatalog.jardinDemo;
+    draftSpiderSuits = SpiderSuitCount.one;
+  }
+
+  void _applyExperienceToDraft(PastimeExperience experience) {
+    switch (experience) {
+      case GuidedPastimeExperience():
+        _resetExperienceDraft(GuidedPastimeExperience.wireType);
+      case SudokuPastimeExperience(:final boardSize, :final puzzlePackId):
+        draftExperienceType = SudokuPastimeExperience.wireType;
+        draftSudokuSize = boardSize;
+        draftSudokuPackId = puzzlePackId;
+      case WordSearchPastimeExperience(:final boardSize, :final wordSetId):
+        draftExperienceType = WordSearchPastimeExperience.wireType;
+        draftWordSearchSize = boardSize;
+        draftWordSetId = wordSetId;
+      case SpiderSolitairePastimeExperience(:final suitCount):
+        draftExperienceType = SpiderSolitairePastimeExperience.wireType;
+        draftSpiderSuits = suitCount;
+      case QuarantinedPastimeExperience():
+        _resetExperienceDraft(GuidedPastimeExperience.wireType);
+    }
+  }
+
+  PastimeExperience _buildExperience(String wireType) {
+    return switch (wireType) {
+      GuidedPastimeExperience.wireType => const GuidedPastimeExperience(),
+      SudokuPastimeExperience.wireType => SudokuPastimeExperience(
+        boardSize: draftSudokuSize,
+        puzzlePackId: draftSudokuPackId,
+      ),
+      WordSearchPastimeExperience.wireType => WordSearchPastimeExperience(
+        boardSize: draftWordSearchSize,
+        wordSetId: draftWordSetId,
+      ),
+      SpiderSolitairePastimeExperience.wireType =>
+        SpiderSolitairePastimeExperience(suitCount: draftSpiderSuits),
+      _ => throw ArgumentError.value(wireType, 'wireType'),
+    };
   }
 
   Future<void> _runAfterLocalWrite() async {
