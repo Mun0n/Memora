@@ -1,5 +1,10 @@
 # Current project state
 
+- Development policy (2026-10-16): direct lightweight work is the default;
+  numbered slices and Cursor multi-agent orchestration are optional. Checks are
+  proportional to the change. See `.agent/workflow.md`. This policy change adds
+  no product functionality and does not reopen Slice 14.
+
 - Phase: **Slice 14 ACCEPTED / CLOSED** — native pastime runtime.
   User approval: 2026-10-15. Implementation, README and context-harness
   improvements committed in `9ee9706`. Latest independent audit:

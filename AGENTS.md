@@ -1,25 +1,25 @@
 # Agent instructions
 
-## Mandatory MVP orchestration
+## Default: lightweight product development
 
-The approved MVP is implemented from one human-started local orchestration command:
+Prioritize usable features and short feedback loops. Work directly in the current
+Codex/Work session by default. On 2026-10-16 the user replaced mandatory Cursor
+orchestration with this lightweight workflow. No slice specification, planning
+agent, QA agent, auditor or sandbox worktree is required for ordinary tasks.
 
-```bash
-cd /Users/mun0n/Memora && ./scripts/run_mvp.sh
-```
+Before editing, inspect Git status and preserve unrelated pending changes. Read
+`.agent/workflow.md`, then only files relevant to the task. Read project status
+when needed; do not preload architecture, product specs or historical reports.
 
-The command executes the remaining approved slices in order. A passing audit authorizes
-automatic progression to the next slice and an automatic local checkpoint commit.
-Human approval is not required between those slices. The orchestrator must stop on a
-failed audit after bounded repair, a safety stop, an unresolved product ambiguity, a
-toolchain failure or any request for credentials, deployment or real personal data.
+For small changes, implement and perform the smallest useful check. For features,
+briefly describe the intended behavior and build a working vertical increment.
+Resolve routine implementation choices autonomously. Ask only about material
+product ambiguity or data risk. Numbered slices are optional.
 
-`scripts/run_slice.sh <slice-number>` remains available for focused repairs and
-explicitly approved post-MVP product slices. Do not invoke `cursor-agent` or `agent`
-directly. Codex/Work may prepare specifications, inspect the repository and run local
-non-agent checks, but the human starts orchestration from Terminal.
-
-Before changing the repository, read `.agent/workflow.md`, the current `specs/SLICE_NN.md`, and the relevant documents under `docs/`.
+`scripts/run_slice.sh` and `scripts/run_mvp.sh` are optional legacy workflows,
+used only when explicitly requested. Role contracts and isolation rules apply
+inside those runs, not to direct development. Do not improve orchestration unless
+that is the task. Do not start agents or automatic commits by default.
 
 ## Product and safety boundaries
 
@@ -39,4 +39,4 @@ Before changing the repository, read `.agent/workflow.md`, the current `specs/SL
   and start the next approved MVP slice automatically.
 - Do not push, deploy, force-reset, rewrite history or delete work outside an active
   slice. Never connect production services automatically.
-- Keep changes inside the active slice. If the specification is ambiguous, stop with `SPEC_AMBIGUITY`.
+- Keep changes focused on the requested task; clarify only material product ambiguity.

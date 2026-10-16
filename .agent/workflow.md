@@ -1,3 +1,58 @@
+# Lightweight development workflow (default)
+
+This policy supersedes the mandatory orchestration workflow as of 2026-10-16.
+
+## Work loop
+
+1. Inspect the working tree and preserve existing work.
+2. Read AGENTS.md and only the source needed for the request. Use targeted searches.
+3. Implement one useful, reviewable increment directly in the current session.
+4. Run checks proportional to the actual change and report the result honestly.
+5. Summarize behavior, verification and any material limitation. Let the user try it.
+
+No mandatory slice, separate plan document, role handoff, audit report, automatic
+repair cycle or process refactor. A short feature request with intended behavior
+and a few acceptance points is enough. Update product status only when it changes;
+do not rewrite historical documents for a text adjustment.
+
+## Proportional verification
+
+- Text, spacing and visual polish: inspect the diff and affected screen when
+  available. Do not create tests merely to assert copy or mirror layout code.
+- Local behavior or bug: run the relevant existing test(s); add a focused test
+  when it protects meaningful behavior or a regression. Analyze the affected
+  Flutter package when source changes justify it.
+- Data persistence, sync, authorization or migrations: exercise the relevant
+  failure cases and existing integration/RLS checks. These deserve more care.
+- Cross-package changes or release preparation: use `./scripts/validate.sh`.
+  It remains available; it is not required after every edit.
+- Do not repeat passing checks without new changes or a concrete concern.
+  Missing device/tool evidence must be stated, never replaced by a claimed pass.
+
+## Context and architecture
+
+Use one implementation context by default. No agents unless explicitly requested.
+Do not preload all specs, project state, role contracts, logs or reports. Expand
+context only to answer a specific question. Reuse existing patterns; introduce an
+abstraction only when the current feature needs it. Prefer a working end-to-end
+path over scaffolding future requirements. No token or time savings are guaranteed.
+
+## Boundaries retained
+
+Fictional data only; no secrets, real health data, hosted production connections,
+medical efficacy claims or LLM features without separate authorization. Preserve
+accessibility, server-side authorization and explicit offline behavior. No push,
+deployment, destructive cleanup or history rewrite without user authorization.
+
+## Optional legacy orchestration
+
+The existing runners and their implementation are preserved, including pending
+isolation work. Use them only on explicit request for a task that benefits from
+them. Their startup may require a clean tree and macOS isolation. The following
+historical rules apply only when those runners are explicitly selected.
+
+---
+
 # Local Cursor-agent workflow
 
 ## Ownership
@@ -53,7 +108,12 @@ Metrics cover initial context only, not subsequent targeted reads or CLI interna
 ## Guards and validation
 
 - `--dry-run` validates contracts, Git state, spec blockers, Cursor discovery, prompt budgets and planned phases without invoking agents or modifying run state.
-- Each mutating role is surrounded by a filesystem snapshot. Changes outside its allowed paths stop the run.
+- Before any agent starts, `role_sandbox.py` preflight requires working macOS
+  `sandbox-exec`. Missing isolation aborts; there is no permissive fallback.
+  Each role runs in an external write-restricted worktree; only accepted,
+  path-allowed results integrate back when the main tree fingerprint is unchanged.
+  See `docs/engineering/ROLE_SANDBOX.md`.
+- Each mutating role is surrounded by a filesystem snapshot. Changes outside its allowed paths stop the run. Post-checks run even when the agent exits non-zero.
 - QA runs `./scripts/validate.sh`; validation is run again after QA so the auditor
   never relies on stale evidence.
 - QA may repair tests and fictional fixtures in the app/package test directories

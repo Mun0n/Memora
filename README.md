@@ -47,29 +47,24 @@ follow the shared local demo setup in the project state document: start the loop
 authority, launch web with its shared URL and use `tool/run_user_android_local_demo.sh`
 for a physical Android device. A plain `flutter run` does not verify shared sync.
 
-## Validation and orchestration
+## Development
 
-Run non-agent checks with:
+The default is direct, lightweight development in Codex/Work: one concrete task,
+a working increment and checks proportional to the change. No mandatory numbered
+slice or multi-agent orchestration. Read [the workflow](.agent/workflow.md).
+
+For copy and visual changes, inspect the affected result. For behavior changes,
+run relevant existing tests and add focused coverage when it protects meaningful
+behavior. Use the full validation suite for broad changes or release preparation:
 
 ```bash
 ./scripts/validate.sh
 ```
 
-Cursor orchestration is human-started from Terminal. Fresh SUPERVISOR, DOMAIN, UI,
-QA and AUDITOR processes have role/path guards, bounded repairs and independent
-acceptance evidence. Initial context comes from `.agent/context_defaults.json`;
-metrics count the prompt plus referenced file contents and warn on soft budgets.
-
-```bash
-./scripts/run_slice.sh 14 --dry-run
-```
-
-A dry run invokes no agents but runs local checks and writes local preview files.
-Slice 14 is closed; do not rerun its implementation without a new repair request.
-Preserve any pending local work. Use a repair mode only for documented findings under the
-[workflow](.agent/workflow.md). No new repair is currently requested by the audit.
-The MVP runner can checkpoint and advance approved MVP slices; focused post-MVP
-slice runs stop for human review. Neither workflow pushes or deploys.
+The existing Cursor runners remain available only when explicitly requested.
+Their role isolation and audit requirements apply to those runs. Preserve pending
+local work; do not restart closed Slice 14 without a repair request. No workflow
+pushes or deploys by default.
 
 ## Data policy
 
