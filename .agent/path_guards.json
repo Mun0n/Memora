@@ -17,7 +17,6 @@
       "packages/data/test/",
       "packages/domain/test/",
       "packages/ui/test/",
-      "scripts/validate.sh",
       "docs/current/",
       ".agent/reports/"
     ],

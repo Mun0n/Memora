@@ -15,12 +15,29 @@ def snapshot() -> dict[str, str]:
         elif path.is_file(): result[name] = hashlib.sha256(path.read_bytes()).hexdigest()
     return result
 
+ROLE_REPORT_FILES = {
+    "SUPERVISOR": "plan.md",
+    "DOMAIN": "domain.md",
+    "UI": "ui.md",
+    "QA": "qa.md",
+    "AUDITOR": "audit.md",
+}
+
+
 def allowed(role: str, changed: list[str]) -> list[str]:
     guards = json.loads((ROOT / ".agent/path_guards.json").read_text())
     bad = []
+    report_name = ROLE_REPORT_FILES.get(role)
     for name in changed:
         if any(name == p.rstrip("/") or name.startswith(p) for p in guards["protected_paths"]):
             bad.append(f"PROTECTED:{name}"); continue
+        if name.startswith(".agent/reports/"):
+            # Each role may write only its own report file under the active slice dir.
+            parts = name.split("/")
+            if report_name is None or len(parts) < 4 or parts[-1] != report_name:
+                bad.append(f"REPORT_OUTSIDE_{role}:{name}")
+                continue
+            continue
         if not any(name == p.rstrip("/") or name.startswith(p) for p in guards["allowed"][role]):
             bad.append(f"OUTSIDE_{role}:{name}")
     return bad

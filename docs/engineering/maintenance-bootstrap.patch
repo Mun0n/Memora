@@ -1,0 +1,31 @@
+*** Begin Patch
+*** Update File: /Users/mun0n/Memora/AGENTS.md
+@@
+ # Agent instructions
++
++## Temporary engineering maintenance exception
++
++For specs/ENGINEERING_AGENT_ISOLATION.md only, after explicit user approval of
++this bootstrap, Codex/Work may implement and test the orchestration infrastructure
++directly. This exception does not authorize starting Cursor agents from the chat.
++The user starts any real-agent compatibility test from Terminal.
++
++Allowed implementation paths: scripts/lib/cursor_cli.sh, scripts/lib/orch.py,
++scripts/run_slice.sh, scripts/lib/role_sandbox.py,
++scripts/tests/test_role_sandbox.py, .agent/context_defaults.json, README.md,
++and docs/engineering/. Changes to .agent/path_guards.json may only tighten QA
++and per-role report permissions, not broaden role access.
++
++Preserve existing work. Use temporary fictional repositories for destructive
++probes. No product changes, credentials, push, deployment or automatic commits.
++Do not claim isolation until the specification checks pass. Remove this temporary
++exception and its workflow note when the engineering task is accepted.
+*** Update File: /Users/mun0n/Memora/.agent/workflow.md
+@@
+ ## Ownership
++
++Temporary exception: the user-approved AGENTS.md engineering-maintenance clause
++permits direct implementation of ENGINEERING_AGENT_ISOLATION only within its
++enumerated paths. Product slices retain the workflow below. Real Cursor agent
++execution remains human-started, including compatibility tests.
+*** End Patch

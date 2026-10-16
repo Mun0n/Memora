@@ -16,3 +16,4 @@ __pycache__/
 !.agent/tmp/.gitkeep
 .agent/reports/slice_*/
 !.agent/reports/.gitkeep
+.agent/runs/

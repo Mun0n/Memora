@@ -13,7 +13,13 @@ cursor_cli_discover() {
   return 1
 }
 
+# Run the Cursor CLI inside the prepared role sandbox. Requires RUN_DIR with
+# control/manifest.json from role_sandbox.py prepare. No permissive fallback.
 cursor_cli_run() {
-  local bin="$1" prompt_file="$2"
-  "$bin" -p --trust --force --output-format text --workspace "$ROOT" "$(cat "$prompt_file")"
+  local bin="$1" prompt_file="$2" role="$3" run_dir="$4"
+  python3 "$ROOT/scripts/lib/role_sandbox.py" run-agent \
+    --role "$role" \
+    --run-dir "$run_dir" \
+    --bin "$bin" \
+    --prompt "$prompt_file"
 }

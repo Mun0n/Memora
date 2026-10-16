@@ -39,9 +39,14 @@ DEFAULT_COMPLETION_SOUND="${HOME:-}/Downloads/139-item-catch.mp3"
 required=(
   "$SPEC" AGENTS.md .agent/workflow.md .agent/context_defaults.json .agent/path_guards.json
   agents/SUPERVISOR.md agents/DOMAIN.md agents/UI.md agents/QA.md agents/AUDITOR.md
-  scripts/validate.sh scripts/lib/cursor_cli.sh scripts/lib/orch.py
+  scripts/validate.sh scripts/lib/cursor_cli.sh scripts/lib/orch.py scripts/lib/role_sandbox.py
 )
 for path in "${required[@]}"; do [[ -f "$ROOT/$path" ]] || { echo "ERROR: missing $path" >&2; exit 1; }; done
+
+if ! python3 "$ROOT/scripts/lib/role_sandbox.py" preflight >/dev/null; then
+  echo "ERROR: role write isolation is unavailable; refusing to start agents" >&2
+  exit 1
+fi
 
 if command -v rg >/dev/null 2>&1; then
   blocker_found="$(rg -n 'DESIGN_BLOCKER' "$SPEC" || true)"
@@ -166,17 +171,47 @@ play_completion_sound() {
 
 invoke() {
   local role="$1" extra="$2" before="$TMP/${role}.before.json"
+  local run_id run_dir agent_rc=0 guard_rc=0
   write_prompt "$role" "$extra"
   python3 scripts/lib/orch.py snapshot "$before"
-  echo "[$role] starting fresh Cursor context"
-  cursor_cli_run "$CLI" "$TMP/${role}.prompt.md" >"$REPORT_DIR/${role}.stdout.txt" 2>"$REPORT_DIR/${role}.stderr.txt" &
+  run_id="$(date +%Y%m%d-%H%M%S)-${role}-$(python3 -c 'import uuid; print(uuid.uuid4().hex[:8])')"
+  echo "[$role] preparing write isolation (run_id=$run_id)"
+  if ! python3 scripts/lib/role_sandbox.py prepare \
+      --role "$role" --spec "$SPEC" --report "$REPORT_REL" --run-id "$run_id" \
+      >"$REPORT_DIR/${role}.sandbox_prepare.json"; then
+    echo "ERROR: $role isolation prepare failed; agent not started" >&2
+    return 1
+  fi
+  run_dir="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["run_dir"])' "$REPORT_DIR/${role}.sandbox_prepare.json")"
+  echo "[$role] sandbox run_dir=$run_dir"
+  echo "[$role] starting fresh Cursor context inside role sandbox"
+  # Always keep post-checks: run-agent finalizes even on failure; guard always runs.
+  set +e
+  cursor_cli_run "$CLI" "$TMP/${role}.prompt.md" "$role" "$run_dir" \
+    >"$REPORT_DIR/${role}.stdout.txt" 2>"$REPORT_DIR/${role}.stderr.txt" &
   local worker_pid=$!
   show_progress "$worker_pid" "$role trabajando"
-  if ! wait "$worker_pid"; then
-    echo "ERROR: $role invocation failed; see $REPORT_REL/${role}.stderr.txt" >&2; return 1
+  wait "$worker_pid"
+  agent_rc=$?
+  if [[ ! -f "$run_dir/control/evidence.json" ]]; then
+    python3 scripts/lib/role_sandbox.py finalize --run-dir "$run_dir" --agent-exit "$agent_rc"
   fi
-  if ! python3 scripts/lib/orch.py guard "$role" "$before" >"$REPORT_DIR/${role}.path_guard.log"; then
-    echo "ERROR: $role changed a protected or unauthorized path" >&2; return 1
+  [[ -f "$run_dir/control/evidence.json" ]] && cp "$run_dir/control/evidence.json" "$REPORT_DIR/${role}.sandbox_evidence.json"
+  python3 scripts/lib/orch.py guard "$role" "$before" >"$REPORT_DIR/${role}.path_guard.log"
+  guard_rc=$?
+  set -e
+  if [[ "$agent_rc" -ne 0 ]]; then
+    echo "ERROR: $role invocation failed (exit $agent_rc); see $REPORT_REL/${role}.stderr.txt and sandbox evidence" >&2
+    return 1
+  fi
+  if [[ "$guard_rc" -ne 0 ]]; then
+    echo "ERROR: $role changed a protected or unauthorized path on the main tree" >&2
+    return 1
+  fi
+  if [[ -f "$REPORT_DIR/${role}.sandbox_evidence.json" ]] \
+      && ! grep -q '"status": "accepted"' "$REPORT_DIR/${role}.sandbox_evidence.json"; then
+    echo "ERROR: $role sandbox evidence is not accepted; preserving run under $run_dir" >&2
+    return 1
   fi
 }
 

@@ -104,6 +104,8 @@ class OrchestratorContracts(unittest.TestCase):
         }.issubset(qa))
         self.assertNotIn("apps/", qa)
         self.assertNotIn("packages/", qa)
+        # QA must not mutate the validator that judges it.
+        self.assertNotIn("scripts/validate.sh", qa)
 
     def test_audit_resume_is_bounded_to_passing_qa(self):
         runner = (ROOT / "scripts/run_slice.sh").read_text()
