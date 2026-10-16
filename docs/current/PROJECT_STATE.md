@@ -1,8 +1,11 @@
 # Current project state
 
-- Phase: **Slice 14 HUMAN_REVIEW_REPAIR (UI Findings 2–4 + app baseline tests
-  done; QA/audit + physical re-review pending)** — native pastime runtime
-  (post-MVP, gated on accepted Slice 13).
+- Phase: **Slice 14 ACCEPTED / CLOSED** — native pastime runtime.
+  User approval: 2026-10-15. Implementation, README and context-harness
+  improvements committed in `9ee9706`. Latest independent audit:
+  `PASS_WITH_NOTES`; full validation evidence: `VALIDATION PASS`.
+  Closure records explicit user acceptance; no additional physical-device
+  test execution is asserted by this documentation update.
   Slice 13 accepted after physical-device review (2026-10-14). Slice 12
   preferred-name greeting, live orientation, centred home / ≥104 dp `Ayúdame`,
   and caregiver-web Finding 3 chrome remain the accepted baseline. Slice 11
@@ -59,8 +62,10 @@
   clue/revealed styling; Spider landscape lock via injectable orientation port
   + local playing-card faces (`playing_cards` package not adopted). App-owned
   web/user tests now expect the three native Demo cards (no obsolete
-  `Radio Demo` / `…0802` assertions). Full `./scripts/validate.sh` + fresh
-  auditor + physical Android re-review still pending before acceptance.
+  `Radio Demo` / `…0802` assertions). Full `./scripts/validate.sh` passed;
+  the fresh auditor returned `PASS_WITH_NOTES`. User accepted the repaired
+  Slice 14 on 2026-10-15. Known audit notes remain documented in the local
+  audit report; approval does not erase those limitations.
 - Data: fictional development data only (`Amparo Demo`, `Elena Demo`,
   `Familia Ejemplo`, `Casa Demo B`, reserved Slice-2–12 UUIDs); no auth credentials
   or production endpoints. Preferred names never enter diagnostic logs.
@@ -70,9 +75,9 @@
   caregiver/family web; routines, reminders, memories, weight/blood-pressure
   recording, local persistence and synchronization. No native caregiver app or
   meal tracking.
-- Next work: Slice 14 QA/audit + physical device re-review against the three
-  native demo cards (drag word-search, persistent Sudoku solution, landscape
-  Spider cards). Do not begin Slice 15. Family Stories, calls/contacts, LLM,
+- Next work: agree the next bounded product/engineering objective and prepare
+  its specification. Slice 14 is closed; Slice 15 is not yet authorized.
+  Family Stories, calls/contacts, LLM,
   deployment and real-data connection remain out of scope.
 
 ## Human handoff — run fictional demo mode

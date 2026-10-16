@@ -11,7 +11,9 @@ The Flutter Android phone/tablet app and caregiver/family web are implemented as
 fictional local demo. Features include routines, reminders, memories, observations,
 family configuration, voice guidance, guided conversations and offline sync contracts.
 Slice 14 adds native Sudoku, Spanish word search and Spider Solitaire. Its latest
-local audit is `PASS_WITH_NOTES`; physical Android re-review remains pending.
+local audit is `PASS_WITH_NOTES`; the user approved and closed Slice 14 on
+2026-10-15. Implementation and context-harness improvements were committed in
+`9ee9706`. This records user acceptance, not additional device-test evidence.
 Do not begin Slice 15 automatically.
 
 Hosted Supabase/Auth, production media storage, durable Android Drift integration,
@@ -63,8 +65,8 @@ metrics count the prompt plus referenced file contents and warn on soft budgets.
 ```
 
 A dry run invokes no agents but runs local checks and writes local preview files.
-The existing Slice 14 working tree must be preserved; do not use a normal slice run
-against it. Use a repair mode only for documented findings under the
+Slice 14 is closed; do not rerun its implementation without a new repair request.
+Preserve any pending local work. Use a repair mode only for documented findings under the
 [workflow](.agent/workflow.md). No new repair is currently requested by the audit.
 The MVP runner can checkpoint and advance approved MVP slices; focused post-MVP
 slice runs stop for human review. Neither workflow pushes or deploys.
